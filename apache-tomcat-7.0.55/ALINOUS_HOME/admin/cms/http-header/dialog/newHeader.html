@@ -1,0 +1,116 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("button").button();
+});
+
+function postForm(form)
+{
+	var match_path = form.match_path.value;
+	var redirect_path = form.redirect_path.value;
+	
+	if(match_path == ""){
+		alert('Input Match Path.');
+		return;
+	}
+	if(redirect_path == ""){
+		alert('Input Redirect Path.');
+		return;
+	}
+	
+	
+	form.cmd.value = "new";
+
+	var url = "/admin/cms/http-header/dialog/newHeader.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+-->
+</script>
+
+<form name="dlgfrm" action="newHeader.html" method="POST">
+
+<h3>Header Setting</h3>
+
+<table width="100%">
+	<tr>
+		<td width="120">
+			<b>Match Path:</b>
+		</td>
+		<td>
+			<input type="text" name="match_path" value="" style="width:100%" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>MatchType:</b>
+		</td>
+		<td>
+			<select name="match_type">
+			<option value="file-match">File Match</option>
+			<option value="directory-match">Directory Match</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Redirect:</b>
+		</td>
+		<td>
+			<select name="return_code">
+			<option value="301">Redirect 301</option>
+			<option value="302">Redirect 302</option>
+			<option value="410">410 Gone</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td width="120">
+			<b>Redirect Host:</b>
+		</td>
+		<td>
+			<input type="text" name="redirect_host" value="" style="width:100%" />
+			Start with "http://" or "https://". Leaving blank means same host
+		</td>
+	</tr>
+	<tr>
+		<td width="120">
+			<b>Redirect Path:</b>
+		</td>
+		<td>
+			<input type="text" name="redirect_path" value="" style="width:100%" /><br />
+		</td>
+	</tr>
+</table>
+
+<br />
+<br />
+
+<center>
+<button type="button" onclick="postForm(this.form)">New Header</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="site" value="{$IN.site}" />
+</form>
+
+</body>
+</html>

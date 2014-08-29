@@ -1,0 +1,53 @@
+<html>
+<body>
+<script>
+<!-- 
+function submitImport(form)
+{
+	var template_zip = form.template_zip.value;
+	if(template_zip == ""){
+		alert("Input the Template Zip file.");
+		return;
+	}
+	
+	var fd = new FormData(form);
+	var url = "/admin/cms/template-primitive/dialog/import.html"
+
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+
+-->
+</script>
+
+<h1>Import Primitive Template</h1>
+<p>
+Input a zip file.
+</p>
+
+
+<form name="dlgfrm" action="export.html" method="POST">
+
+<input type="file" name="template_zip" value="" />
+
+<button type="button" onclick="submitImport(this.form)">Import</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+<input type="hidden" name="cmd" value="upload" />
+<input type="hidden" name="template_primitive_category_id" value="{$template_primitive_category_id}" />
+</form>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+/*
+include("/admin/cms/publish/publish_inline.alns");
+*/
+include("/include/template_primitive.alns");
+
+function Publish.getInlineTemplateHeaders($cms_page_id, $preview, $current_template_primitive_id)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	if(Array.size(@cms_page) == 0){
+		return null;
+	}
+	
+	$headers.page_addtional_code = $cms_page[0].page_addtional_code;
+	
+	if($preview == true){
+		$xhtml = $cms_page[0].draft_page_body;
+	}else{
+		$xhtml = $cms_page[0].page_body;
+	}
+	
+	@inners = CmsHtml.alanyze($xhtml);
+	$size = Array.size(@inners);
+	if($size == 0){
+		return $headers;
+	}
+	
+	for($i = 0; $i < $size; $i++){
+		$template_primitive_ids[$i] = PrimitiveTmpl.path2TemplateId($inners[$i]);
+	}
+	
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.template_primitive_id IN(@template_primitive_ids);
+	
+	$size = Array.size(@template_primitive);
+	for($i = 0; $i < $size; $i++){
+		$headers.css[$i] = $template_primitive[$i].code_css;
+		$headers.js[$i] = $template_primitive[$i].code_js;
+		$headers.header[$i] = $template_primitive[$i].code_html_header;
+	}
+	
+	return $headers;
+}
+
+function Publish.joinArray(@headers)
+{
+	$str = "";
+	$size = Array.size(@headers);
+	for($i = 0; $i < $size; $i++){
+		$str = $str + $headers[$i];
+	}
+	return $str;
+}

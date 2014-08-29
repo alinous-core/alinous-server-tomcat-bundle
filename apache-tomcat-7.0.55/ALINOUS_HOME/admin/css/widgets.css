@@ -1,0 +1,36 @@
+
+
+.pageNavi {
+	margin: 5px 0 5px 0;
+}
+
+.pageNavi .ui-button .ui-button-text{
+    height: 18px !important;
+    line-height:16px !important;
+    padding: 2px 4px 2px 4px;
+}
+
+.stdtable {
+	width:100%;
+	border-collapse: separate;
+	border-spacing: 0px;
+	border-top: 1px solid #ccc;
+	border-left: 1px solid #ccc;
+}
+.stdtable th{
+	padding: 4px;
+	text-align: left;
+	vertical-align: top;
+	color: #2779AA;
+	background-color: #ccc;
+	border-top: 1px solid #fff;
+	border-left: 1px solid #fff;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+}
+.stdtable td{
+	padding: 4px;
+	background-color: #fafafa;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+}

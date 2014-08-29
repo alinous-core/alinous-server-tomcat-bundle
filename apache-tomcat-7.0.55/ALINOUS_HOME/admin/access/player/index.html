@@ -1,0 +1,176 @@
+<html>
+<head>
+<title>Play recorded motion</title>
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/admin/access/player/play.js"></script>
+<script type="text/javascript"> 
+<!--//
+
+function reload(form)
+{
+	form.page.value = 0;
+	form.cmd.value = "";
+	form.submit();
+}
+
+function gotoPage(form, page)
+{
+	form.page.value = page;
+	form.cmd.value = "";
+	form.submit();
+}
+
+$(function() {
+	$("button").button();
+	$(".pageNavi a").button();
+	$(".playbtn").button();
+});
+
+-->
+</script>
+
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Access Recorder</h1>
+
+<h2>Play recorded motion</h2>
+
+
+<form name="frm" action="index.html" method="POST">
+
+<button type="button" onclick="reload(this.form)">Reload</button>
+
+<input type="hidden" name="page" value="{$IN.page}" />
+<input type="hidden" name="cmd" value="" />
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+<table class="stdtable">
+	<tr>
+		<th width="80">
+			user id
+		</th>
+		<th width="80">
+			access id
+		</th>
+		<th width="180">
+			Access Time
+		</th>
+		<th width="120">
+			Remote Host
+		</th>
+		<th>
+			Url/useragent
+		</th>
+		<th width="80">
+			play
+		</th>
+	</tr>
+	<tr alns:iterate="@pageAccesses" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.user_id}
+		</td>
+		<td>
+			{$oneRecord.access_id}
+		</td>
+		<td>
+			{$oneRecord.access_time}
+		</td>
+		<td>
+			{$oneRecord.remote_host}
+		</td>
+		<td>
+			<table border="0" width="100%">
+				<tr>
+					<td>
+						<b>Url:</b>
+					</td>
+					<td>
+						{$oneRecord.url}
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>User Agent:</b>
+					</td>
+					<td>
+						{$oneRecord.useragent}
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Referer:</b>
+					</td>
+					<td>
+						{$oneRecord.referrer}
+					</td>
+				</tr>
+			</table>
+		</td>
+		<td align="center">
+			<button type="button" onclick="AlinousPlayer.play('{$oneRecord.user_id}', '{$oneRecord.access_id}')"
+				class="playbtn"
+				id="play-{$oneRecord.user_id}-{$oneRecord.access_id}">play</button>
+		</td>
+	</tr>
+</table>
+
+<div class="pageNavi">
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+</form>
+
+</div>
+
+</body>
+</html>

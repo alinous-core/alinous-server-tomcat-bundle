@@ -1,0 +1,37 @@
+
+if($IN.cmd == "stepover"){
+	stepOver($IN, $SESSION);
+}
+else if($IN.cmd == "stepreturn"){
+	stepReturn($IN, $SESSION);
+}
+else if($IN.cmd == "stepin"){
+	stepIn($IN, $SESSION);
+}
+else if($IN.cmd == "resume"){
+	resume($IN, $SESSION);
+}
+
+
+return "{}";
+
+function stepOver($IN, $SESSION)
+{
+	Debugger.stepOver($IN.threadId);
+}
+
+function stepReturn($IN, $SESSION)
+{
+	Debugger.stepReturn($IN.threadId);
+}
+
+function stepIn($IN, $SESSION)
+{
+	Debugger.stepIn($IN.threadId);
+}
+
+
+function resume($IN, $SESSION)
+{
+	Debugger.resume($IN.threadId);
+}

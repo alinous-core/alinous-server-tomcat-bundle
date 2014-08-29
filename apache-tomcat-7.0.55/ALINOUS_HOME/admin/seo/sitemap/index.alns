@@ -1,0 +1,172 @@
+
+include("/include/parseurl.alns");
+
+initParams($IN, $SESSION, $COOKIE);
+
+if($IN.cmd == "back"){
+	redirect "/admin/", 302;
+}
+else if($IN.cmd == "uploadSitemap"){
+	uploadSitemap($IN, $SESSION);
+}
+
+return 0;
+
+function initParams($IN, $SESSION, $COOKIE)
+{
+	if($IN.sitemapUrl == null){
+		$IN.sitemapUrl = "";
+	}
+}
+
+function uploadSitemap($IN, $SESSION)
+{
+	BEGIN;
+	DELETE FROM wmc_sitemap;
+	COMMIT;
+
+	$sitemapXml = Http.access($IN.sitemapUrl, "GET", $postParams, "utf-8", "Alinous-Core Http connect", "http://alinous.org/");
+	
+	// parse xml file
+	@domXml = Html.html2Dom($sitemapXml);
+	
+	$size = Array.size(@domXml);
+	for($i = 0; $i < $size; $i++){
+		if($domXml[$i] == "urlset"){
+			handleUrlset($domXml[$i], $IN.sitemapUrl);
+		}
+	}
+	
+	return 0;
+}
+
+function handleUrlset($urlset, $sitemapUrl)
+{
+	$size = Array.size(@urlset.CHILDREN);
+	for($i = 0; $i < $size; $i++){
+		if($urlset.CHILDREN[$i] != "url"){
+			continue;
+		}
+		
+		// get loc
+		$childSize = Array.size(@urlset.CHILDREN[$i].CHILDREN);
+		for($j = 0; $j < $childSize; $j++){
+			if($urlset.CHILDREN[$i].CHILDREN[$j] == "loc"){
+				$loc = $urlset.CHILDREN[$i].CHILDREN[$j];
+				
+				$url = getText($loc);
+				
+				handleUrl($url, $sitemapUrl);
+			}
+		}
+	}
+	
+	return 0;
+}
+
+function handleUrl($url, $sitemapUrl)
+{
+	$path = UrlParse.getPath($url);
+	$domain = UrlParse.getDomain($url);
+	
+	if($path == ""){
+		$path = "/";
+	}
+	
+	$last_robot_crawl = getLastRobotCrawled($domain, $path);
+	$occurrences = getKeyWordOccurence($domain, $path);
+	$internal_links = getInternalLinks($domain, $path);
+	
+	BEGIN;
+	
+	INSERT INTO wmc_sitemap(
+		sitemap_host,
+		sitemap_path,
+		last_robot_crawl,
+		occurrences,
+		internal_links
+	)
+	VALUES(
+		$domain, // sitemap_host,
+		$path, // sitemap_path,
+		$last_robot_crawl,
+		$occurrences,
+		$internal_links
+	);
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getInternalLinks($domain, $path)
+{
+	SELECT * INTO wmil_internal_link_file
+	FROM
+		wmil_internal_link_file LEFT JOIN wmil_internal_link
+		ON
+			wmil_internal_link_file.internal_link_file_id = wmil_internal_link.internal_link_file_id
+	WHERE
+		wmil_internal_link_file.internal_link_host = $domain AND
+		wmil_internal_link.target_page = $path;
+	
+	if(Array.size(@wmil_internal_link_file) == 0){
+		return 0;
+	}
+	
+	return $wmil_internal_link_file[0].num_links;
+}
+
+function getKeyWordOccurence($domain, $path)
+{
+	SELECT count(*) as cnt 
+	INTO wmc_content_keywords_url
+	FROM
+		wmc_content_keywords_url LEFT JOIN wmc_content_keywords
+		ON
+			wmc_content_keywords_url.wmc_content_keywords_id = wmc_content_keywords.wmc_content_keywords_id
+	WHERE
+		wmc_content_keywords_url.hostname = $domain AND
+		wmc_content_keywords_url.path = $path AND
+		wmc_content_keywords.wmc_content_keywords_file_name IN (
+			SELECT wmc_content_keywords.wmc_content_keywords_file_name
+			FROM
+				wmc_content_keywords
+			ORDER BY wmc_content_keywords.wmc_content_keywords_timestamp DESC
+			LIMIT 1
+		);
+	
+	if($wmc_content_keywords_url[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($wmc_content_keywords_url[0].cnt);
+}
+
+function getLastRobotCrawled($domain, $path)
+{
+	SELECT * INTO wmc_robot_access
+	FROM
+		wmc_robot_access
+	WHERE
+		wmc_robot_access.path = $path
+	ORDER BY wmc_robot_access.access_time DESC
+	LIMIT 1;
+	if(Array.size(@wmc_robot_access) == 0){
+		return "2000-01-01 00:00:00";
+	}
+	
+	return $wmc_robot_access[0].access_time;
+}
+
+function getText($xmlObj)
+{
+	$size = Array.size(@xmlObj.CHILDREN);
+	for($i = 0; $i < $size; $i++){
+		if($xmlObj.CHILDREN[$i].TAG_TYPE == "TEXT_STRING"){
+			return $xmlObj.CHILDREN[$i];
+		}
+	}
+	
+	return null;
+}

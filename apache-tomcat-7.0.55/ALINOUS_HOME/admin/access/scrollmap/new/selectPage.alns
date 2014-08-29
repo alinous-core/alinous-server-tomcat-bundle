@@ -1,0 +1,31 @@
+
+initParams($IN, $SESSION);
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	$now = Timestamp.now();
+	if($IN.hm_master_name == null){
+		$IN.hm_master_name = "hm_T" + Timestamp.format($now, "yyyyMMddhhmmss");
+	}
+	
+	if($IN.hm_master_url == null){
+		$IN.hm_master_url = "";
+	}
+	
+	if($IN.start_date == null){
+		$startTm = Timestamp.add($now, -1, "MONTH");
+		$IN.start_date = Timestamp.format($startTm, "MM'/'dd'/'yyyy");
+	}
+	if($IN.start_time == null){
+		$IN.start_time = "00:00";
+	}
+	
+	if($IN.end_date == null){
+		$IN.end_date = Timestamp.format($now, "MM'/'dd'/'yyyy");
+	}
+	if($IN.end_time == null){
+		$IN.end_time = Timestamp.format($now, "HH':'mm");
+	}
+}

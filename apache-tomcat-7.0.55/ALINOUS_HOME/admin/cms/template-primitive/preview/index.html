@@ -1,0 +1,132 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+
+	$("button").button();
+});
+
+function storeParamsCookie(form)
+{
+	if(document.dlgfrm.preview_width.value == "" || document.dlgfrm.preview_height.value == ""){
+		alert("Input preview window size.");
+		return;
+	}
+
+	var previewCookie = "param_primitive_preview_" + form.selectedNodeId.value;
+	var previewValue = document.dlgfrm.preview_width.value + "," + document.dlgfrm.preview_height.value;
+	$.cookie(previewCookie, previewValue , {expires: 32});
+	
+
+	var cookieName = "param_primitive_" + form.selectedNodeId.value;
+	var cookieValue = "";
+	
+	var nodeParams = form.pageInput.value.split(",");
+	cookieValue += "node_id=" + nodeParams[0];
+	cookieValue += "&cms_page_id=" + nodeParams[1];
+	
+	// alert(cookieValue);
+	
+	var param_ids = document.getElementsByName("parameter_ids[]");
+	
+	for (var i = 0; i < param_ids.length; i++) {
+		cookieValue += "&"
+		
+		var hiddeninput = document.getElementsByName("parameter_name_" + param_ids[i].value);
+		cookieValue += encodeURIComponent(hiddeninput[0].value);
+		
+		cookieValue += "="
+		
+		hiddeninput = document.getElementsByName("params_" + param_ids[i].value);
+		cookieValue += encodeURIComponent(hiddeninput[0].value);
+		
+	}
+	
+	$.cookie(cookieName, cookieValue , {expires: 32});
+	
+	$("#dialog").dialog("close");
+}
+
+function clearParamCookie(form)
+{
+	var cookieName = "param_primitive_" + form.selectedNodeId.value;
+	$.cookie(cookieName, null);
+	
+	$("#dialog").dialog("close");
+}
+-->
+</script>
+
+
+<form name="dlgfrm" action="" method="POST" >
+
+<h3>Preview Window Size</h3>
+<table>
+	<tr>
+		<td>
+			<b>Width:</b>
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="preview_width" value="{$IN.preview_width}" />
+		</td>
+		<td>
+			<b>Height:</b>
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="preview_height" value="{$IN.preview_height}" />
+		</td>
+	</tr>
+</table>
+
+
+<h3>Select Page</h3>
+
+<table>
+	<tr>
+		<td width="220">
+			Select page for Input
+		</td>
+		<td>
+			<select name="pageInput" value="{$IN.pageInput}">
+			<option alns:iterate="@cms_page" alns:variable="p" value="{$p.node_id},{$p.cms_page_id}">{$p.page_path}</option>
+			</select>
+		</td>
+	</tr>
+</table>
+
+
+<h3>Custom Parameters</h3>
+<table class="stdtable" width="100%">
+	<tr>
+		<th>
+			Parameter Name
+		</th>
+		<th>
+			Parameter Value
+		</th>
+	</tr>
+	<tr alns:iterate="@template_primitive_parameter" alns:variable="oneRecoed">
+		<td>
+			{$oneRecoed.parameter_name}
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="params_{$oneRecoed.parameter_id}" value="{$oneRecoed.value}" />
+			<input type="hidden" name="parameter_name_{$oneRecoed.parameter_id}" value="{$oneRecoed.parameter_name}" />
+			<input type="hidden" name="parameter_ids[]" value="{$oneRecoed.parameter_id}" />
+		</td>
+	</tr>
+</table>
+
+<center>
+	<button type="button" onclick="storeParamsCookie(this.form)">Set Parameters</button>
+	<button type="button" onclick="clearParamCookie(this.form)">Clear Setting</button>
+	<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="selectedNodeId" value="{$IN.selectedNodeId}" />
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+
+
+/*
+drop table tree_model;
+drop table tree_model_serial;
+drop table cms_page;
+*/
+
+function PageTree.ddl()
+{
+	BEGIN;
+	
+	CREATE TABLE tree_model(
+		tree_id varchar(255),
+		
+		node_id int not null,
+		page_path text not null,
+		page_depth int not null default 0,
+		page_order int not null default 0,
+		page_children int not null default 0,
+		
+	
+		PRIMARY KEY (tree_id, node_id)
+	);
+	
+	CREATE INDEX idx_tree_model_node_id
+	ON
+		tree_model(node_id);
+	
+	CREATE INDEX idx_tree_model_tree_id_page_path
+	ON
+		tree_model(tree_id, page_path);
+	CREATE INDEX idx_tree_model_tree_id_page_depth
+	ON
+		tree_model(tree_id, page_depth);
+	
+	CREATE TABLE tree_model_serial(
+		tree_id varchar(255),
+		serial_no int not null default 0,
+		
+		PRIMARY KEY (tree_id, serial_no)
+	);
+	
+	CREATE TABLE cms_page(
+		cms_page_id int,
+		
+		node_id int not null,
+		template_top_id int not null default 0,
+		second_template_top_id int not null default 0,
+		second_template_context varchar(255) not null default 's',
+		page_type varchar(255) not null default '',
+		
+		/*
+			draft
+			published
+			published-with-draft
+		*/
+		page_status varchar(32) not null default 'draft',
+		
+		force_folder int not null default 0,
+		force_extract int not null default 0,
+		
+		page_title text not null default '',
+		page_short_title text not null default '',
+		page_sub_title text not null default '',
+		page_description text not null default '',
+		page_body_headline text not null default '',
+		page_body text not null default '',
+		page_addtional_code text not null default '',
+		
+		draft_page_title text not null default '',
+		draft_page_short_title text not null default '',
+		draft_page_sub_title text not null default '',
+		draft_page_description text not null default '',
+		draft_page_body_headline text not null default '',
+		draft_page_body text not null default '',
+		draft_page_addtional_code text not null default '',
+		
+		img_cms_resource_id int not null default 0,
+		
+		creator varchar(255) default '',
+		/*
+			published time. If this is future, publish is scheduled.
+			If the timestamp of the file 
+		*/
+		published_time TIMESTAMP,
+		
+		/*
+			content is officially updated time, this is used in RSS
+		*/
+		updated_time TIMESTAMP,
+		/*
+			editied time
+		*/
+		last_edit_time TIMESTAMP not null default now(),
+		/*
+			Created Time
+		*/
+		created_time TIMESTAMP not null default now(),
+		
+		dirty TIMESTAMP not null default now(),
+		search_text text not null default '',
+		
+		PRIMARY KEY (cms_page_id)
+	);
+	
+	CREATE INDEX idx_cms_page_node_id
+	ON
+		cms_page(node_id);
+	
+	COMMIT;
+}

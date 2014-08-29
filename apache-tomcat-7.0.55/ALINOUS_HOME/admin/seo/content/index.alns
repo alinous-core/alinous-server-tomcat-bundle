@@ -1,0 +1,94 @@
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "back"){
+	redirect "/admin/", 302;
+}
+
+
+$statistic = getStatistics($IN, $SESSION);
+
+return 0;
+
+function getStatistics($IN, $SESSION)
+{
+	SELECT count(*) AS cnt
+	INTO
+		wmc_content_keywords
+	FROM
+		wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $IN.wmc_content_keywords_file_name;
+	if(Array.size(@wmc_content_keywords) > 0){
+		$ret.totalKeywords = Cast.toNumber($wmc_content_keywords[0].cnt);
+	}else{
+		$ret.totalKeywords = 0;
+	}
+	
+	SELECT sum(wmc_content_keywords.occurrences) AS cnt
+	INTO
+		wmc_content_keywords
+	FROM
+		wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $IN.wmc_content_keywords_file_name;
+	if(Array.size(@wmc_content_keywords) > 0 && $wmc_content_keywords[0].cnt != null){
+		$ret.totalKeywords_occur = Cast.toNumber($wmc_content_keywords[0].cnt);
+	}else{
+		$ret.totalKeywords_occur = 0;
+	}
+	
+	
+	
+	return $ret;
+}
+
+
+function initParams($IN, $SESSION)
+{
+	if($IN.wmc_content_keywords_file_name == null){
+		SELECT * INTO wmc_content_keywords
+		FROM
+			wmc_content_keywords
+		ORDER BY wmc_content_keywords.wmc_content_keywords_timestamp DESC
+		LIMIT 1;
+		
+		$IN.wmc_content_keywords_file_name = $wmc_content_keywords[0].wmc_content_keywords_file_name;
+	}
+}
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($inputName == "wmc_content_keywords_file_name"){
+		return validate_wmc_content_keywords_file_name($formName, $inputName, $value, $IN, $SESSION);
+	}
+	return 0;
+}
+
+function validate_wmc_content_keywords_file_name($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($value == ""){
+		return 0;
+	}
+	
+	// ex. alinous-org_20140307T084122Z_Keywords.csv
+	$ret = String.match($value, "^.*[0-9]{8}T[0-9]{6}Z_Keywords\.csv$");
+	if(!$ret){
+		return "wrongformat";
+	}
+	
+	SELECT * INTO wmc_content_keywords
+	FROM
+		wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $value
+	LIMIT 1;
+	
+	if(Array.size(@wmc_content_keywords) == 0){
+		return "notexists";
+	}
+	
+	return 0;
+}
+
+

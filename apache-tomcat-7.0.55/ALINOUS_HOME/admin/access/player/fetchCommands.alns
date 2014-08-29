@@ -1,0 +1,19 @@
+
+if($IN.offset == null){
+	$IN.offset = 0;
+}
+$limit = 200;
+
+SELECT * INTO wic_user_motion
+FROM
+	wic_user_motion
+WHERE
+	wic_user_motion.user_id = $IN.user_id AND
+	wic_user_motion.access_id = $IN.access_id
+ORDER BY wic_user_motion.delta_mill ASC
+LIMIT $limit OFFSET $IN.offset;
+
+$recordJson = Record.dom2json(@wic_user_motion);
+
+return $recordJson;
+

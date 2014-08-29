@@ -1,0 +1,64 @@
+<html>
+<body>
+<script type="text/javascript" charset="utf-8">
+<!--
+function createFirstCategory(form)
+{
+	var category_code = form.category_code.value;
+	var category_name = form.category_name.value;
+	
+	if(category_code == ""){
+		alert("Input the Tag Code.");
+		return;
+	}
+	if(category_code.match(/[^A-Za-z0-9_-]+/)){
+		alert("Please Tag Code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	
+	if(category_name == ""){
+		alert("Input the Tag Name.");
+		return;
+	}
+	
+	document.firstfrm.category_name.value = category_name;
+	document.firstfrm.category_code.value = category_code;
+	
+	document.firstfrm.cmd.value = 'createFirst';
+	document.firstfrm.submit();
+}
+-->
+</script>
+
+<h1>Create the first category</h1>
+<form name="dlgfrm" action="index.html">
+
+<table>
+	<tr>
+		<td width="160">
+			Category Code:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="category_code" value="" />
+		</td>
+	</tr>
+	<tr>
+		<td width="160">
+			Category Name(Display):
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="category_name" value="" />
+		</td>
+	</tr>
+</table>
+
+
+<br />
+
+<button type="button" onclick="createFirstCategory(this.form)">Create Page</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript">
+<!-- 
+$(function() {
+	$("#btnback2page").click(function() {
+		$( "#dialog" ).dialog( "close" );
+		
+		var url = "/admin/access/heatmap/new/selectPage.html";
+		
+		var hm_master_name = $("#hm_master_name").val();
+		var hm_master_url = $("#hm_master_url").val();
+		var start_date = $("#start_date").val();
+		var start_time = $("#start_time").val();
+		var end_date = $("#end_date").val();
+		var end_time = $("#end_time").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {hm_master_name: hm_master_name,
+				hm_master_url: hm_master_url,
+				start_date: start_date,
+				start_time: start_time,
+				end_date: end_date,
+				end_time: end_time},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+				$("#dialog").dialog("open");
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+	});
+	
+	$("#btndlgfinish").click(function() {
+		var archive_page_id = $("input[name='archive_page_id']:checked").val();
+		
+		if(archive_page_id == null){
+			alert("Select archive version");
+			return;
+		}
+		
+		var hm_master_name = $("#hm_master_name").val();
+		var hm_master_url = $("#hm_master_url").val();
+		var start_date = $("#start_date").val();
+		var start_time = $("#start_time").val();
+		var end_date = $("#end_date").val();
+		var end_time = $("#end_time").val();
+		
+		var url = "/admin/access/heatmap/new/createHeatmap.alns";
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {archive_page_id : archive_page_id,
+				hm_master_name: hm_master_name,
+				hm_master_url: hm_master_url,
+				start_date: start_date,
+				start_time: start_time,
+				end_date: end_date,
+				end_time: end_time},
+			dataType: 'html',
+			success: function(data) {				
+				$("#dialog").dialog("close");
+				
+				document.frm.cmd.value = "";
+				document.frm.submit();
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});		
+	});
+});
+-->
+</script>
+</head>
+<body>
+
+<h1>Select Page Version</h1>
+
+<form name="dlgfrm" action="selectPage.html" method="POST">
+
+<h2>Page information</h2>
+
+<table>
+	<tr>
+		<td>
+			Analyze master's name :
+		</td>
+		<td>
+			{$IN.hm_master_name}
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Page url to analyze :
+		</td>
+		<td>
+			{$IN.hm_master_url}
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Start time : 
+		</td>
+		<td>
+			{$IN.start_date} {$IN.start_time}
+		</td>
+	</tr>
+	<tr>
+		<td>
+			End time : 
+		</td>
+		<td>
+			{$IN.end_date} {$IN.end_time}
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="hm_master_name" id="hm_master_name" value="{$IN.hm_master_name}" />
+<input type="hidden" name="hm_master_url" id="hm_master_url" value="{$IN.hm_master_url}" />
+<input type="hidden" name="start_date" id="start_date" value="{$IN.start_date}" />
+<input type="hidden" name="start_time" id="start_time" value="{$IN.start_time}" />
+<input type="hidden" name="end_date" id="end_date" value="{$IN.end_date}" />
+<input type="hidden" name="end_time" id="end_time" value="{$IN.end_time}" />
+
+
+<h2>Archived page version</h2>
+
+<table>
+	<tr alns:iterate="@versions" alns:variable="oneRecord">
+		<td>
+			<input type="radio" name="archive_page_id" value="{$oneRecord.archive_page_id}" />
+		</td>
+		<td>
+			{$oneRecord.archived_time}
+		</td>
+	</tr>
+</table>
+
+<br />
+
+
+<button type="button" id="btnback2page">&lt; Back</button>
+<button type="button" id="btndlgfinish">Finish &gt;</button>
+</form>
+
+
+
+
+</body>
+</html>

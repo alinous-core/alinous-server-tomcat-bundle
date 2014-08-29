@@ -1,0 +1,15 @@
+
+include("/include/page.alns");
+
+if($IN.cmd == "delete"){
+	deletePage($IN, $SESSION);
+}
+
+return 0;
+
+function deletePage($IN, $SESSION)
+{
+	BEGIN;
+	CmsPage.removePage($IN.nodeId);
+	COMMIT;
+}

@@ -1,0 +1,13 @@
+
+
+// $variables = Debugger.getVariables($IN.threadId);
+
+@ar = Debugger.getVariablesFlat($IN.threadId);
+
+// @ar = val2table($variables);
+
+// @ar = Variable.sort(@ar, "path", false);
+
+$json = Record.dom2json(@ar);
+
+return $json;

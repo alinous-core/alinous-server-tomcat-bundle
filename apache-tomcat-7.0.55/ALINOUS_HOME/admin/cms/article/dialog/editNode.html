@@ -1,0 +1,182 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$("button").button();
+	
+	$('#newnode').click(function() {
+		var treeCode =  $("#newTreeCode").val();
+		
+		var page_title = document.editNodeFrm.page_title.value;
+		var template_top_id = document.editNodeFrm.template_top_id.value;
+		var page_status = document.editNodeFrm.page_status.value;
+		var force_folder = document.editNodeFrm.force_folder.value;
+		
+		var page_type =  document.editNodeFrm.page_type.value;
+
+		
+		if(treeCode == ""){
+			alert("Input the Page Code");
+			return;
+		}
+		if(treeCode.match(/[^A-Za-z0-9_-]+/)){
+			alert("Please input Page code in alphabets, numbers, '_' and '-'.");
+			return;
+		}
+		if(treeCode.match(/^[0-9]+$/)){
+			alert("Please input Page code with alphabet.");
+			return;
+		}
+		
+		if(page_type == ""){
+			alert("Input the Page Type");
+			return;
+		}
+		
+		
+		if(page_title == ""){
+			alert("Input the Title.");
+			return;
+		}
+		
+		var position = $("input:radio[name='newPosition']:checked").val();
+		
+		var editNodeId = $("#editNodeId").val();
+		
+		document.pagefrm.page_title.value = page_title;
+		document.pagefrm.template_top_id.value = template_top_id;
+		document.pagefrm.page_status.value = page_status;
+		document.pagefrm.force_folder.value = force_folder;
+		document.pagefrm.page_type.value = page_type;
+		
+		document.pagefrm.cmd.value = "addNode";
+		document.pagefrm.nodeCode.value = treeCode;
+		document.pagefrm.position.value = position;
+		document.pagefrm.nodeId.value = editNodeId;
+		document.pagefrm.submit();
+		
+	});
+	
+	$('#deletenode').click(function() {
+		var editNodeId = $("#editNodeId").val();
+		
+		document.pagefrm.cmd.value = "deleteNode";
+		document.pagefrm.nodeId.value = editNodeId;
+		document.pagefrm.submit();
+	});
+	
+	$(".page_type_main").autocomplete({
+		source: "/admin/cms/article/autocomplete/pagetype.alns",
+		minLength: 0	
+	});
+});
+-->
+</script>
+
+
+
+<form name="editNodeFrm" action="index.html" method="POST">
+
+<div alns:if="{BOOL($IN.key == 'add_page')}">
+	<h2>Add a new node</h2>
+	<table>
+		<tr>
+			<td>
+				Page Code :
+			</td>
+			<td>
+				<input type="text" name="treeCode" id="newTreeCode" size="32" maxlength="128" />
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Position :
+			</td>
+			<td>
+				<span alns:if="{BOOL($node.page_depth > 1)}">
+				<input type="radio" id="newPosition" name="newPosition" value="before">Before this node
+				<input type="radio" id="newPosition" name="newPosition" value="after" checked>After this node
+				<input type="radio" id="newPosition" name="newPosition" value="inside">Inside this node
+				</span>
+				<span alns:if="{BOOL($node.page_depth == 1)}">
+				<input type="radio" id="newPosition" name="newPosition" value="inside" checked>Inside this node
+				</span>
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Title:
+			</td>
+			<td>
+				<input type="text" size="80" style="width:400px;" name="page_title" value="" />
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Page Type:
+			</td>
+			<td>
+				<input type="text" size="80" style="width:400px;" name="page_type" class="page_type_main" value=""
+					onfocus="$('.page_type_main').autocomplete('search');" />
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Page Template:
+			</td>
+			<td>
+				<select name="template_top_id" value="{$cms_page[0].template_top_id}">
+				<option value="0">Use Default</option>
+				<option value="{$oneRecord.template_top_id}" alns:iterate="@template_top" alns:variable="oneRecord">{$oneRecord.template_top_name}</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Status:
+			</td>
+			<td>
+				<select name="page_status">
+				<option value="draft">draft</option>
+				<option value="published">published</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				File or Directory:
+			</td>
+			<td>
+				<select name="force_folder" >
+				<option value="1">Directory Node</option>
+				<option value="0">File when children do not exists</option>
+				</select>
+			</td>
+		</tr>
+	</table>
+	
+	<br />
+	
+	<center>
+		<button type="button" id="newnode">Create Node</button>
+		<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+	</center>
+
+</div>
+
+<div alns:if="{BOOL($IN.key == 'delete_page')}">
+	<h2>Delete this node</h2>
+	
+	<center>
+		<button type="button" id="deletenode">Delete this Node</button>
+		<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+	</center>
+</div>
+
+<input type="hidden" id="editNodeId" name="editNodeId" value="{$IN.nodeId}" />
+</form>
+
+
+</body>
+</html>

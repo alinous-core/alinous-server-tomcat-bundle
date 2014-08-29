@@ -1,0 +1,159 @@
+
+include("/include/imageresource.alns");
+include("/include/serialutils.alns");
+include("/include/pathutils.alns");
+include("/include/page.alns");
+
+$dom = $args[0];
+$params = $args[1];
+
+if(String.toLowerCase($dom.name) == "img"){
+	return handleimg($dom, $params);
+}
+
+return $dom;
+
+function handleSrcTable($dom, $params)
+{
+	$idxClass = getAttributeIndex("class", $dom);
+	if($idxClass < 0){
+		return $dom;
+	}
+	
+	$class = $dom.attributes[$idxClass].value;
+	if($class != "srctable"){
+		return $dom;
+	}
+	
+	$code = "";
+	@lines = DomXpath.getParts($dom.innerHtml, "div[@class='linesrc']");
+	$size = Array.size(@lines);
+	for($i = 0; $i < $size; $i++){
+		$str = DomXpath.stripTopTag($lines[$i]);
+		
+		$code = $code + $str + "\n";
+	}
+	
+	$code = String.replace($code, "&nbsp;&nbsp;&nbsp;&nbsp;", "	");
+	$code = String.replace($code, "&lt;", "<");
+	$code = String.replace($code, "&gt;", ">");
+	
+	
+	BEGIN;
+	
+	$cms_resource_id = Common.newSerial("cms_resource");
+	
+	$resource_name = "code-" + $cms_resource_id;
+	
+	INSERT INTO cms_resource(
+		cms_resource_id,
+		position,
+		resource_owner_type,
+		resource_owner_id,
+		resource_type,
+		resource_name,
+		resource_title,
+		resource_description,
+		resource_binary
+	)
+	VALUES(
+		$cms_resource_id,
+		$cms_resource_id,
+		'cms_page', // resource_owner_type,
+		$params.cms_page_id, // resource_owner_id,
+		'text', // resource_type,
+		$resource_name,
+		$resource_name, // resource_title,
+		'', // resource_description,
+		$code
+	);
+	
+	COMMIT;
+	
+	$mode = detectMode($code);
+	
+	$dom.name = "div";
+	$dom.policy = "inner";
+	$dom.innerHtml = '';
+	
+	$attr[0].name = "alns:inner";
+	$attr[0].value = "/html_tmpl/primitive/inline/source/index.html?cms_page_id={$IN.cms_page_id}&node_id={$IN.node_id}"
+		+ "&resource_name=" + $resource_name + "&mode=" + $mode;
+	
+	$attr[1].name = "alns:tagid";
+	$attr[1].value = $cms_resource_id;
+	
+	@dom.attributes = @attr;
+	
+	return $dom;
+}
+
+function handleimg($dom, $params)
+{
+	$idxSrc = getAttributeIndex("src", $dom);
+	$idxTitle = getAttributeIndex("title", $dom);
+	$idxAlt = getAttributeIndex("alt", $dom);
+	
+	if($idxSrc < 0){
+		return 0;	
+	}
+	$src = 	$dom.attributes[$idxSrc].value;
+	
+	$resource_title = "";
+	if($idxTitle >= 0){
+		$resource_title = $dom.attributes[$idxTitle].value;
+	}
+	if($idxAlt >= 0){
+		$resource_title = $dom.attributes[$idxAlt].value;
+	}
+	
+	$parsedSrc = CmsPage.parseUrl($src);
+	if($parsedSrc.scheme != ""){
+		$params.scheme = $parsedSrc.scheme;
+	}
+	if($parsedSrc.host != ""){
+		$params.importHost = $parsedSrc.host;
+	}
+	
+	$src = File.getRelationalPath($params.path, $parsedSrc.path);
+	$resource_name = ImgResource.getLastPathSegment($src);
+	
+	
+	$imgUrl = $params.scheme + "://" + $params.importHost + $src;
+	
+	$resource_name = ImgResource.getLastPathSegment($src);
+	
+	BEGIN;
+	
+	try{
+		$cms_resource_id = ImgResource.fetchResource($imgUrl, $resource_name, $resource_title, "cms_page", $params.cms_page_id);
+		ImgResource.sync($cms_resource_id);
+	}
+	catch($e){
+		return $dom;
+		ROLLBACK;
+	}
+	
+	COMMIT;
+	
+	$src = CmsPath.getImageUrlPath("", $cms_resource_id);
+	
+	$dom.attributes[$idxSrc].value = $src;
+	
+	return $dom;
+}
+
+function getAttributeIndex($name, $dom)
+{
+	$size = Array.size(@dom.attributes);
+	for($i = 0; $i < $size; $i++){
+		$attr = $dom.attributes[$i];
+		$attrname = String.toLowerCase($attr.name);
+		if($name == $attrname){
+			return $i;
+		}
+	}
+	
+	return -1;	
+}
+

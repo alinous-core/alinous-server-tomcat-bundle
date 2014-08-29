@@ -1,0 +1,191 @@
+
+include("/admin/seo/robotlog/loganalyze.alns");
+include("/include/progress.alns");
+
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "uploadlog"){
+	uploadlog($IN, $SESSION);
+}
+else if($IN.cmd == "back"){
+	redirect "/admin/", 302;
+}
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = 'importrobot';
+	
+	if(Array.size(@job_progress) > 0){
+		return 1;
+	}
+	
+	return 0;
+}
+
+
+function initParams($IN, $SESSION)
+{
+	$currentTime = Timestamp.now();
+	
+	if($IN.end_date == null){
+		SELECT * INTO wmc_robot_access
+		FROM
+			wmc_robot_access
+		ORDER BY wmc_robot_access.access_time DESC
+		LIMIT 1;
+		if(Array.size(@wmc_robot_access) > 0){
+			$IN.end_date = Timestamp.format($wmc_robot_access[0].access_time, "MM'/'dd'/'yyyy");
+			$endTm = $wmc_robot_access[0].access_time;
+		}elsE{
+			$IN.end_date = Timestamp.format($currentTime, "MM'/'dd'/'yyyy");
+			$endTm = $currentTime;
+		}
+	}
+
+	if($IN.start_date == null){
+		SELECT * INTO wmc_robot_access
+		FROM
+			wmc_robot_access
+		ORDER BY wmc_robot_access.access_time ASC
+		LIMIT 1;
+		
+		if(Array.size(@wmc_robot_access) > 0){
+			$IN.start_date = Timestamp.format($wmc_robot_access[0].access_time, "MM'/'dd'/'yyyy");
+			
+			$lastMonth = Timestamp.add($endTm, -1, "MONTH");
+			if(Timestamp.before($wmc_robot_access[0].access_time, $lastMonth)){
+				$IN.start_date = Timestamp.format($lastMonth, "MM'/'dd'/'yyyy");
+			}
+		}else{
+			$IN.start_date = Timestamp.format($currentTime, "MM'/'dd'/'yyyy");
+		}
+	}
+}
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($IN.cmd == "back"){
+		return 0;
+	}
+
+	if($IN.cmd != "" && $value == ""){
+		return "notnull";
+	}
+	return 0;
+}
+
+function uploadlog($IN, $SESSION)
+{
+	if(ProgressJob.jobStarted("importrobot")){
+		return 0;
+	}
+	
+	$logfile = "/tmp/" + $SESSION + "_" + $IN.csvfile;
+	$jobMax = countLines($logfile);
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob("importrobot", $jobMax, "backbroundWrapper", $params);
+	
+	return 0;
+}
+
+function backbroundWrapper($params)
+{
+	$tmpFile = "/tmp/" + $params.SESSION + "_" + $params.IN.csvfile; 
+	doUploadlog($tmpFile);
+	
+	ProgressJob.jobFinished("importrobot");
+	
+	return 0;
+}
+
+function countLines($logfile)
+{
+	$lines = 0;
+	
+	AccessLogLineReader.openFile($logfile);
+	$logline = AccessLogLineReader.readLine($logfile);
+	while($logline != null){
+		$lines++;
+		$logline = AccessLogLineReader.readLine($logfile);
+	}
+	AccessLogLineReader.closeFile($logfile);
+	
+	return $lines;
+}
+
+function doUploadlog($tmpFile)
+{
+	$config = AccessLog.readConfig();
+	AccessLogLineReader.openFile($tmpFile);
+	
+	$idx = 0;
+	$mod = 100;
+	$logline = AccessLogLineReader.readLine($tmpFile);
+	while($logline != null){
+	
+		try{
+			AccessLog.analyze($logline, $config);
+		}catch($e){}
+		
+		$idx++;
+		if($idx % $mod == 0){
+			ProgressJob.progress($mod, "importrobot");
+			$idx = 0;
+		}
+		
+		/*
+		$loglines[$idx] = $logline;
+		$idx++;
+		if($idx % $mod == 0){
+			bulkExecute(@loglines, $config);
+			
+			ProgressJob.progress($mod, "importrobot");
+			
+			$idx = 0;
+			Variable.release(@loglines);
+		}
+		*/
+		
+		$logline = AccessLogLineReader.readLine($tmpFile);
+	}
+	
+	
+	AccessLogLineReader.closeFile($tmpFile);
+	
+	File.remove($tmpFile);
+}
+
+function bulkExecute(@loglines, $config)
+{
+	$size = Array.size(@loglines);
+	for($i = 0; $i < $size; $i++){
+		$logline = $loglines[$i];
+		$sync = parallel(4){
+			local $logline;
+			local $config;
+			
+			try{
+				AccessLog.analyze($logline, $config);
+			}catch($e){}
+		};
+	}
+	
+	Parallel.join($sync);
+	
+	return $sync;
+}
+
+
+

@@ -1,0 +1,19 @@
+
+include("/include/rss.alns");
+
+if($IN.cmd == "publish"){
+	publishRss($IN, $SESSION);
+}
+else if($IN.cmd == "pubhub"){
+	return "/admin/cms/rss-sitemap/dialog/rssPubhub.html?cmd=" + $IN.cmd
+		+ "&rss_setting_id=" + $IN.rss_setting_id;
+}
+
+return 0;
+
+
+function publishRss($IN, $SESSION)
+{
+	Rss.publish($IN.rss_setting_id);
+	return 0;
+}

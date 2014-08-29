@@ -1,0 +1,282 @@
+/*
+include("/admin/cms/publish/publish.alns");
+*/
+
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+
+function Publish.publishPage($cms_page_id)
+{
+	$template_top_id = Publish.getTopTemplateId($cms_page_id);
+	
+	$genCode = "";
+	$pages = Publish.getPaging($template_top_id, $cms_page_id, $genCode);
+	
+	$fileExt = "";
+	$contextRoot = "";
+	for($i = 0; $i < $pages; $i++){
+		TopTmpl.sync($template_top_id, "");
+		Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $i);
+	}
+	
+	$template_top_id = Publish.getSecondaryTopTemplateId($cms_page_id);
+	
+	Publish.setDirty($cms_page_id);
+	
+	return 0;
+}
+
+function Publish.setDirty($cms_page_id)
+{
+	$module = Publish.getPublishPagePath($cms_page_id, 0);
+	$fileName = $module.fileName;
+	
+	$published = File.getTimestamp($fileName);
+	$published = Timestamp.add($published, -1, "SECOND");
+	BEGIN;
+	
+	UPDATE cms_page
+	SET
+		dirty = $published
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	COMMIT;
+}
+
+function Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $page)
+{
+	$module = Publish.getPublishPagePath($cms_page_id, $page);
+	
+	$fileName = $module.fileName;
+	
+	$fileDir = File.getDirectory($fileName);
+	File.makeDir($fileDir);
+	
+	$metaFile = "/tmp/publish" + $cms_page_id + "meta.html";
+	$metaAlnsFile = "/tmp/publish" + $cms_page_id + "meta.alns";
+	
+	File.remove($metaFile);
+	File.remove($metaAlnsFile);
+	
+	File.putText($metaAlnsFile, "return 0;", "utf-8");
+	
+	
+	// conbine with article
+	$templatePath = TopTmpl.getTopDirPath($template_top_id);
+	$htmlPath = $templatePath + "index.html";
+	
+	SELECT cms_page.cms_page_id, tree_model.node_id
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.cms_page_id = $cms_page_id;
+	
+	$params.cms_page_id = $cms_page[0].cms_page_id;
+	$params.node_id = $cms_page[0].node_id;
+	$params.page = $page;
+	$params.publish = "publish-meta";
+	
+	Html.outputHtml($htmlPath, $metaFile, $params, false, "utf-8");
+	
+	
+	// insert header
+	$template_primitive_id = 0;
+	$headers = Publish.getInlineTemplateHeaders($cms_page[0].cms_page_id, false, $template_primitive_id);
+	
+	$css = "<style>\n<!--\n" + Publish.joinArray(@headers.css) + "\n-->\n</style>\n";
+	$js = "<script>\n<!--\n" + Publish.joinArray(@headers.js) + "\n-->\n</script>\n";
+	$header = Publish.joinArray(@headers.header);
+	$total = $header + $css + $js + $headers.page_addtional_code + "\n";
+	
+	$html = File.readAllText($metaFile, "utf-8");
+	$offset = String.indexOf($html, "</head>", 0);
+	$html = String.insert($html, $total, $offset);
+	
+	File.putText($metaFile, $html, "utf-8");
+	
+	// real publish
+	File.remove($fileName);
+	
+	$params.publish = "publish";
+	Html.outputHtml($metaFile, $fileName, $params, false, "utf-8");
+	
+	$outText = "return 0;\n";
+	File.putText($module.alinous, $outText, "utf-8");
+	
+	File.remove($metaFile);
+	File.remove($metaAlnsFile);	
+}
+
+function Publish.getPaging($template_top_id, $cms_page_id, $genCode)
+{
+	SELECT inner_template_primitive_id, inner_template_container_id
+	INTO ch
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.template_top_id = $template_top_id
+	ORDER BY template_top_children.position_order;
+	
+	@scripts = null;
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			PrimitiveTmpl.getPaging($ch[$i].inner_template_primitive_id, @scripts, $genCode);
+		}
+		else if($ch[$i].inner_template_container_id != 0){
+			ContainerTmpl.getPaging($ch[$i].inner_template_container_id, @scripts, $genCode);
+		}
+	}
+	
+	// Inline parts
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	if(Array.size(@cms_page) == 0){
+		return null;
+	}
+	
+	if($preview == true){
+		$xhtml = $cms_page[0].draft_page_body;
+	}else{
+		$xhtml = $cms_page[0].page_body;
+	}
+	
+	@inners = CmsHtml.alanyze($xhtml);
+	$size = Array.size(@inners);
+	for($i = 0; $i < $size; $i++){
+		$template_primitive_id = PrimitiveTmpl.path2TemplateId($inners[$i]);
+		
+		PrimitiveTmpl.getPaging($template_primitive_id, @scripts, $genCode);
+	}
+	
+	$ret = 1;
+	$size = Array.size(@scripts);
+	for($i = 0; $i < Array.size(@scripts); $i++){
+		try{
+			$httpParams.node_id = $cms_page[0].node_id;
+			$httpParams.cms_page_id = $cms_page[0].cms_page_id;
+			
+			$pages = Plugin.call($scripts[$i], $httpParams);
+			if($pages > $ret){
+				$ret = $pages;
+			}
+		}catch($e){
+		
+		}
+	}
+	
+	return $ret;
+}
+
+function Publish.getSecondaryTopTemplateId($cms_page_id)
+{
+	SELECT template_top_id INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	if($cms_page[0].second_template_top_id == 0){
+		return null;
+	}
+	
+	return $cms_page[0].second_template_top_id;
+}
+
+function Publish.getTopTemplateId($cms_page_id)
+{
+	SELECT template_top_id INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	if($cms_page[0].template_top_id == 0){
+		SELECT * INTO template_top
+		FROM
+			template_top
+		ORDER BY template_top.template_top_code;
+		
+		return $template_top[0].template_top_id;
+	}
+	
+	return $cms_page[0].template_top_id;
+}
+
+function Publish.getPublishPagePath($cms_page_id, $page)
+{
+	SELECT cms_page.force_folder, tree_model.page_children, tree_model.page_path
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.cms_page_id = $cms_page_id;
+	
+	if($page == 0){
+		if($cms_page[0].page_children > 0 || $cms_page[0].force_folder > 0){
+			$module.fileName = "/html" + $cms_page[0].page_path + "/index.html";
+			$module.alinous = "/html" + $cms_page[0].page_path + "/index.alns";
+		}else{
+			$module.fileName = "/html" + $cms_page[0].page_path + ".html";
+			$module.alinous = "/html" + $cms_page[0].page_path + ".alns";
+		}
+		
+		return $module;
+	}
+	
+	$module.fileName = "/html" + $cms_page[0].page_path + "/" + $page + "/index.html";
+	$module.alinous = "/html" + $cms_page[0].page_path + "/" + $page + "/index.alns";
+	
+	return $module;
+}
+
+
+function Publish.getPublishPageUrlPath($cms_page_id)
+{
+	SELECT cms_page.force_folder, tree_model.page_children, tree_model.page_path
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.cms_page_id = $cms_page_id;
+	
+	$path =  Publish.removeSiteSection($cms_page[0].page_path);
+	
+	if($cms_page[0].page_children > 0 || $cms_page[0].force_folder > 0){
+		$fileName = $path + "/index.html";
+	}else{
+		$fileName = $path + ".html";
+	}
+	
+	return $fileName;
+}
+
+function Publish.removeSiteSection($path)
+{
+	$idx = String.indexOf($path, "/", 1);
+	
+	if($idx < 0){
+		return "";
+	}
+	
+	$len = String.length($path);
+	return String.subString($path, $idx, $len);
+}
+

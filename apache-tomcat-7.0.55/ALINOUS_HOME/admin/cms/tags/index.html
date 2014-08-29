@@ -1,0 +1,192 @@
+<html>
+<head>
+<title>Tag Management - Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/cms/tags/jqcookiestate.js"></script>
+<script src="/admin/cms/tags/jqtree.js"></script>
+
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	$('#left-menu-handle-tab').click( function() {
+    	 $("#left-menu-contents").animate({
+    	 	 width: 'toggle'
+    	 }, 400, function() {
+    	 	var marginWidth = this.clientWidth + 35;
+			    	 	
+    	 	$("#right-body").css("margin-left", marginWidth + "px");
+    	 	$("#lq_content_wrap").css("margin-left", marginWidth + "px");
+    	 });
+	});
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+	var site = $("#site").val();
+	initJqTree(site);
+});
+
+function firstTag()
+{
+	var url = "/admin/cms/tags/dialog/firstTag.html";
+	
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	
+	$( "#dialog" ).dialog( "open" );
+}
+
+-->
+</script>
+<style>
+#scroll-container {
+    height: 800px;
+    overflow-y: scroll;
+    overflow-x: none;
+    position: relative;
+}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; <a href="/admin/cms/tags/index.html">Manage Tags</a></h1>
+
+<div id="left-menu">
+	<div id="left-menu-contents">
+		<h2><a href="/admin/cms/tags/index.html">Tag Management Top</a></h2>
+		
+		<table width="100%">
+			<tr>
+				<td width="40">
+					<b>Site:</b>
+				</td>
+				<td>
+					<form name="selectSiteFrm" action="index.html" method="POST" style="margin:0;">
+					<select name="site" id="site" value="{$IN.site}" style="width:100%;">
+					<option value="{$s}" alns:iterate="@sites" alns:variable="s">{$s}</option>
+					</select>
+					</form>
+				</td>
+			</tr>
+		</table>
+	
+		
+		
+		<div alns:if="{BOOL($sizeTag != 0)}">
+			<form name="tagFrm" action="index.html" method="POST">
+				<div id="scroll-container">
+					<div id="pageTree" data-url="/admin/cms/tags/makejson.alns"
+						style="width:100%; padding: 0 0 0 12px; width: 328px;"></div>
+				</div>
+				
+				
+				
+				<input type="hidden" name="cmd" value="" />
+				
+				<input type="hidden" id="position" name="position" value="" />
+				<input type="hidden" id="nodeId" name="nodeId" value="" />
+				
+				<input type="hidden" name="tag_code" value="" />
+				<input type="hidden" name="tag_name" value="" />
+				
+				<input type="hidden" name="site" value="{$IN.site}" />
+				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />
+			</form>
+		</div>
+		<div alns:if="{BOOL($sizeTag == 0)}">
+			<p>
+				Please create the first tag from the button below.<br />
+			</p>
+			<br />
+			<form name="firstfrm" action="index.html" method="POST">
+			<center><button type="button" onclick="firstTag()">Create First Tag</button></center>
+			<input type="hidden" name="cmd" value="" />
+			
+			<input type="hidden" name="tag_code" value="" />
+			<input type="hidden" name="tag_name" value="" />
+			
+			<input type="hidden" name="site" value="{$IN.site}" />
+			<input type="hidden" name="selectedTagId" id="selectedTagId" value="" />
+			
+			</form>
+		</div>
+		
+	</div>
+	<div id="left-menu-handle">
+		<div id="left-menu-handle-tab">
+			<img src="/admin/cms/img/leftmenu.png" width="20" /><br />
+			<div id="left-menu-handle-tab-string">
+			M<br />
+			E<br />
+			N<br />
+			U<br />
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="lq_content_wrap">
+	<div id="right-body">
+		<div alns:inner="/admin/cms/tags/default.html?site={$IN.site}" alns:tagid="main"></div>
+	</div>
+</div>
+
+</div>
+
+</body>
+</html>

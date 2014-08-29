@@ -1,0 +1,34 @@
+
+if($IN.cmd == "updateCode"){
+	updateCode($IN, $SESSION);
+}
+
+$content_importer = getImporter($IN, $SESSION);
+
+return 0;
+
+function getImporter($IN, $SESSION)
+{
+	SELECT * INTO content_importer
+	FROM
+		content_importer
+	WHERE
+		content_importer.content_importer_id = $IN.content_importer_id;
+	
+	return $content_importer[0];
+}
+
+function updateCode($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE content_importer
+	SET
+		content_importer_code = $IN.content_importer_code
+	WHERE
+		content_importer.content_importer_id = $IN.content_importer_id;
+	
+	COMMIT;
+	
+	return 0;
+}

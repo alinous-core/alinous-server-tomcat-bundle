@@ -1,0 +1,68 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$("button").button();
+});
+
+function submitPublish(form)
+{
+	var effect_range = $("input[name='effect_range']:checked").val();
+
+	document.frm.effect_range.value = effect_range;
+	
+	var tmcheck = $("input[name='update_tm']"); // .prop('checked')
+	var ch = tmcheck.is(':checked');
+	// alert(ch);
+	if(ch) {
+		document.frm.update_tm.value = form.update_tm.value;
+	}else{
+		document.frm.update_tm.value = "";
+	}
+	
+	document.frm.cmd.value = "publish";
+	
+	$( "#dialog" ).html('<h2>Please wait for publishing this page...</h2>');
+	
+	document.frm.submit();
+}
+-->
+</script>
+
+
+<form name="dlgfrm" action="publishContext.html" method="POST" >
+<h3>Select publish property</h3>
+
+<table width="100%">
+	<tr>
+		<td width="180">
+			<b>This publish Effects</b>
+		</td>
+		<td width="280">
+			<input type="radio" name="effect_range" value="this_only" />This page only<br />
+			<input type="radio" name="effect_range" value="parents_and_sibling" checked="checked" />Parent and sbiling pages<br />
+			<input type="radio" name="effect_range" value="whole_site" />Whole site
+		</td>
+		<td width="180">
+			<b>Update Updated Time</b>
+		</td>
+		<td>
+			<input type="checkbox" name="update_tm" value="1" />Update<br />
+		</td>
+	</tr>
+</table>
+
+<br />
+
+
+<center>
+<button type="button" onclick="submitPublish(this.form)">Publish</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+
+</form>
+
+</body>
+</html>

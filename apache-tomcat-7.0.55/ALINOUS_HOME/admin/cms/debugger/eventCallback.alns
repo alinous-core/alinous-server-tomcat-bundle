@@ -1,0 +1,35 @@
+
+if($IN.cmd == "THREAD_START"){
+	threadStart($IN, $SESSION);
+}
+else if($IN.cmd == "THREAD_ENDED")
+{
+	threadEnd($IN, $SESSION);
+}
+else if($IN.cmd == "HIT_BREAK_POINT"){
+	hitBreakpoint($IN, $SESSION);
+}
+
+return 0;
+
+
+function hitBreakpoint($IN, $SESSION)
+{
+	$point = Debugger.getCurrentLine($IN.threadId);
+	@candidates = Debugger.getStepInCandidates($IN.threadId);
+	$repo = Debugger.getVariables($IN.threadId);
+	
+	
+	return 0;
+}
+
+function threadEnd($IN, $SESSION)
+{
+	
+}
+
+
+function threadStart($IN, $SESSION)
+{
+	
+}

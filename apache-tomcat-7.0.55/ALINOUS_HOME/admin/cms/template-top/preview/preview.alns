@@ -1,0 +1,45 @@
+
+include("/admin/cms/publish/publish_top.alns");
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+
+SELECT * INTO template_top
+FROM
+	template_top
+WHERE
+	template_top.template_top_id = $IN.currentTemplateId;
+
+
+if(Array.size(@template_top) == 0){
+	return "error";
+}
+
+$valuePath = "COOKIE.param_top_" + $IN.currentTemplateId;
+$cookieStr = Variable.get($valuePath);
+$cookieStr = UrlEncode.decode($cookieStr, "utf-8");
+
+@values = String.split($cookieStr, "&");
+for($i = 0; $i < Array.size(@values); $i++){
+	@pair = String.split($values[$i], "=");
+	
+	$script = '$params.' + $pair[0] + '= "' + $pair[1] + '";';
+	Script.evaluate($script);
+}
+$params.page = 0;
+
+$publishedFile = Publish.previewTop($SESSION, $template_top[0].template_top_id, $params);
+
+$paramStr = "?";
+@names = Variable.listNames($params);
+for($i = 0; $i < Array.size(@names); $i++){
+	if($i != 0){
+		$paramStr = $paramStr + "&";
+	}
+	
+	$val = Variable.get("params." + $names[$i]);
+	$paramStr = $paramStr + $names[$i] + "=" + $val;
+}
+
+
+redirect $publishedFile;

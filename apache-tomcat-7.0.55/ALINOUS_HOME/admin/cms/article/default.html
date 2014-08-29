@@ -1,0 +1,307 @@
+<html>
+<body>
+<script>
+<!--//
+$(function() {
+	$.ajax({
+		url: "/admin/cms/article/autocomplete/pagetype.alns",
+		dataType: "json",
+		success: function( data ) {
+			$( ".page_type_main" ).autocomplete({
+				source: data,
+				minLength: 0
+			});
+		}
+	});
+	
+	$(".page_path").autocomplete({
+		source: "/admin/cms/article/autocomplete/pagepath.alns",
+		minLength: 0	
+	});
+
+});
+
+function onchecked(checkbox)
+{
+	if(checkbox.checked){
+		// alert("ON");
+	}
+	else{
+		elements = document.getElementsByClassName("check_cms_page_ids_" + checkbox.value);
+		for(var i = 0; i < elements.length; i++){
+			elements[i].parentNode.removeChild(elements[i]);
+		}
+	}
+}
+
+function submitForm(form, cmd)
+{
+	form.page.value = 0;
+	form.cmd.value = cmd;
+	form.submit();
+}
+
+function gotoPage(form, $p)
+{
+	form.page.value = $p;
+	form.submit();
+}
+
+function openEditPage(nodeId)
+{
+	var url = "/admin/cms/article/default_openlist.alns";
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {nodeId: nodeId},
+		dataType: 'json',
+		success: function(data) {
+			for(var i = 0; i < data.length; i++){
+				JqTreeLazyState.addCookie(data[i].node_id, data[i].page_depth, treeId);
+			}			
+			
+			var url = "/admin/cms/article/index.html?selectedNodeId=" + nodeId;
+			document.location = url;
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+
+
+function selectTmpl()
+{
+	var url = "/admin/cms/article/dialog/selectTmpl.html";
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	$( "#dialog" ).dialog( "open" );
+}
+
+function selectPageType()
+{
+	var url = "/admin/cms/article/dialog/setPageType.html";
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	$( "#dialog" ).dialog( "open" );
+}
+
+
+function selectAll(form)
+{
+	var img = document.getElementById("checker");
+	var srcText = new String(img.src);
+	if(srcText.lastIndexOf("/admin/cms/article/img/action_stop.gif") < 0){
+		var checked_bl = true;
+		img.src = "/admin/cms/article/img/action_stop.gif";
+	}else{
+		var checked_bl = false;
+		img.src = "/admin/cms/article/img/accept.png";
+	}
+
+	var checks = document.getElementsByName("cms_page_ids[]");
+	
+	for (var i = 0; i < checks.length; i++) {
+		checks[i].checked = checked_bl;
+	}
+	
+	return false;
+};
+-->
+</script>
+
+<h2>Edit Article</h2>
+<form name="frm" action="default.html" method="POST">
+<p>
+	input '' to search brank field.
+</p>
+<table>
+	<tr>
+		<td width="140" align="center" valign="top">
+			<b>Publish Status:</b>
+		</td>
+		<td width="160"  valign="top">
+			<select name="page_status" value="{$IN.page_status}">
+			<option value=""> --- Select All ---</option>
+			<option value="draft"> Draft </option>
+			<option value="published"> Published </option>
+			<option value="published-with-draft"> Published + Draft </option>
+			</select>
+		</td>
+		<td width="100" align="center" valign="top">
+			<b>Template:</b>
+		</td>
+		<td width="280" valign="top">
+			<select name="template_top_id" value="{$IN.template_top_id}">
+			<option value=""> --- Select All --- </option>
+			<option value="0"> Use Default </option>
+			<option alns:iterate="@template_top" alns:variable="t"
+				value="{$t.template_top_id}">{$t.template_top_name}</option>
+			</select>
+			<input type="checkbox" name="secondary_template" value="1" checked="{$IN.secondary_template}" />
+			By 2nd
+		</td>
+		<td valign="top">
+			<b>Page Type:</b>
+		</td>
+		<td valign="top">
+			<input type="text" name="page_type" class="page_type_main" value="{$IN.page_type}"
+				onfocus="$('.page_type_main').autocomplete('search');" style="width:200px;" />
+		</td>
+	</tr>
+	<tr>
+		<td align="center">
+			<b>Path</b>
+		</td>
+		<td colspan="5">
+			<input type="text" name="page_path" class="page_path" value="{$IN.page_path}" style="width:100%;"
+				onfocus="$('.page_path').autocomplete('search');" />
+		</td>
+	</tr>
+</table>
+
+<blockquote>
+<button type="button" onclick="submitForm(this.form, 'search')">Search</button>
+<button type="button" onclick="submitForm(this.form, 'publish')">Publish</button>
+<button type="button" onclick="selectTmpl()">Change Template</button>
+<button type="button" onclick="selectPageType()">Change Page Type</button>
+</blockquote>
+
+<div class="jquery-ui-button">
+	<span alns:if="{BOOL($navi.prevPage != null)}">
+	<button type="button" onclick="gotoPage(this.form, {$navi.prevPage})" >Previous</button>
+	</span>
+	<span alns:if="{BOOL($navi.nextPage != null)}">
+	<button type="button" onclick="gotoPage(this.form, {$navi.nextPage})">Next</button>
+	</span>
+	
+	<span alns:iterate="@navi.pages" alns:variable="p">
+		<span alns:if="{BOOL($p != $IN.page)}">
+		<button type="button" onclick="gotoPage(this.form, {$p})">{$p.disp}</button>
+		</span>
+		<span alns:if="{BOOL($p == $IN.page)}" style="margin: 0 12px 0 12px;">
+		<u><b>{$p.disp}</b></u>
+		</span>
+	</span>
+</div>
+
+<table class="stdtable" width="100%">
+	<tr>
+		<th width="20" align="center">
+			<img src="/admin/cms/article/img/accept.png" border="0" id="checker"
+				onclick="javascript:selectAll(document.searchFrm);">
+		</th>
+		<th>
+			Title
+		</th>
+		<th width="100">
+			Page Type
+		</th>
+		<th width="160">
+			Status
+		</th>
+		<th width="200">
+			Template
+		</th>
+		<th width="100">
+			Edit
+		</th>
+	</tr>
+	<tr alns:iterate="@cms_page" alns:variable="oneRecord">
+		<td>
+			<input type="checkbox" name="cms_page_ids[]" value="{$oneRecord.cms_page_id}"
+				onclick="onchecked(this)" checked="{$oneRecord.checked}">
+		</td>
+		<td>
+			{$oneRecord.page_title}<br />
+			<input type="text" name="pathes[]" value="{$oneRecord.page_path}" readonly="readonly" style="width:100%;" />
+		</td>
+		<td>
+			{$oneRecord.page_type}<br />
+		</td>
+		<td>
+			{$oneRecord.page_status}
+		</td>
+		<td style="padding: 0;">
+			<table border="0" class="" width="100%">
+				<tr>
+					<td width="45" style="border-bottom:0; border-right:0;">
+						<b>Main:</b>
+					</td>
+					<td style="border-bottom:0; border-right:0;">
+						{$oneRecord.template_top_name}
+					</td>
+				</tr>
+				<tr>
+					<td style="border-bottom:0; border-right:0;">
+						<b>2nd:</b>
+					</td>
+					<td style="border-bottom:0; border-right:0;">
+						{$oneRecord.second_template_top_name}
+					</td>
+				</tr>
+			</table>
+			
+		</td>
+		<td align="center">
+			<button type="button" onclick="openEditPage({$oneRecord.node_id})">Edit</button>
+		</td>
+	</tr>
+</table>
+
+<div class="jquery-ui-button">
+	<span alns:if="{BOOL($navi.prevPage != null)}">
+	<button type="button" onclick="gotoPage(this.form, {$navi.prevPage})" >Previous</button>
+	</span>
+	<span alns:if="{BOOL($navi.nextPage != null)}">
+	<button type="button" onclick="gotoPage(this.form, {$navi.nextPage})">Next</button>
+	</span>
+	
+	<span alns:iterate="@navi.pages" alns:variable="p">
+		<span alns:if="{BOOL($p != $IN.page)}">
+		<button type="button" onclick="gotoPage(this.form, {$p})">{$p.disp}</button>
+		</span>
+		<span alns:if="{BOOL($p == $IN.page)}" style="margin: 0 12px 0 12px;">
+		<u><b>{$p.disp}</b></u>
+		</span>
+	</span>
+</div>
+
+<input type="hidden" name="cms_page_ids[]" class="check_cms_page_ids_{$ids}" alns:iterate="@IN.cms_page_ids" alns:variable="ids" value="{$ids}" />
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="page" value="{$IN.page}" />
+
+<input type="hidden" name="apply_template_top_id" value="" />
+<input type="hidden" name="apply_second_template_top_id" value="" />
+<input type="hidden" name="apply_page_type" value="" />
+</form>
+
+
+</body>
+</html>

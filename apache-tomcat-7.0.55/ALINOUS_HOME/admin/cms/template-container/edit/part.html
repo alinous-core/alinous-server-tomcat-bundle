@@ -1,0 +1,65 @@
+<html>
+<body>
+
+<span alns:if="{BOOL($IN.tmpltype == 'primitive')}" alns:ignoreself="true">
+
+<table class="stdtable">
+	<tr>
+		<td width="130">
+			<b>Template Type:</b>
+		</td>
+		<td>
+			Primitive Part
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Template Name:</b>
+		</td>
+		<td>
+			{$tmpl.template_primitive_name}
+		</td>
+	</tr>
+
+</table>
+
+<input type="hidden" name="{$IN.position}_tmpls[]" value="{$IN.tmplid},{$IN.tmpltype}" />
+
+<button type="button" onclick="TemplateCallback.remove(this)">remove</button>
+
+<br style="clear:both;" />
+</span>
+
+
+<span alns:if="{BOOL($IN.tmpltype == 'container')}" alns:ignoreself="true">
+
+<table class="stdtable">
+	<tr>
+		<td width="130">
+			<b>Template Type:</b>
+		</td>
+		<td>
+			Primitive Part
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Template Name:</b>
+		</td>
+		<td>
+			{$tmpl.template_container_name}
+		</td>
+	</tr>
+
+</table>
+
+<input type="hidden" name="{$IN.position}_tmpls[]" value="{$IN.tmplid},{$IN.tmpltype}" />
+
+<button type="button" onclick="TemplateCallback.remove(this)">remove</button>
+
+<br style="clear:both;" />
+</span>
+
+</body>
+</html>
+

@@ -1,0 +1,44 @@
+
+initParams($IN, $SESSION);
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	$currentTime = Timestamp.now();
+	
+
+	if($IN.end_date == null){
+		SELECT * INTO wmc_user_access
+		FROM
+			wmc_user_access
+		ORDER BY wmc_user_access.access_time DESC
+		LIMIT 1;
+		if(Array.size(@wmc_user_access) > 0){
+			$IN.end_date = Timestamp.format($wmc_user_access[0].access_time, "MM'/'dd'/'yyyy");
+			$endTm = $wmc_user_access[0].access_time;
+		}elsE{
+			$IN.end_date = Timestamp.format($currentTime, "MM'/'dd'/'yyyy");
+			$endTm = $currentTime;
+		}
+	}
+	
+	if($IN.start_date == null){
+		SELECT * INTO wmc_user_access
+		FROM
+			wmc_user_access
+		ORDER BY wmc_user_access.access_time ASC
+		LIMIT 1;
+		
+		if(Array.size(@wmc_user_access) > 0){
+			$IN.start_date = Timestamp.format($wmc_user_access[0].access_time, "MM'/'dd'/'yyyy");
+			
+			$lastMonth = Timestamp.add($endTm, -1, "MONTH");
+			if(Timestamp.before($wmc_user_access[0].access_time, $lastMonth)){
+				$IN.start_date = Timestamp.format($lastMonth, "MM'/'dd'/'yyyy");
+			}
+		}else{
+			$IN.start_date = Timestamp.format($currentTime, "MM'/'dd'/'yyyy");
+		}
+	}
+}

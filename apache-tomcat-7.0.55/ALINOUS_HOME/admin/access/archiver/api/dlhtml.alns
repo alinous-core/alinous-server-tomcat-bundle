@@ -1,0 +1,14 @@
+
+return returnPageHtml($IN, $SESSION);
+
+
+function returnPageHtml($IN, $SESSION)
+{
+	SELECT * INTO archive_page
+	FROM
+		archive_page
+	WHERE
+		archive_page.archive_page_id = $IN.ar;
+	
+	return $archive_page[0].page_html;
+}

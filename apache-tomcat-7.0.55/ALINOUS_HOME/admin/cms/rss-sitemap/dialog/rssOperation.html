@@ -1,0 +1,72 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("button").button();
+});
+
+function publishRss(form)
+{
+	form.cmd.value = "publish";
+	
+	var url = "/admin/cms/rss-sitemap/dialog/rssOperation.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function pubhubRss(form)
+{
+	form.cmd.value = "pubhub";
+	
+	var url = "/admin/cms/rss-sitemap/dialog/rssOperation.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+-->
+</script>
+<form name="dlgfrm" action="rssOperation.html" method="POST">
+<h3>Publish Rss File</h3>
+
+<button type="button" onclick="publishRss(this.form)">Publish</button>
+
+<h3>Pubsubhubbub</h3>
+
+
+<button type="button" onclick="pubhubRss(this.form)">Push Rss to Pubsubhubbub</button>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="site" value="{$IN.site}" />
+<input type="hidden" name="rss_setting_id" value="{$IN.rss_setting_id}" />
+
+</form>
+
+</body>
+</html>

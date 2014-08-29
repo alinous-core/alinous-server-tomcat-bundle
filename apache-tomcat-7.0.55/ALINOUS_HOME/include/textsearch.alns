@@ -1,0 +1,34 @@
+/*
+include("/include/textsearch.alns");
+*/
+
+function CmsPage.buildText($xhtml)
+{
+	$searchText = CmsHtml.text($xhtml);
+	$searchText = String.toLowerCase($searchText);
+	
+	return $searchText;
+}
+
+function CmsPage.syncAllText()
+{
+	SELECT cms_page_id, cms_page.draft_page_body INTO cms_page
+	FROM
+		cms_page;
+		
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		BEGIN;
+		
+		$searchText = CmsHtml.text($cms_page[$i].draft_page_body);
+		$searchText = String.toLowerCase($searchText);
+		
+		UPDATE cms_page
+		SET
+			search_text = $searchText
+		WHERE
+			cms_page.cms_page_id = $cms_page[$i].cms_page_id;
+		
+		COMMIT;		
+	}
+}

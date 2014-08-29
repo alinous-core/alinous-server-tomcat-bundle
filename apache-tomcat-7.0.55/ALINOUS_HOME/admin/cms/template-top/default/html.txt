@@ -1,0 +1,10 @@
+<html>
+<head>
+  <title>{$title}</title>
+  <meta name="description" content="{$cms_page.page_description}" />
+  {$autoHeader}
+</head>
+<body>
+  {$autoBody}
+</body>
+</html>

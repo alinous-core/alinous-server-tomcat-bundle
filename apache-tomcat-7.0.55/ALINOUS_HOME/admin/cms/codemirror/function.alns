@@ -1,0 +1,8 @@
+
+
+@functions = Script.getRegisteredFunctions();
+@functions= Variable.sort(@functions, "name", true);
+
+$json = Record.dom2json(@functions);
+
+return $json;

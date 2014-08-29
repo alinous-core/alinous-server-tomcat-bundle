@@ -1,0 +1,55 @@
+  .alnstooltip{
+    background-color: white;
+    border: 1px solid silver;
+    border-radius: 3px;
+    box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.2);
+    color: #444;
+    font-family: monospace;
+    font-size: 90%;
+    max-width: 40em;
+    padding: 2px 5px;
+    position: absolute;
+    transition: opacity 1s ease 0s;
+    white-space: pre-wrap;
+    z-index: 10;
+  }
+  
+  .alinous-table:before {
+  	width: 15px;
+  	height: 15px;
+    background: url('/admin/cms/codemirror/img/table.png');
+    
+    display: inline-block;
+    
+    content: " ";
+  }
+  
+  .alinous-function-prefix:before {
+  	width: 15px;
+  	height: 15px;
+    background: url('/admin/cms/codemirror/img/class_obj.gif');
+    
+    display: inline-block;
+    
+    content: " ";
+  }
+  
+  .alinous-table-column:before {
+  	width: 15px;
+  	height: 15px;
+    background: url('/admin/cms/codemirror/img/envvar_obj.gif');
+    
+    display: inline-block;
+    
+    content: " ";
+  }
+  
+  .alinous-function:before {
+  	width: 15px;
+  	height: 15px;
+    background: url('/admin/cms/codemirror/img/methpub_obj.gif');
+    
+    display: inline-block;
+    
+    content: " ";
+  }

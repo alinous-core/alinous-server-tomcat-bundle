@@ -1,0 +1,7 @@
+
+if($IN.selectedNodeId != null && $IN.selectedNodeId != ""){
+	return "/admin/cms/template-primitive/edit/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+
+return 0;

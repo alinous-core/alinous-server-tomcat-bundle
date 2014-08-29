@@ -1,0 +1,40 @@
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+if($IN.cmd == "delete"){
+	deleteNode($IN.treeId, $IN.nodeId);
+	redirect "/admin/cms/template-top/index.html";
+}
+
+
+return 0;
+
+function deleteNode($treeId, $nodeId)
+{
+	BEGIN;
+	
+	SELECT template_container.template_container_id INTO template_container
+	FROM
+		template_container
+	WHERE
+		template_container.node_id = $nodeId;
+	
+	if(Array.size(@template_container) > 0){
+		DELETE FROM template_container_children
+		WHERE
+			template_container_children.template_container_id = $template_container[0].template_container_id;
+	}
+	
+	DELETE FROM template_container
+	WHERE
+		template_container.node_id = $nodeId;
+	
+	DELETE FROM template_container_category
+	WHERE
+		template_container_category.node_id = $nodeId;
+	
+	ImgResource.clearResources("template_container", $template_container[0].template_container_id);
+	
+	COMMIT;
+}

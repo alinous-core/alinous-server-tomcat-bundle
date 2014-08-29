@@ -1,0 +1,230 @@
+
+include("/include/sitesetting.alns");
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/admin/cms/publish/publish.alns");
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+include("/include/sitefiles.alns");
+
+$path = $args[0];
+
+// template resource
+if(String.startsWith($path, "/html_resource/")){
+	@pathel = String.split($path, "/");
+	
+	if(String.startsWith($path, "/html_resource/tmplt/")){
+		$page_path =  "/" + $pathel[2] + "/" + $pathel[3];
+		$tmpleType = "tmplt";
+		$resource_name = $pathel[4];
+		
+		$template_top_code = $pathel[3];
+	}else{
+		$page_path =  "/" + $pathel[3] + "/" + $pathel[4];
+		$tmpleType = $pathel[2];
+		$resource_name = $pathel[5];
+	}
+	
+	if($tmpleType == "tmplp"){
+		SELECT template_primitive_id INTO template_primitive
+		FROM
+			template_primitive LEFT JOIN tree_model
+			ON
+				template_primitive.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'primitive' AND
+			tree_model.page_path = $page_path;
+		
+		$resource_owner_type = 'template_primitive';
+		$resource_owner_id = $template_primitive[0].template_primitive_id;
+	}
+	else if($tmpleType == "tmplc"){
+		SELECT template_container.template_container_id INTO template_container
+		FROM
+			template_container LEFT JOIN tree_model
+			ON
+				template_container.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'container' AND
+			tree_model.page_path = $page_path;
+		
+		$resource_owner_type = 'template_container';
+		$resource_owner_id = $template_container[0].template_container_id;
+	}
+	else if($tmpleType == "tmplt"){
+		SELECT template_top.template_top_id INTO template_top
+		FROM
+			template_top
+		WHERE
+			template_top.template_top_code = $template_top_code;
+		
+		$resource_owner_type = 'template_top';
+		$resource_owner_id = $template_top[0].template_top_id;
+	}
+	
+	SELECT cms_resource_id, update_time INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = $resource_owner_type AND
+		cms_resource.resource_owner_id = $resource_owner_id AND
+		cms_resource.resource_name = $resource_name;
+	
+	if(Array.size(@cms_resource) == 0){
+		// file resource
+		
+		return 0;
+	}
+	
+	if(!File.exists($path)){
+		ImgResource.sync($cms_resource[0].cms_resource_id);
+		return 0;
+	}
+	
+	
+	$lastModified = File.getTimestamp($path);
+	if(Timestamp.after($cms_resource[0].update_time, $lastModified)){
+		ImgResource.sync($cms_resource[0].cms_resource_id);
+		return 0;
+	}
+	
+	return 0;
+}
+
+
+// cms page resource
+if(String.startsWith($path, "/page/")){
+	@pathel = String.split($path, "/");
+	
+	$site_path = "/" + $pathel[2];
+	
+	$size = Array.size(@pathel);
+	$resource_name = $pathel[$size - 1];
+	
+	
+	if($size == 3){
+		$tree_path = $site_path;
+	}else{
+		$size = $size - 1;
+		$tree_path = $site_path;
+		for($i = 3; $i < $size; $i++){
+			$tree_path = $tree_path + "/" + $pathel[$i];
+		}
+		
+	}
+	
+	SELECT cms_page.cms_page_id INTO tree_model
+	FROM
+		tree_model LEFT JOIN cms_page
+		ON
+			tree_model.node_id = cms_page.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		tree_model.page_path = $tree_path;
+	
+	if(Array.size(@tree_model) == 0){
+		return 0;
+	}
+	
+	
+	SELECT cms_resource_id, update_time INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'cms_page' AND
+		cms_resource.resource_owner_id = $tree_model[0].cms_page_id AND
+		cms_resource.resource_name = $resource_name;
+	
+	if(Array.size(@cms_resource) == 0){
+		syncFileResource($path);
+		return 0;
+	}
+	
+	$fileName = "/html_resource" + $path;
+	if(!File.exists($fileName)){
+		ImgResource.sync($cms_resource[0].cms_resource_id);
+		return 0;
+	}
+	
+	$lastModified = File.getTimestamp($fileName);
+	if(Timestamp.after($cms_resource[0].update_time, $lastModified)){
+		ImgResource.sync($cms_resource[0].cms_resource_id);
+		return 0;
+	}
+	
+	return 0;
+}
+
+
+// sitemap
+if(String.endsWith($path, "sitemap.xml")){
+	@pathel = String.split($path, "/");
+	
+	$site_path = "/" + $pathel[2];
+	
+	SELECT * INTO sitemap_setting
+	FROM
+		sitemap_setting
+	WHERE
+		sitemap_setting.site_path = $site_path;
+	
+	if(Array.size(@sitemap_setting) == 0){
+		return 0;
+	}
+	
+	
+	$sitemapFile = "/html_resource" + $path;
+	
+	if(!File.exists($sitemapFile)){
+		SiteSetting.generateSitemap($site_path);
+		return 0;
+	}
+	
+	$lastModified = File.getTimestamp($sitemapFile);
+	if(Timestamp.after($sitemap_setting[0].update_time, $lastModified)){
+		SiteSetting.generateSitemap($site_path);
+		return 0;
+	}
+	
+	return 0;
+}
+
+return 0;
+
+function syncFileResource($path)
+{
+	@pathel = String.split($path, "/");
+	
+	$site_path = "/" + $pathel[2];
+	$file_name =  $pathel[3];
+	
+	SELECT site_resource.site_resource_id, site_resource.update_time INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.site_path = $site_path AND
+		site_resource.file_name = $file_name;
+	
+	if(Array.size(@site_resource) == 0){
+		return 0;
+	}
+	
+	$filePath = "/html_resource" + $path;
+	
+	if(!File.exists($filePath)){
+		Sitefiles.sync($site_resource[0].site_resource_id);
+		return 0;
+	}
+	
+	$lastModified = File.getTimestamp($filePath);
+	if(Timestamp.after($site_resource[0].update_time, $lastModified)){
+		Sitefiles.sync($site_resource[0].site_resource_id);
+		return 0;
+	}
+	
+	return 0;
+}
+

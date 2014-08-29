@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Import csv Content Keywords of the Web Master tools</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.droppable.js"></script>
+
+<style>
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+</head>
+<body>
+
+<h1>Import csv Content Keywords of the Web Master tools</h1>
+<p>
+Download CSV file form the Content-Keywords in the google webmaster tools.<br />
+In order to access download page, login the web master tools and click the "Index" -> "Content Keywords".
+</p>
+
+<form name="frm" action="importpopup.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress == 0)}">
+
+<h2>Select file and submit it</h2>
+
+<table>
+	<tr>
+		<td width="600">
+			Csv file: <br />
+			(The file name should be "[site-name]_[YYYYMMDD]T[HHmmss]Z_Keywords.csv")<br />
+			<br />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<input type="file" name="csvfile" size="18" value="" alns:validate="notnull" />
+			<span alns:msg="csvfile" alns:form="frm" alns:validate="notnull">
+				<font color="#FF0000">Select csv file to input</font>
+			</span>
+		</td>
+	</tr>
+</table>
+
+<br />
+<br />
+
+<center>
+	<button type="button" onclick="ImportKeywordsCsv.uploadCsv(this.form)">Import Google webmaster tools' CSV</button>
+	<button type="button" onclick="window.close()">Cancel</button>
+</center>
+
+<input type="hidden" name="cmd" value="" />
+</form>
+
+
+<form name="frm" action="importpopup.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress != 0)}">
+<input type="hidden" name="showProgress" value="{$showProgress}" />
+<input type="hidden" name="cmd" value="" />
+
+<input type="hidden" name="uploadedFile" id="uploadedFile" value="{$IN.uploadedFile}" />
+
+<div id="progressbar"><div class="progress-label">Loading...</div></div>
+
+<script>
+<!--
+$(function() {
+	var progressbar = $( "#progressbar" ),
+	progressLabel = $( ".progress-label" );
+	
+	progressbar.progressbar({
+		value: false,
+		change: function() {
+			progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+		},
+		complete: function() {
+			progressLabel.text( "Complete!" );
+			
+			var nextfile = $("#uploadedFile").val();
+			window.opener.document.frm.wmc_content_keywords_file_name.value = nextfile;
+			window.opener.document.frm.submit();
+			
+			window.close();
+		}
+	});
+
+	function progress() {
+		var val = progressbar.progressbar( "value" ) || 0;
+		
+		$.ajax({
+			type: "POST",
+			url: "/admin/seo/content/watch.alns",
+			data: "job_id=importcontents",
+			processData: false,
+			success: function(msg)
+			{
+		    	val = parseInt(msg,10);
+		    	
+		    	progressbar.progressbar("value", val);
+		    	
+				if ( val < 100 ) {
+					setTimeout( progress, 1000 );
+				}				
+			}
+		});
+	};
+	
+	progress();
+	
+});
+-->
+</script>
+</form>
+
+<script type="text/javascript">
+<!--
+var ImportKeywordsCsv = new Object();
+
+ImportKeywordsCsv.uploadCsv = function (form)
+{
+	form.cmd.value = "uploadCsv";
+	form.submit();
+}
+-->
+</script>
+
+</body>
+</html>

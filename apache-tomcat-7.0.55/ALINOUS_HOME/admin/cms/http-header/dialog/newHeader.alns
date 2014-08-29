@@ -1,0 +1,36 @@
+
+
+if($IN.cmd == "new"){
+	newHeader($IN, $SESSION);
+}
+
+return 0;
+
+function newHeader($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM http_path_match
+	WHERE
+		http_path_match.site_path = $IN.site AND
+		http_path_match.match_path = $IN.match_path;
+	
+	INSERT INTO http_path_match(
+		site_path,
+		match_path,
+		match_type,
+		return_code,
+		redirect_host,
+		redirect_path 
+	)
+	VALUES(
+		$IN.site, // site_path,
+		$IN.match_path,
+		$IN.match_type,
+		$IN.return_code,
+		$IN.redirect_host,
+		$IN.redirect_path 
+	);
+	
+	COMMIT;
+}

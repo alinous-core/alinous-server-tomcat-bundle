@@ -1,0 +1,7 @@
+
+@ddls = Script.getDdl("/install/");
+@ddls = Variable.sort(@ddls, "name", true);
+
+$json = Record.dom2json(@ddls);
+
+return $json;

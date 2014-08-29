@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Robot crawl</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.droppable.js"></script>
+
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+
+<style>
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+
+<style type="text/css" title="currentStyle">
+	@import "/jquery/datatables/media/css/demo_page.css";
+	@import "/jquery/datatables/media/css/demo_table.css";
+</style>
+<script type="text/javascript" language="javascript" src="/jquery/datatables/media/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf-8">
+<!--
+$(document).ready(function() {
+	var oTable = $('#robotaccesstbl').dataTable({
+		"iDisplayLength": 25,
+		"aaSorting": [[1,'desc']],
+		"aoColumns": [
+			null,
+			{ "asSorting": [ "desc", "asc", "asc" ] },
+			null,
+			{ "bSortable": false },
+			{ "bSortable": false }
+		],
+		"bProcessing": false,
+		"bServerSide": true,
+		"sAjaxSource": "/admin/seo/robotlog/serverData.alns",
+		"fnServerParams": function ( aoData ) {
+			var start_date = 	$("#start_date").val();
+			var end_date = 	$("#end_date").val();
+			aoData.push( { "name": "start_date",
+					"value": start_date } );
+			aoData.push( { "name": "end_date",
+					"value": end_date } );
+		}
+	});
+	
+	var submitted = 0;
+	$( "#start_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#end_date" ).datepicker( "option", "minDate", selectedDate );
+		},
+		onSelect: function(selectedDate) {
+			var thisform = this.form;
+			setTimeout(function(){
+				if(submitted == 0){
+					submitted = 1;
+					thisform.submit();
+				}
+			}, 400);
+		}
+	});
+	$( "#end_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#start_date" ).datepicker( "option", "maxDate", selectedDate );
+		},
+		onSelect: function(selectedDate) {
+			var thisform = this.form;
+			setTimeout(function(){
+				if(submitted == 0){
+					submitted = 1;
+					thisform.submit();
+				}
+			}, 400);
+		}
+	});
+	
+});
+-->
+</script>
+
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+<h2>Analyze Robot crawl</h2>
+
+<form name="frm" action="index.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress == 0)}">
+
+<b>Import Access log</b><br />
+<table>
+	<tr>
+		<td>
+			File :
+		</td>
+		<td>
+			<input type="file" name="csvfile" size="18" value="" alns:validate="custom" />
+			<span alns:msg="csvfile" alns:form="frm" alns:validate="notnull">
+				<font color="#FF0000">Select csv file to input</font>
+			</span>
+		</td>
+		<td>
+			<button type="button" onclick="ImportAccesslog.uploadLog(this.form)">Import</button>
+		</td>
+		<td>
+			<button type="button" onclick="ImportAccesslog.back2Top(this.form)">Back</button>
+		</td>
+	</tr>
+</table>
+<input type="hidden" name="cmd" value="" />
+
+
+Start date:
+<input type="text" id="start_date" name="start_date" value="{$IN.start_date}" style="width:120px;" />
+End date:
+<input type="text" id="end_date" name="end_date" value="{$IN.end_date}" style="width:120px;" />
+
+
+<button type="button" onclick="this.form.cmd.value='';this.form.submit();">Reload</button>
+
+<div id="robotaccess" style="width:100%;">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="robotaccesstbl" width="100%">
+	<thead>
+		<tr>
+			<th>Remote Host</th>
+			<th width="80">Time</th>
+			<th width="580">Path</th>
+			<th>User Agent</th>
+			<th width="50">Return Code</th>
+		</tr>
+	</thead>
+	<tbody>
+		
+	</tbody>
+	<tfoot>
+		<tr>
+			<th>Remote Host</th>
+			<th>Time</th>
+			<th>Path</th>
+			<th>User Agent</th>
+			<th>Return Code</th>
+		</tr>
+	</tfoot>
+</table>
+</div>
+
+</form>
+
+<form name="frm" action="index.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress != 0)}">
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="showProgress" value="{$showProgress}" />
+<div id="progressbar"><div class="progress-label">Loading...</div></div>
+<script>
+<!--
+$(function() {
+	var progressbar = $( "#progressbar" ),
+	progressLabel = $( ".progress-label" );
+	
+	progressbar.progressbar({
+		value: false,
+		change: function() {
+			progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+		},
+		complete: function() {
+			progressLabel.text( "Complete!" );
+			
+			document.frm.submit();
+		}
+	});
+
+	function progress() {
+		var val = progressbar.progressbar( "value" ) || 0;
+		
+		$.ajax({
+			type: "POST",
+			url: "/admin/seo/robotlog/watch.alns",
+			data: "job_id=importrobot",
+			processData: false,
+			success: function(msg)
+			{
+		    	val = parseInt(msg,10);
+		    	
+		    	progressbar.progressbar("value", val);
+		    	
+				if ( val < 100 ) {
+					setTimeout( progress, 1000 );
+				}				
+			}
+		});
+	};
+	
+	progress();
+	
+});
+-->
+</script>
+</form>
+
+</div>
+
+<script type="text/javascript">
+<!--
+var ImportAccesslog = new Object();
+
+ImportAccesslog.uploadLog = function (form)
+{
+	form.cmd.value = "uploadlog";
+	form.submit();
+}
+
+ImportAccesslog.back2Top = function (form)
+{
+	form.cmd.value = "back";
+	form.submit();
+}
+
+-->
+</script>
+</body>
+</html>

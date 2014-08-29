@@ -1,0 +1,110 @@
+
+include("/include/serialutils.alns");
+
+include("/admin/cms/resources/includedCommand.alns");
+include("/admin/cms/template-top/edit/command.alns");
+
+include("/include/template_container.alns");
+include("/include/template_primitive.alns");
+include("/include/template_top.alns");
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+include("/include/pagedirty.alns");
+
+initParams($IN, $SESSION);
+
+$ret = executeCommand($IN, $SESSION);
+if($ret != 0){
+	redirect "/admin/cms/template-top/index.html?currentTemplateId=" + $IN.currentTemplateId;
+}
+
+Resource.execCommand($IN, $SESSION);
+
+if($IN.cmd == "addTemplate"){
+	addTemplate($IN, $SESSION);
+	redirect "/admin/cms/template-top/index.html?currentTemplateId=" + $IN.currentTemplateId;
+}
+else if($IN.cmd == "delete"){
+	deleteTemplate($IN, $SESSION);
+	redirect "/admin/cms/template-top/index.html";
+}
+
+SELECT * INTO template_top
+FROM
+	template_top
+ORDER BY template_top.position_order;
+
+$sizeTemplates = Array.size(@template_top);
+for($i = 0; $i < $sizeTemplates; $i++){
+	if($template_top[$i].template_top_id == $IN.currentTemplateId){
+		$template_top[$i].class = "current";
+	}
+	else{
+		$template_top[$i].class = "";
+	}
+}
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	if($IN.currentTemplateId == null){
+		$IN.currentTemplateId = "";
+	}
+}
+
+function deleteTemplate($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM template_top
+	WHERE
+		template_top.template_top_id = $IN.targetTemplateId;
+	
+	DELETE FROM template_top_children
+	WHERE
+		template_top_children.template_top_id = $IN.targetTemplateId;
+	
+	ImgResource.clearResources("template_top", $IN.targetTemplateId);
+	
+	COMMIT;
+}
+
+function addTemplate($IN, $SESSION)
+{
+	BEGIN;
+	
+	$template_top_id = Common.newSerial("template_top");
+	
+	$encode = "utf-8";
+	$code_css = File.readAllText("/admin/cms/template-top/default/css.txt", $encode);
+	$code_html = File.readAllText("/admin/cms/template-top/default/html.txt", $encode);
+	$code_alinous = File.readAllText("/admin/cms/template-top/default/alns.txt", $encode);
+	
+	INSERT INTO template_top(
+		template_top_id,
+		template_top_code,
+		template_top_name,
+		div_id,
+		code_css,
+		code_html,
+		code_alinous,
+		has_paging,
+		paging_template_primitive_id 
+	)
+	VALUES(
+		$template_top_id,
+		$IN.template_top_code,
+		$IN.template_top_name,
+		'wrap', // div_id,
+		$code_css, // code_css,
+		$code_html,
+		$code_alinous, // code_alinous,
+		0, // has_paging,
+		0 // paging_template_primitive_id 
+	);
+	
+	COMMIT;
+}

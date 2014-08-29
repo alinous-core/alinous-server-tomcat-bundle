@@ -1,0 +1,272 @@
+<html>
+<head>
+<title>Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/admin/cms/article/editor/nicedit.css">
+
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-2.1.1.min.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+
+<script src="/jquery/jquery-migrate-1.0.0.js"></script>
+
+<script src="/admin/cms/article/editor/importContents.js"></script>
+
+<script src="/jquery/nicedit/nicEdit.js"></script>
+<script src="/admin/cms/article/editor/ext/nicetable.js"></script>
+<script src="/admin/cms/article/editor/ext/niceanchor.js"></script>
+<script src="/admin/cms/article/editor/ext/nicimages.js"></script>
+<script src="/admin/cms/article/editor/ext/niceobjects.js"></script>
+<script src="/admin/cms/article/editor/ext/nicealinous.js"></script>
+
+<script src="/jquery/contextMenu/jquery.contextMenu.js"></script>
+<link rel="stylesheet" href="/jquery/contextMenu/jquery.contextMenu.css">
+
+<script src="/jquery/jquery-ui.js"></script>
+
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.css">
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.theme.default.css">
+<script src="/jquery/tree-table/jquery.treetable.js"></script>
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/cms/article/jqcookiestate.js"></script>
+<script src="/admin/cms/article/jqtree.js"></script>
+
+<script src="/admin/cms/article/editor/editor.js"></script>
+
+
+<style>
+#scroll-container {
+    height: 800px;
+    overflow-y: scroll;
+    overflow-x: none;
+    position: relative;
+}
+</style>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+
+$(function() {
+	$("button").button();
+	
+	$('#left-menu-handle-tab').click( function() {
+    	 $("#left-menu-contents").animate({
+    	 	 width: 'toggle'
+    	 }, 400, function() {
+    	 	var marginWidth = this.clientWidth + 35;
+			    	 	
+    	 	$("#right-body").css("margin-left", marginWidth + "px");
+    	 	$("#lq_content_wrap").css("margin-left", marginWidth + "px");
+    	 });
+	});
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		modal: true,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+	initJqTree();
+	
+	
+	$( "#tabs" ).tabs({
+		activate: function( event, ui ) {
+			var index = ui.newPanel.attr("order");
+			$.cookie("cms-edit-tab", index , {expires: 7});
+			
+			if(index == 0){
+				activateNicedit();
+			}else{
+				removeNicedit();
+			}
+		}
+	});
+	var activeEditTabIdx = $.cookie("cms-edit-tab");
+	if(!activeEditTabIdx){
+		activeEditTabIdx = 0;
+	}
+	if(activeEditTabIdx == 0 || activeEditTabIdx){
+		$("#tabs").tabs('option', 'active', parseInt(activeEditTabIdx));
+		if(activeEditTabIdx == 0){
+			
+			activateNicedit();
+		}
+	}
+	
+	
+	$(".h2_detail").click(function () {
+		$("#div_detail").slideToggle();
+		
+		var h2_detail_disp =  $.cookie("h2_detail_disp");
+		if(h2_detail_disp == "on"){
+			$.cookie("h2_detail_disp", "off" , {expires: 7});
+		}else{
+			$.cookie("h2_detail_disp", "on" , {expires: 7});
+		}
+		
+	});
+	var h2_detail_disp =  $.cookie("h2_detail_disp");
+	if(h2_detail_disp == 'off'){
+		$("#div_detail").slideToggle("fast");
+	}else{
+		$.cookie("h2_detail_disp", "on" , {expires: 7});
+	}
+	
+	$("input[name='created_time_date']").datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 1
+	});
+	$("input[name='created_time_time']").timepicker({ 'timeFormat': 'H:i' });
+	
+	$("input[name='updated_time_date']").datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 1
+	});
+	$("input[name='updated_time_time']").timepicker({ 'timeFormat': 'H:i' });
+	
+	
+	$("input[name='page_type']").autocomplete({
+		source: "/admin/cms/article/autocomplete/pagetype.alns",
+		minLength: 0	
+	});
+});
+
+function firstNode()
+{
+	var url = "/admin/cms/article/dialog/firstnode.html";
+	
+	var str01 = $("#str01").val();
+	var sel01 = $("#sel01").val();
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			str01: str01,
+			sel01: sel01
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	
+	$( "#dialog" ).dialog( "open" );
+}
+
+-->
+</script>
+</head>
+<body>
+
+<div id="wrap2">
+<!--
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+-->
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; <a href="/admin/cms/article/">Manage Articles</a></h1>
+
+
+
+<div id="left-menu">
+	<div id="left-menu-contents">
+		<h2><a href="/admin/cms/article/">Manage Contents</a></h2>
+		<div alns:if="{BOOL($size_tree_model > 0)}">
+			<form name="pagefrm" action="index.html" method="POST">
+				<div id="scroll-container">
+					<div id="pageTree" data-url="/admin/cms/article/makejson.alns"
+						style="width:100%; padding: 0 0 0 12px; width: 328px;"></div>
+				</div>
+				
+				<input type="hidden" name="cmd" value="" />
+				
+				<input type="hidden" id="nodeCode" name="nodeCode" value="" />
+				<input type="hidden" id="position" name="position" value="" />
+				<input type="hidden" id="nodeId" name="nodeId" value="" />
+				
+				<input type="hidden" name="page_title" value="" />
+				<input type="hidden" name="page_status" value="" />
+				<input type="hidden" name="template_top_id" value="" />
+				<input type="hidden" name="force_folder" value="" />
+				<input type="hidden" name="page_type" value="" />
+				
+				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />				
+			</form>
+		</div>
+		<div>
+			<form name="firstfrm" action="index.html" method="POST">
+				<center alns:if="{BOOL($size_tree_model = 0)}"><button type="button" onclick="firstNode()">Create a new Website.</button></center>
+				<input type="hidden" name="cmd" value="" />
+				
+				<input type="hidden" id="nodeCode" name="nodeCode" value="" />
+				<input type="hidden" name="page_title" value="" />
+				<input type="hidden" name="page_status" value="" />
+				<input type="hidden" name="template_top_id" value="" />
+				
+				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />
+			
+			</form>
+		</div>
+	</div>
+	<div id="left-menu-handle">
+		<div id="left-menu-handle-tab">
+			<img src="/admin/cms/img/leftmenu.png" width="20" /><br />
+			<div id="left-menu-handle-tab-string">
+			M<br />
+			E<br />
+			N<br />
+			U<br />
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<div id="lq_content_wrap">
+	<div id="right-body">
+		<div id="editor-area" alns:tagid="editor-area"
+			alns:inner="/admin/cms/article/default.html?selectedNodeId={$IN.selectedNodeId}"></div>
+	</div>
+</div>
+
+</div>
+
+
+</body>
+</html>

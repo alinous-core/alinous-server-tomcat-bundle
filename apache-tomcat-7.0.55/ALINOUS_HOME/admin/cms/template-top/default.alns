@@ -1,0 +1,7 @@
+
+if($IN.currentTemplateId != null && $IN.currentTemplateId != ""){
+	return "/admin/cms/template-top/edit/index.html?currentTemplateId=" + $IN.currentTemplateId;
+}
+
+
+return 0;

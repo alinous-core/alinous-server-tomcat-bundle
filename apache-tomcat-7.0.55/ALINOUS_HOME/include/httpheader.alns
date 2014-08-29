@@ -1,0 +1,29 @@
+/*
+include("/include/httpheader.alns");
+*/
+
+function Redirects.sync($site)
+{
+	SELECT * INTO http_path_match
+	FROM
+		http_path_match
+	ORDER BY http_path_match.match_path;
+	
+	$dir = "/log/sites/";
+	File.makeDir($dir);
+	$file = $dir + "redirects.txt";
+	
+	$txt = "";
+	$size = Array.size(@http_path_match);
+	for($i = 0; $i < $size; $i++){
+		$txt = $txt + $http_path_match[$i].site_path + ","
+			+ $http_path_match[$i].match_path + ","
+			+ $http_path_match[$i].match_type  + ","
+			+ $http_path_match[$i].return_code + ","
+			+ $http_path_match[$i].redirect_host + ","
+			+ $http_path_match[$i].redirect_path + "\n";
+	}
+	
+	File.putText($file, $txt, "utf-8");
+	
+}

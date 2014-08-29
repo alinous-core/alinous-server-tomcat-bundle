@@ -1,0 +1,13 @@
+			var drgitemId =  ui.item[0].getAttribute("id");
+			var dragTarget = ui.item[0].parentElement.getAttribute("id");
+			
+			if(dragTarget == "sortable2"){
+				if(drgitemId == "a1"){
+					$( "#sortable1, #sortable2" ).sortable( "cancel" );
+				}
+			}
+
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+			LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\""
+
+Feedfetcher-Google

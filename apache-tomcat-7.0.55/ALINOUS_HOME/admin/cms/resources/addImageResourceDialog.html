@@ -1,0 +1,83 @@
+<html>
+<body>
+<script>
+<!--
+function uploadImageResource(form)
+{
+	if(form.imgFile.value == ""){
+		alert("Select image resource to upload.");
+		return;
+	}
+	if(form.resource_name.value == ""){
+		alert("Input resource name.");
+		return;
+	}
+
+
+	form.cmd.value = "upload";
+	
+	var fd = new FormData(form);
+	var url = "/admin/cms/resources/addImageResourceDialog.html";
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: afterUploadImage,
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+
+function afterUploadImage()
+{
+	document.frm.cmd.value = "";
+	document.frm.submit();
+}
+
+function onChangeFileName(form)
+{
+	form.resource_name.value = form.imgFile.value;
+}
+-->
+</script>
+
+<h3>Add image Resource</h3>
+
+<form name="resourcefrm" action="/admin/cms/resources/addImageResourceDialog.html" method="POST" enctype="multipart/form-data">
+
+<table width="100%">
+	<tr>
+		<td width="160">
+			Select Image
+		</td>
+		<td>
+			<input type="file" name="imgFile" onchange="onChangeFileName(this.form);" />
+		</td>
+	</tr>
+	<tr>
+		<td width="160">
+			Image Name
+		</td>
+		<td>
+			<input type="text" name="resource_name" value="" />
+		</td>
+	</tr>
+</table>
+
+<center>
+<button type="button" onclick="uploadImageResource(form);">Upload Image Resource</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="resource_owner_type" value="{$IN.resource_owner_type}" />
+<input type="hidden" name="resource_owner_id" value="{$IN.resource_owner_id}" />
+<input type="hidden" name="cmd" value="" />
+</form>
+
+</body>
+</html>

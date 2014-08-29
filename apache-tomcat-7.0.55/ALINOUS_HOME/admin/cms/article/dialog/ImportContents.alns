@@ -1,0 +1,165 @@
+
+include("/include/page.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "fetch"){
+	fetchContents($IN, $SESSION);
+}
+else if($IN.cmd == "filter"){
+	filterContents($IN, $SESSION);
+}
+else if($IN.cmd == "import"){
+	importConntents($IN, $SESSION);
+}
+
+$cms_page = getCmsPage($IN, $SESSION);
+
+SELECT * INTO content_importer
+FROM
+	content_importer
+ORDER by content_importer.content_importer_name;
+
+
+return 0;
+
+function importConntents($IN, $SESSION)
+{
+	$html = Http.access($IN.url, "GET", $postParams, "utf-8", "Alinous-CMS", "Alinous-CMS");
+	
+	$title = "";
+	$subtitle = "";
+	@title = DomXpath.getParts($html, "title");
+	if(Array.size(@title) > 0){
+		$title = DomXpath.stripTopTag($title[0]);
+	
+		if(String.indexOf($title, " - ", 0) >= 0){
+			@el = String.split($title, " - ");
+			$title = String.trim($el[0]);
+			$subtitle = String.trim($el[1]);
+		}	
+		else if(String.indexOf($title, "|", 0) >= 0){
+			@el = String.split($title, " - ");
+			$title = String.trim($el[0]);
+			$subtitle = String.trim($el[1]);
+		}
+	}
+	
+	$description = "";
+	@desc = DomXpath.getParts($html, "meta[@name='description']");
+	if($desc[0] != null){
+		$description = DomXpath.getAttribute($desc[0], "content");
+		if($description == null){
+			$description = "";
+		}
+	}
+	
+	$ret = CmsPage.parseUrl($IN.url);
+	
+	$params.node_id = $IN.selectedNodeId;
+	$params.cms_page_id = $IN.cms_page_id;
+	$params.importHost = $ret.host;
+	$params.path = $ret.path;
+	$params.scheme = $ret.scheme;	
+	$callback = "/admin/cms/importer/test/defaulttest.alns";
+	$page_body = DomXpath.rewrite($IN.htmlCode, $params, $callback);
+	
+	
+	$IN.htmlCode = $page_body;
+	
+	BEGIN;
+	
+	UPDATE cms_page
+	SET
+		draft_page_title = $title,
+		draft_page_sub_title = $subtitle,
+		draft_page_body = $page_body,
+		draft_page_description = $description
+	WHERE
+		cms_page.cms_page_id = $IN.cms_page_id;
+	
+	COMMIT;
+	
+	return 0;
+}
+
+
+function filterContents($IN, $SESSION)
+{
+	try{
+		@htmls = DomXpath.getParts($IN.htmlCode, $IN.xpath);
+	}catch($e)
+	{
+		return 0;
+	}
+	
+	if(Array.size(@htmls) == 0){
+		return 0;
+	}
+	
+	$IN.htmlCode = DomXpath.stripTopTag($htmls[0]);
+	
+	return 0;
+}
+
+function fetchContents($IN, $SESSION)
+{
+	$urlStr = $IN.url;
+	$SESSION.importer.xpath = $IN.xpath;
+	
+	try{
+		$ret = Http.access($urlStr, "GET", $postParams, "utf-8", "Alinous-CMS", "Alinous-CMS");
+	}catch($e){
+		$IN.error = $e.message;
+		$IN.htmlCode = "";
+		return 0;
+	}
+	
+	if($ret == null){
+		$IN.error = "Page Not Fount";
+		$IN.htmlCode = "";
+		return 0;
+	}
+	
+	if(String.indexOf($ret.RESPONSE, "200", 0) > 0){
+		$IN.htmlCode = $ret;
+		$IN.error = "";
+		$SESSION.importer.xpath = $IN.xpath;
+	}
+	
+	return $ret;
+}
+
+function getCmsPage($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	return $cms_page[0];
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.url == null){
+		$IN.url = "http://";
+	}
+	if($IN.error == null){
+		$IN.error = "";
+	}
+	if($IN.htmlCode == null){
+		$IN.htmlCode = "";
+	}
+	if($IN.xpath == null){
+		if($SESSION.importer.xpath != null){
+			$IN.xpath = $SESSION.importer.xpath;
+		}else{
+			$IN.xpath = "// body";
+		}
+	}
+	if($IN.content_importer_id == null){
+		$IN.content_importer_id = "";
+	}
+}

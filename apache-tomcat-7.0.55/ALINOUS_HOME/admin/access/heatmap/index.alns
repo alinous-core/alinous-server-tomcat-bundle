@@ -1,0 +1,158 @@
+
+include("/include/paging.alns");
+include("/include/heatmap.alns");
+include("/include/progress.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "new"){
+	return "/admin/access/heatmap/new/index.html";
+}else if($IN.cmd == "regenerate"){
+	regenerate($IN, $SESSION);
+}
+else if($IN.cmd == "delete"){
+	deleteMap($IN, $SESSION);
+}
+
+$maxPagingNumberScroll = 20;
+$limit = 10;
+$pageNumber = $IN.page;
+
+@hm_master = getHeatmaps($IN, $SESSION, $limit);
+$totalRecords = getNumRecord($IN, $SESSION);
+
+$navi = Paging.getNavi($pageNumber, $limit, $totalRecords, 10);
+
+return 0;
+
+function deleteMap($IN, $SESSION)
+{
+	BEGIN;
+	
+	SELECT * INTO hm_master
+	FROM 
+		hm_master
+	WHERE
+		hm_master.hm_master_id = $IN.hm_master_id;
+	
+	DELETE FROM 
+		hm_master
+	WHERE
+		hm_master.hm_master_id = $IN.hm_master_id;
+	
+	DELETE FROM hm_master_result_image
+	WHERE
+	hm_master_result_image.hm_master_id = $IN.hm_master_id;
+	
+	DELETE FROM hm_raster
+	WHERE
+		hm_raster.hm_raster_id = $hm_master[0].hm_raster_id;
+	
+	DELETE FROM hm_raster_line
+	WHERE
+		hm_raster_line.hm_raster_id = $hm_master[0].hm_raster_id;
+	
+	COMMIT;
+}
+
+function regenerate($IN, $SESSION)
+{
+	SELECT hm_master.hm_master_id, hm_master.hm_master_name,
+		hm_master.hm_raster_id, hm_master.hm_start, hm_master.hm_end,
+		archive_page.archive_page_id, archive_page.page_url
+	INTO hm_master
+	FROM
+		hm_master LEFT JOIN archive_page
+		ON
+			hm_master.archive_page_id = archive_page.archive_page_id
+	WHERE
+		hm_master.hm_master_id = $IN.hm_master_id;
+	
+	$docSize = Heatmap.getDocumentSize($hm_master[0].page_url);
+	$start = $hm_master[0].hm_start;
+	$end = $hm_master[0].hm_end;
+	
+	$params.jobId = "mouse-heatmap-" + $hm_master[0].hm_master_id;
+	$params.hm_raster_id = $hm_master[0].hm_raster_id;
+	$params.hm_master_url = $hm_master[0].page_url;
+	$params.archive_page_id = $hm_master[0].archive_page_id;
+	$params.start = $start;
+	$params.end = $end;
+	
+	$numPages = Heatmap.countPageAccesses($hm_master[0].page_url, $start, $end);
+	$jobMax = 20 + $docSize.height + $numPages + 50;
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
+	
+	return 0;
+}
+
+function backgroundJob($params)
+{
+	$IN = $params.IN;
+	$SESSION = $params.SESSION;
+	
+	$docSize = Heatmap.getDocumentSize($params.hm_master_url);
+	
+	
+	BEGIN;
+	Heatmap.initRaster($params.hm_raster_id, $docSize.width, $docSize.height);
+	COMMIT;
+	
+	ProgressJob.progress(20, $params.jobId);
+	
+	try{
+		Heatmap.createHeatMap($params.hm_raster_id, $params.hm_master_url,  $params.start, $params.end,
+							$params.archive_page_id, $SESSION, $params.jobId);
+	}finally{
+		ProgressJob.jobFinished($params.jobId);
+	}
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+}
+
+function getHeatmaps($IN, $SESSION, $limit)
+{
+	$offset = $limit * $IN.page;
+	SELECT * INTO hm_master
+	FROM
+		hm_master LEFT JOIN archive_page
+		ON
+			hm_master.archive_page_id = archive_page.archive_page_id
+	ORDER BY hm_master.hm_master_id DESC
+	LIMIT $limit OFFSET $offset;
+	
+	$size = Array.size(@hm_master);
+	for($i = 0; $i < $size; $i++){
+		$hm_master[$i].hm_start_fmt = Timestamp.format($hm_master[$i].hm_start, "MM'/'dd'/'yyyy HH:mm");
+		$hm_master[$i].hm_end_fmt = Timestamp.format($hm_master[$i].hm_end, "MM'/'dd'/'yyyy HH:mm");
+		
+		// progress bar
+		$jobId = "mouse-heatmap-" + $hm_master[$i].hm_master_id;
+		$hm_master[$i].jobWorking = ProgressJob.jobWorking($jobId);
+	}
+	
+	
+	return @hm_master;
+}
+
+function getNumRecord($IN, $SESSION)
+{
+	SELECT count(*) as cnt INTO hm_master
+	FROM
+		hm_master
+	LIMIT $limit OFFSET $offset;
+	
+	if($hm_master[0].cnt == null){
+		return 0;
+	}
+	
+	return cast.toNumber($hm_master[0].cnt);
+}

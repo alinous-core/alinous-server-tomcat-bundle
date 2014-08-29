@@ -1,0 +1,39 @@
+
+include("/include/template_primitive.alns");
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+if($IN.cmd == "delete"){
+	deleteNode("primitive", $IN.nodeId);
+}
+
+
+return 0;
+
+function deleteNode($treeId, $nodeId)
+{
+	BEGIN;
+	
+	SELECT template_primitive.template_primitive_id
+	INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $nodeId;
+	
+	DELETE FROM template_primitive
+	WHERE
+		template_primitive.node_id = $nodeId;
+	
+	DELETE FROM template_primitive_category
+	WHERE
+		template_primitive_category.node_id = $nodeId;
+	
+	if($template_primitive[0].template_primitive_id != null){
+		ImgResource.clearResources("template_primitive", $template_primitive[0].template_primitive_id);
+	}
+	
+	COMMIT;
+	
+	PrimitiveTmpl.removeFiles($template_primitive[0].template_primitive_id);
+}

@@ -1,0 +1,11 @@
+
+if($IN.cmd == "newImporter"){
+	newImporter($IN, $SESSION);
+}
+
+return 0;
+
+function newImporter($IN, $SESSION)
+{
+
+}

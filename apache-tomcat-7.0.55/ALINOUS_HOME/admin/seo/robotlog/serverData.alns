@@ -1,0 +1,118 @@
+
+
+$offset = $IN.iDisplayStart;
+$limit = $IN.iDisplayLength;
+
+// iSortCol_0;
+$ORDER[0] = "wmc_robot_access.access_time";
+if($IN.iSortCol_0 == 0){
+	$ORDER[0] = "wmc_robot_access.remote_host";
+	$ORDER[1] = "wmc_robot_access.access_time";
+	$ORDER[1].ORDER = "DESC";
+}
+else if($IN.iSortCol_0 == 1){
+	$ORDER[0] = "wmc_robot_access.access_time";
+}
+else if($IN.iSortCol_0 == 2){
+	$ORDER[0] = "wmc_robot_access.path";
+	$ORDER[1] = "wmc_robot_access.access_time";
+	$ORDER[1].ORDER = "DESC";
+}
+else if($IN.iSortCol_0 == 3){
+	$ORDER[0] = "wmc_robot_access.user_agent";
+	$ORDER[1] = "wmc_robot_access.access_time";
+	$ORDER[1].ORDER = "DESC";
+}
+else if($IN.iSortCol_0 == 4){
+	$ORDER[0] = "wmc_robot_access.response_status";
+	$ORDER[1] = "wmc_robot_access.access_time";
+	$ORDER[1].ORDER = "DESC";
+}
+$orderDirection = $IN.sSortDir_0;
+$ORDER[0].ORDER = $orderDirection;
+
+if($IN.sSearch != null && $IN.sSearch != ""){
+	$likeStr = "%" + $IN.sSearch + "%";
+}
+
+$startDate = AccessLog.parseDate($IN.start_date);
+$endDate = AccessLog.parseDate($IN.end_date);
+$endDate = Timestamp.add($endDate, 1, "DATE");
+
+SELECT * INTO wmc_robot_access
+FROM
+	wmc_robot_access
+WHERE
+	(
+		wmc_robot_access.remote_host LIKE $likeStr OR
+		wmc_robot_access.path LIKE $likeStr OR
+		wmc_robot_access.user_agent LIKE $likeStr
+	) AND
+	wmc_robot_access.access_time >= $startDate AND wmc_robot_access.access_time <= $endDate
+ORDER BY @ORDER
+LIMIT $limit OFFSET $offset
+ADJUST_WHERE = true;
+
+SELECT count(*) AS cnt INTO recordsCount
+FROM
+	wmc_robot_access
+WHERE
+	(
+		wmc_robot_access.remote_host LIKE $likeStr OR
+		wmc_robot_access.path LIKE $likeStr OR
+		wmc_robot_access.user_agent LIKE $likeStr
+	) AND
+	wmc_robot_access.access_time >= $startDate AND wmc_robot_access.access_time <= $endDate
+ADJUST_WHERE = true;
+
+$iTotalRecords = $recordsCount[0].cnt;
+$iTotalDisplayRecords = Array.size(@wmc_robot_access);
+
+$json = AccessLog.getJSon($IN.sEcho, $iTotalRecords, $iTotalDisplayRecords,
+			@wmc_robot_access);
+
+return $json;
+
+function AccessLog.parseDate($str)
+{
+	@dates = String.split($str, "/");
+	
+	return $dates[2] + "-" + $dates[0] + "-" + $dates[1] + " 00:00:00"; 
+}
+
+function AccessLog.getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @records)
+{
+	$json = "{";
+	
+	$json = $json + '"sEcho":' +  $sEcho + ",\n";
+	$json = $json + '"iTotalRecords":' +  $iTotalRecords + ",\n";
+	$json = $json + '"iTotalDisplayRecords":' +  $iTotalRecords + ",\n";
+	
+	$json = $json + '"aaData": [' + "\n";
+	
+	$first = true;
+	$size = Array.size(@records);
+	for($i = 0; $i < $size; $i++){
+		if($first){
+			$first = false;
+		}else{
+			$json = $json + ',';
+		}
+		
+		$json = $json + '[' + "\n";
+		
+		$json = $json + '"' + $records[$i].remote_host + '",' +  "\n";
+		$json = $json + '"' + $records[$i].access_time + '",' +  "\n";
+		$json = $json + '"' + $records[$i].path + '",' +  "\n";
+		$json = $json + '"' + $records[$i].user_agent  + '",' +  "\n";
+		$json = $json + '"' + $records[$i].response_status + '"' +  "\n";
+		
+		$json = $json + ']' + "\n";
+	}
+	
+	$json = $json + ']' + "\n";
+	
+	$json = $json + "}";
+	
+	return $json;
+}

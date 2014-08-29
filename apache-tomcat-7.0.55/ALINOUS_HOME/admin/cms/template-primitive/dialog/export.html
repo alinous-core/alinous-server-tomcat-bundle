@@ -1,0 +1,73 @@
+<html>
+<body>
+<script>
+<!-- 
+function submitExport(form)
+{
+	var template_code = form.template_code.value;
+	if(template_code == ""){
+		alert("Input the Template Code.");
+		return;
+	}
+	if(template_code.match(/[^A-Za-z0-9_-]+/)){
+		alert("Please Template Code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	
+	document.frm.template_code.value = template_code;
+	document.frm.cmd.value = "export";
+	document.frm.submit();
+}
+
+function gotoImport(form)
+{
+	var fd = new FormData(form);
+	var url = "/admin/cms/template-primitive/dialog/import.html"
+
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+-->
+</script>
+
+<h1>Export Primitive Template</h1>
+<p>
+Input Code of the template. This code is used as default template code when you import template by using this zip file.
+</p>
+
+<form name="dlgfrm" action="export.html" method="POST" enctype="multipart/form-data">
+
+<input type="text" name="template_code" value="{$template_code}" />
+<input type="hidden" name="nodeId" value="{$IN.selectedNodeId}" />
+
+
+<button type="button" onclick="submitExport(this.form)">Export</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Close Dialog</button>
+
+
+<h2>Import Template</h2>
+<p>
+	In order to import templates expoted by the form above, click following button.
+</p>
+
+<center>
+<button type="button" onclick="gotoImport(this.form)">Import</button>
+</center>
+
+</form>
+
+</body>
+</html>

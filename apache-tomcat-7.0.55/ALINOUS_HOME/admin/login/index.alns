@@ -1,0 +1,77 @@
+
+if($IN.cmd == "addUser"){
+	addUser($IN, $SESSION);
+}
+else if($IN.cmd == "editUser"){
+	return "/admin/login/edit.html?users=" + $IN.users;
+}
+else if($IN.cmd == "deleteUser"){
+	deleteUser($IN, $SESSION);
+}
+
+SELECT * INTO auth_table
+FROM
+	auth_table
+ORDER BY auth_table.users;
+
+$sizeUsers = Array.size(@auth_table);
+
+return 0;
+
+function deleteUser($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM auth_table
+	WHERE
+		auth_table.users = $IN.users;
+	
+	COMMIT;
+}
+
+function addUser($IN, $SESSION)
+{
+	BEGIN;
+	
+	INSERT INTO auth_table(
+		users,
+		passwords,
+		roles
+	)
+	VALUES(
+		$IN.users,
+		$IN.passwords,
+		'admin' // roles
+	);
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($inputName == "users"){
+		return validate_users($formName, $inputName, $value, $IN, $SESSION);
+	}
+	return 0;
+}
+
+function validate_users($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($value == ""){
+		return "notnull";
+	}
+	
+	SELECT * INTO auth_table
+	FROM
+		auth_table
+	WHERE
+		auth_table.users = $value;
+	
+	if(Array.size(@auth_table) > 0){
+		return "exists";
+	}
+	
+	return 0;
+}

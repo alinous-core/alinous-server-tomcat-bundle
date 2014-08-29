@@ -1,0 +1,33 @@
+
+/*
+drop table http_path_match;
+*/
+function HttpHeader.ddl()
+{
+	BEGIN;
+	
+	CREATE TABLE http_path_match(
+		site_path varchar(255),
+		match_path varchar(255),
+		
+		/*
+			file-match
+			directory-match
+		*/
+		match_type varchar(255),
+		
+		/*
+			301
+			410
+		*/
+		return_code varchar(8),
+		
+		redirect_host varchar(255) not null default '',
+		redirect_path varchar(255) not null default '',
+		
+		
+		PRIMARY KEY (site_path, match_path)
+	);
+	
+	COMMIT;
+}

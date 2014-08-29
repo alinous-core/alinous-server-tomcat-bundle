@@ -1,0 +1,141 @@
+/*
+include("/include/rss.alns");
+*/
+
+function Rss.publishAll()
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting;
+	$size = Array.size(@rss_setting);
+	for($i = 0; $i < $size; $i++){
+		Rss.publish($rss_setting[$i].rss_setting_id);
+	}
+}
+
+function Rss.publish($rss_setting_id)
+{
+	$url = Rss.getFilePath($rss_setting_id);
+	$outPath = "/html" +$url;
+	$dir = File.getDirectory($outPath);
+	File.makeDir($dir);
+	
+	$httpParams.rss_setting_id = $rss_setting_id;
+	$templetePath = "/include/rss-template/rsstemplate.rss";
+	
+	Html.outputHtml($templetePath, $outPath, $httpParams, false, "utf-8");
+	
+	return 0;
+}
+
+function Rss.pubhubPushAll()
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting;
+	$size = Array.size(@rss_setting);
+	for($i = 0; $i < $size; $i++){
+		Rss.pubhubPush($rss_setting[$i].rss_setting_id);
+	}
+}
+
+function Rss.updateTime($site_path)
+{
+	BEGIN;
+	
+	UPDATE rss_setting
+	SET
+		update_time = now()
+	WHERE
+		rss_setting.site_path = $site_path;
+	
+	COMMIT;
+}
+
+function Rss.pubhubPush($rss_setting_id)
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	WHERE
+		rss_setting.rss_setting_id = $rss_setting_id;
+	
+	if(Array.size(@rss_setting) == 0){
+		return null;
+	}
+	
+	$retCode = "";
+	@hubs = Rss.parsePubsub($rss_setting[0].pubsub);
+	for($i = 0; $i < Array.size(@hubs); $i++){
+		$ret = Rss.doPubhubsubbub($rss_setting[0], $hubs[$i]);
+		$retCode = $retCode + $ret + "\n\n";
+	}
+	
+	return $retCode;
+}
+
+function Rss.doPubhubsubbub($rss_setting, $hubsUrl)
+{
+	SELECT * INTO sitemap_setting
+	FROM
+		sitemap_setting
+	WHERE
+		sitemap_setting.site_path = $rss_setting.site_path;
+	
+	if(Array.size(@sitemap_setting) == 0){
+		return 0;
+	}
+	if(String.endsWith($sitemap_setting[0].site_domain, "/")){
+		$endIndex = String.length($sitemap_setting[0].site_domain) - 1;
+		$sitemap_setting[0].site_domain = String.subString($sitemap_setting[0].site_domain, 0, $endIndex);
+	}
+	
+	$rssUrl = $sitemap_setting[0].site_domain + "/" + $rss_setting.feed_name + ".rss";
+	
+	$ret = Pubsubhubbub.publish($hubsUrl, $rssUrl);
+	
+	return $ret;
+}
+
+function Rss.parsePubsub($pubsub)
+{
+	$idx = 0;
+	@strs = String.split($pubsub, "\n");
+	for($i = 0; $i < Array.size(@strs); $i++){
+		$str = String.trim($strs[$i]);
+		
+		if($str == ""){
+			continue;
+		}
+		
+		$hubs[$idx++] = $str;
+	}
+	
+	return @hubs;
+}
+
+function Rss.getUrl($rss_setting_id)
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	WHERE
+		rss_setting.rss_setting_id = $rss_setting_id;
+	
+	
+	
+	return "/" + $rss_setting[0].feed_name + ".rss";
+}
+
+function Rss.getFilePath($rss_setting_id)
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	WHERE
+		rss_setting.rss_setting_id = $rss_setting_id;
+	
+	
+	
+	return $rss_setting[0].site_path + "/" + $rss_setting[0].feed_name + ".rss";
+}

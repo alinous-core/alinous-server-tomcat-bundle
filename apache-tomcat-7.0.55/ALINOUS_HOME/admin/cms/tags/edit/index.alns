@@ -1,0 +1,60 @@
+
+
+$cms_tag = getTag($IN, $SESSION);
+
+if($cms_tag.pagePath != null && $cms_tag.pagePath != ""){
+	$len = String.length($IN.site);
+	$cms_tag.pagePath = String.subString($cms_tag.pagePath, $len, 
+			String.length($cms_tag.pagePath));
+}
+
+@cms_tag_page = getPages($cms_tag, $IN.site);
+
+return 0;
+
+
+function getPages($cms_tag, $site)
+{
+	SELECT * INTO cms_tag_page
+	FROM
+		(cms_tag_page LEFT JOIN cms_page
+		ON
+			cms_tag_page.cms_page_id = cms_page.cms_page_id)
+		LEFT JOIN tree_model
+		ON
+			tree_model.node_id = cms_page.node_id
+	WHERE
+		cms_tag_page.cms_tag_id = $cms_tag.cms_tag_id AND
+		tree_model.tree_id = 'cms'
+	ORDER BY cms_tag_page.page_order DESC;
+	
+	return @cms_tag_page;
+}
+
+function getTag($IN, $SESSION)
+{
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag
+	WHERE
+		cms_tag.node_id = $IN.selectedNodeId;
+	
+	
+	if($cms_tag[0].tag_cms_page_id == 0){
+		$cms_tag[0].pagePath = "";
+	}
+	else{
+		SELECT * INTO cms_page
+		FROM
+			cms_page LEFT JOIN tree_model
+			ON
+				cms_page.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'cms' AND
+			cms_page.cms_page_id = $cms_tag[0].tag_cms_page_id;
+		
+		$cms_tag[0].pagePath = $cms_page[0].page_path ;
+	}
+	
+	return $cms_tag[0];
+}

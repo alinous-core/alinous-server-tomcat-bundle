@@ -1,0 +1,19 @@
+$cms_page = getPage($IN, $SESSION);
+
+$title = $cms_page.page_title;
+if($cms_page.page_sub_title != ""){
+	$title = $title + " - " + $cms_page.page_sub_title;
+}
+
+return 0;
+
+function getPage($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $IN.cms_page_id;
+	
+	return $cms_page[0];
+}

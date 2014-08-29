@@ -1,0 +1,216 @@
+
+include("/include/serialutils.alns");
+include("/include/treemodel.alns");
+
+include("/admin/cms/resources/includedCommand.alns");
+include("/admin/cms/article/editor/command.alns");
+
+include("/admin/cms/publish/publish.alns");
+
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+
+include("/include/sitesetting.alns");
+
+include("/include/textsearch.alns");
+
+include("/include/rss.alns");
+
+
+$red = Resource.execCommand($IN, $SESSION);
+if($red != null){
+	redirect $red;
+}
+
+Editor.exexuteCommand($IN, $SESSION);
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "createFirst"){
+	createFirst($IN, $SESSION);
+	redirect "/admin/cms/article/index.html";
+}
+else if($IN.cmd == "deleteNode"){
+	deleteNode($IN, $SESSION);
+	redirect "/admin/cms/article/index.html";
+}
+else if($IN.cmd == "addNode"){
+	addNode($IN, $SESSION);
+	redirect "/admin/cms/article/index.html";
+}
+
+@tree_model = getFirstNodes($IN, $SESSION);
+$size_tree_model = Array.size(@tree_model);
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	if($IN.selectedNodeId == null){
+		$IN.selectedNodeId = 0;
+	}
+}
+
+function addNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	if($IN.position == "after"){
+		$nodeId = TreeModel.insertAfter('cms', $IN.nodeId, $IN.nodeCode);
+	}
+	else if($IN.position == "inside"){
+		$nodeId = TreeModel.insertInside('cms', $IN.nodeId, $IN.nodeCode);
+	}
+	else if($IN.position == "before"){
+		$nodeId = TreeModel.insertBefore('cms', $IN.nodeId, $IN.nodeCode);
+	}
+	
+	$cms_page_id = Common.newSerial("cms_page");
+	
+	INSERT INTO cms_page(
+		cms_page_id,
+		node_id,
+		template_top_id,
+		page_type,
+		page_status,
+		force_folder,
+		force_extract,
+		page_title,
+		page_short_title,
+		page_sub_title,
+		page_description,
+		page_body_headline,
+		page_body,
+		draft_page_title,
+		draft_page_short_title,
+		draft_page_sub_title,
+		draft_page_description,
+		draft_page_body_headline,
+		draft_page_body,
+		img_cms_resource_id,
+		creator,
+		updated_time,
+		last_edit_time,
+		created_time
+	)
+	VALUES(
+		$cms_page_id,
+		$nodeId, // node_id,
+		$IN.template_top_id,
+		$IN.page_type,
+		$IN.page_status,
+		$IN.force_folder, // force_folder,
+		0, // force_extract,
+		$IN.page_title,
+		'', // page_short_title,
+		'', // page_sub_title,
+		'', // page_description,
+		'', // page_body_headline,
+		'', // page_body,
+		$IN.page_title, // draft_page_title,
+		'', // draft_page_short_title,
+		'', // draft_page_sub_title,
+		'', // draft_page_description,
+		'', // draft_page_body_headline,
+		'', // draft_page_body,
+		0, // img_cms_resource_id,
+		'', // creator,
+		null, // updated_time,
+		now(), // last_edit_time,
+		now() // created_time
+	);
+	
+	COMMIT;
+}
+
+function deleteNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	$callback = "/admin/cms/article/moveCallback.alns";
+	TreeModel.removeNode('cms', $IN.nodeId, true, $callback);
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getFirstNodes($IN, $SESSION)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model left join cms_page
+		ON
+			tree_model.tree_id = 'cms' AND
+			tree_model.node_id = cms_page.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		tree_model.page_depth = 1
+	ORDER BY tree_model.page_order;
+	
+	return @tree_model;
+}
+
+function createFirst($IN, $SESSION)
+{
+	BEGIN;
+	
+	$nodeId = TreeModel.newNode("cms", 0, $IN.nodeCode, 1);
+	
+	$cms_page_id = Common.newSerial("cms_page");
+	
+	INSERT INTO cms_page(
+		cms_page_id,
+		node_id,
+		template_top_id,
+		page_status,
+		force_folder,
+		force_extract,
+		page_title,
+		page_short_title,
+		page_sub_title,
+		page_description,
+		page_body_headline,
+		page_body,
+		draft_page_title,
+		draft_page_short_title,
+		draft_page_sub_title,
+		draft_page_description,
+		draft_page_body_headline,
+		draft_page_body,
+		img_cms_resource_id,
+		creator,
+		updated_time,
+		last_edit_time,
+		created_time
+	)
+	VALUES(
+		$cms_page_id,
+		$nodeId, // node_id,
+		$IN.template_top_id,
+		$IN.page_status,
+		1, // force_folder,
+		0, // force_extract,
+		$IN.page_title,
+		'', // page_short_title,
+		'', // page_sub_title,
+		'', // page_description,
+		'', // page_body_headline,
+		'', // page_body,
+		$IN.page_title, // draft_page_title,
+		'', // draft_page_short_title,
+		'', // draft_page_sub_title,
+		'', // draft_page_description,
+		'', // draft_page_body_headline,
+		'', // draft_page_body,
+		0, // img_cms_resource_id,
+		'', // creator,
+		null, // updated_time,
+		now(), // last_edit_time,
+		now() // created_time
+	);
+	
+	COMMIT;
+}

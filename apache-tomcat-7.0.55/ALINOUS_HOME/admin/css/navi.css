@@ -1,0 +1,122 @@
+
+nav {
+	background-color:#e0e0e0;
+	position: fixed;
+	top: 0;
+	width: 100%;
+	padding 0;
+	z-index: 100;
+	box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
+	display: block;
+	float: none;
+}
+
+
+nav ul {
+	list-style: none; !important;
+	background-color:#f0f0f0;
+	padding:0;
+	margin:0;
+}
+
+nav li {
+	list-style:none !important;
+	color:#111;
+	font-size:18px;
+	text-decoration:none;
+}
+ 
+
+ 
+nav ul li {
+	list-style: none; !important;
+	line-height:20px;
+	float:left;
+	padding: 5px 0 4px 36px;
+	
+	
+}
+
+nav ul li.toplogo {
+	list-style: none; !important;
+	padding: 0;
+} 
+ 
+nav ul li a {
+	color:#111;
+	
+
+	font-size:18px;
+	text-decoration:none;
+}
+
+.rounddiv {
+	background-color:#ffffff;
+	border-radius: 5px; /* CSS3 */
+	-webkit-border-radius: 5px; /* Safari,Google Chrome */
+	-moz-border-radius: 5px; /* Firefox */
+	
+	padding: 0 3px 5px 5px;
+	margin: 4px 0 0  0;
+	
+	box-shadow: 3px 3px 2px 1px rgba(0, 0, 0, 0.2) inset;
+}
+
+nav ul li a img.itemIcon {
+	margin: 10px 10px 0 5px;
+}
+
+nav ul li a div.itemText {
+	display: inline-block;
+	clear: none;
+	vertical-align: top;
+	padding: 10px 0 0 0;
+	margin: -2px 10px 2px 0;
+}
+
+
+nav ul li a.toplogo {
+	color:#111;
+	padding: 0;
+	font-size:18px;
+	text-decoration:none;
+	
+}
+ 
+nav li a:hover {
+	border-bottom:3px #111 solid;
+}
+nav ul li ul { display:none; } /* Makes the Dropdown menu Hidden by default */
+ 
+nav ul li:hover ul { /* Displayes the dropNav when Hovered over the nav item with the .drop class */
+	z-index:99999;
+	display:list-item !important;
+	list-style: none; !important;
+	position:absolute;
+	margin-top: 3px;
+	
+	width: 400px;
+	
+	background-color:#333333;
+	opacity:0.8;
+	
+	box-shadow: 5px 5px 2px -1px rgba(0, 0, 0, 0.2);
+}
+ 
+nav ul li ul li {
+	list-style: none; !important;
+	padding:10px 0 10px 20px;
+	
+	float:none;
+	
+	border-bottom: medium solid #777777;
+}
+
+nav ul li ul li a {
+	color: #ffffff;
+}
+
+nav ul li ul li a:hover {
+	border-bottom:3px #ffffff solid;
+}
+

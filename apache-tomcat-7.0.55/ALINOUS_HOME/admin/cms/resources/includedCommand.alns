@@ -1,0 +1,50 @@
+
+/*
+include("/admin/cms/resources/includedCommand.alns");
+*/
+
+function Resource.execCommand($IN, $SESSION)
+{
+	if($IN.cmd == "resource.updateAll"){
+		Resource.updateAll($IN, $SESSION);
+	}
+}
+
+function Resource.updateAll($IN, $SESSION)
+{
+	BEGIN;
+	
+	$size = Array.size(@IN.cms_resource_ids);
+	for($i = 0; $i < $size; $i++){
+		$resource_title = Variable.get("IN.resource_title_" + $IN.cms_resource_ids[$i]);
+		$resource_description = Variable.get("IN.resource_description_" + $IN.cms_resource_ids[$i]);
+		
+		UPDATE cms_resource
+		SET
+			resource_title = $resource_title,
+			resource_description = $resource_description
+		WHERE
+			cms_resource.cms_resource_id = $IN.cms_resource_ids[$i];
+		
+		
+		// marking tags	
+		@tags = Variable.get("IN.tags_" + $IN.cms_resource_ids[$i]);
+		DELETE FROM cms_resource_to_group
+		WHERE
+			cms_resource_to_group.cms_resource_id = $IN.cms_resource_ids[$i];
+		for($t = 0; $t < Array.size(@tags); $t++){
+			INSERT INTO cms_resource_to_group(
+				cms_resource_group_id,
+				cms_resource_id
+			)
+			VALUES(
+				$tags[$t], // cms_resource_group_id,
+				$IN.cms_resource_ids[$i] // cms_resource_id
+			);
+		}
+	}
+	
+	COMMIT;
+	
+	return 0;
+}

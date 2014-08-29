@@ -1,0 +1,266 @@
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/include/template_top.alns");
+
+include("/include/serialutils.alns");
+
+include("/include/csvutils.alns");
+include("/include/pagedirty.alns");
+
+include("/include/templatedirty.alns");
+
+
+
+function execCommand($IN, $SESSION)
+{
+	if($IN.cmdType != "primitive"){
+		return 0;
+	}
+	
+	if($IN.cmd == "save"){
+		savePrimitive($IN, $SESSION);
+		return 1;
+	}
+	else if($IN.cmd == "newParameter"){
+		newParameter($IN, $SESSION);
+		return 1;
+	}
+	else if($IN.cmd == "deleteParameter"){
+		deleteParameter($IN, $SESSION);
+		return 1;
+	}
+	else if($IN.cmd == "export"){
+		$dl = exportPrimitiveTemplate($IN, $SESSION);
+		$ret = 2;
+		$ret.path = $dl.path;
+		$ret.fileName = $dl.fileName;
+		
+		return $ret;
+	}else if($IN.cmd == "apply"){
+		apply($IN, $SESSION);
+	}
+	
+	return 0;
+}
+
+function apply($IN, $SESSION)
+{
+	SELECT template_primitive_id, is_paging INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $IN.selectedNodeId;
+	
+	
+	PrimitiveTmpl.sync($template_primitive[0].template_primitive_id, "");
+	TemplateDirty.primitiveUser($template_primitive[0].template_primitive_id);
+	
+	BEGIN;
+	PageDirty.detectPrimitive($template_primitive[0].template_primitive_id, $template_primitive[0].is_paging);
+	COMMIT;
+}
+
+function exportPrimitiveTemplate($IN, $SESSION)
+{
+	$tmpFolder = "/tmp/dl_primitive" + $SESSION;
+	$csvFolder = $tmpFolder + "/csv/";
+	$zipFile = "/tmp/" + $SESSION + "export.zip";
+		
+	File.remove($tmpFolder);
+	File.makeDir($csvFolder);
+	
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $IN.selectedNodeId;
+	
+	$outPath = $csvFolder + "/template_primitive.csv";
+	CsvRecord.storeRecords(@template_primitive, $outPath);
+	
+	SELECT * INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'template_primitive' AND
+		cms_resource.resource_owner_id = $template_primitive[0].template_primitive_id
+	ORDER BY cms_resource.position;
+	
+	$outPath = $csvFolder + "cms_resource.csv";
+	CsvRecord.storeRecords(@cms_resource, $outPath);
+	
+	
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_primitive' AND
+		cms_resource_group.resource_owner_id = $template_primitive[0].template_primitive_id;
+		
+	$outPath = $csvFolder + "cms_resource_group.csv";
+	CsvRecord.storeRecords(@cms_resource_group, $outPath);
+	
+	
+	SELECT * INTO cms_resource_to_group
+	FROM
+		cms_resource_to_group
+	WHERE
+		cms_resource_to_group.cms_resource_id IN(
+			SELECT cms_resource_id
+			FROM
+				cms_resource
+			WHERE
+				cms_resource.resource_owner_type = 'template_primitive' AND
+				cms_resource.resource_owner_id = $template_primitive[0].template_primitive_id
+		);
+	
+	$outPath = $csvFolder + "cms_resource_to_group.csv";
+	CsvRecord.storeRecords(@cms_resource_to_group, $outPath);
+	
+	
+	SELECT * INTO template_primitive_parameter
+	FROM
+		template_primitive_parameter
+	WHERE
+		template_primitive_parameter.template_primitive_id = $template_primitive[0].template_primitive_id;
+	
+	$outPath = $csvFolder + "template_primitive_parameter.csv";
+	CsvRecord.storeRecords(@template_primitive_parameter, $outPath);
+	
+	
+	$codeTxt = $csvFolder + "primitive_code.txt";
+	File.putText($codeTxt, $IN.template_code, "utf-8");
+	
+	Zip.compress($csvFolder, $zipFile);
+	
+	
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.node_id = $IN.selectedNodeId;
+	
+	
+	$code = $IN.template_code;
+	$now = Timestamp.now();
+	$dateStr = Timestamp.format($now, "yyyyMMdd");
+	
+	$ret.path = $zipFile;
+	$ret.fileName = $code + "-" + $dateStr + ".zip";
+	
+	File.remove($tmpFolder);
+	
+	return $ret;
+}
+
+function deleteParameter($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM template_primitive_parameter
+	WHERE
+		template_primitive_parameter.parameter_id = $IN.parameter_id;
+	
+	COMMIT;
+}
+
+function newParameter($IN, $SESSION)
+{
+	BEGIN;
+	
+	SELECT template_primitive_id INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $IN.selectedNodeId;
+	
+	$parameter_id = Common.newSerial("template_primitive_parameter");
+	
+	INSERT INTO template_primitive_parameter(
+		parameter_id,
+		template_primitive_id,	
+		parameter_name
+	)
+	VALUES(
+		$parameter_id,
+		$template_primitive[0].template_primitive_id,	
+		$IN.new_parameter_name // parameter_name
+	);
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function savePrimitive($IN, $SESSION)
+{
+	if($IN.is_dynamic == null){
+		$IN.is_dynamic = 0;
+	}
+	if($IN.is_paging == null){
+		$IN.is_paging = 0;
+	}
+	if($IN.is_embeded == null){
+		$IN.is_embeded = 0;
+	}
+	
+	BEGIN;
+	
+	UPDATE template_primitive
+	SET
+		// template_primitive_name ,
+		is_dynamic = $IN.is_dynamic,
+		is_paging = $IN.is_paging,
+		is_embeded = $IN.is_embeded,
+		code_css = $IN.code_css,
+		code_js = $IN.code_js,
+		code_alinous = $IN.code_alinous,
+		code_html = $IN.code_html,
+		code_html_header = $IN.code_html_header,
+		code_max_page = $IN.code_max_page,
+		estimated_height = $IN.estimated_height
+	WHERE
+		template_primitive.node_id = $IN.selectedNodeId;
+	
+	
+	COMMIT;	
+	
+	SELECT template_primitive_id INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $IN.selectedNodeId;
+	
+	PrimitiveTmpl.sync($template_primitive[0].template_primitive_id, "preview");
+	
+	// Breakpoints
+	BEGIN;
+	
+	DELETE FROM debug_break_points
+	WHERE
+		debug_break_points.module_path = $IN.modulePath;
+	
+	@bps = String.split($IN.breakpoints, ",");
+	for($i = 0; $i < Array.size(@bps); $i++){
+		if($bps[$i] == ""){
+			continue;
+		}
+		
+		INSERT INTO debug_break_points(
+			module_path,
+			line
+		)
+		VALUES(
+			$IN.modulePath, // module_path,
+			$bps[$i] // line
+		);
+	}
+	COMMIT;
+	
+	
+}
+
+

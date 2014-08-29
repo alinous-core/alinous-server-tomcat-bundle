@@ -1,0 +1,36 @@
+
+include("/include/serialutils.alns");
+include("/include/sitefiles.alns");
+
+
+if($IN.cmd == "add"){
+	newFile($IN, $SESSION);
+}
+
+return 0;
+
+function newFile($IN, $SESSION)
+{
+	BEGIN;
+	
+	$site_resource_id = Common.newSerial("site_resource");
+	
+	INSERT INTO site_resource(
+		site_resource_id,
+		site_path,
+		
+		file_name,
+		file_text
+	)
+	VALUES(
+		$site_resource_id,
+		$IN.site, // site_path,
+		
+		$IN.file_name,
+		$IN.file_text
+	);
+	
+	COMMIT;
+	
+	Sitefiles.sync($site_resource_id);
+}

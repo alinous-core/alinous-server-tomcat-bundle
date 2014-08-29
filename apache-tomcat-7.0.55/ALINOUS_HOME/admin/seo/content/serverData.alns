@@ -1,0 +1,124 @@
+
+$OFFSET = $IN.iDisplayStart;
+$LIMIT = $IN.iDisplayLength;
+
+// iSortCol_0;
+$ORDER[0] = "wmc_content_keywords_url.path";
+if($IN.iSortCol_0 == 0){
+	$ORDER[0] = "wmc_content_keywords_url.hostname";
+}
+else if($IN.iSortCol_0 == 1){
+	$ORDER[0] = "wmc_content_keywords_url.path";
+}
+else if($IN.iSortCol_0 == 2){
+	$ORDER[0] = "kwcount";
+}
+$orderDirection = $IN.sSortDir_0;
+$ORDER[0].ORDER = $orderDirection;
+
+if($IN.sSearch != null && $IN.sSearch != ""){
+	$likeStr = "%" + $IN.sSearch + "%";
+}
+
+SELECT
+	wmc_content_keywords_url.hostname, wmc_content_keywords_url.path,
+	count(wmc_content_keywords.wmc_content_keywords_id) as kwcount
+INTO wmc_content_keywords_url
+FROM
+	wmc_content_keywords_url LEFT JOIN wmc_content_keywords
+	ON
+		wmc_content_keywords_url.wmc_content_keywords_id = wmc_content_keywords.wmc_content_keywords_id
+WHERE
+	wmc_content_keywords.wmc_content_keywords_file_name = $IN.wmc_content_keywords_file_name AND
+	(wmc_content_keywords_url.path LIKE $likeStr OR
+	wmc_content_keywords.keyword LIKE $likeStr)
+GROUP BY wmc_content_keywords_url.hostname, wmc_content_keywords_url.path
+ORDER BY @ORDER
+LIMIT $LIMIT OFFSET $OFFSET
+ADJUST_WHERE = true;
+
+SELECT count(DISTINCT wmc_content_keywords_url.path) AS cnt
+INTO recordsCount
+FROM
+	wmc_content_keywords_url LEFT JOIN wmc_content_keywords
+	ON
+		wmc_content_keywords_url.wmc_content_keywords_id = wmc_content_keywords.wmc_content_keywords_id
+WHERE
+	wmc_content_keywords.wmc_content_keywords_file_name = $IN.wmc_content_keywords_file_name AND
+	(wmc_content_keywords_url.path LIKE $likeStr OR
+	wmc_content_keywords.keyword LIKE $likeStr)
+ADJUST_WHERE = true;
+
+$iTotalRecords = $recordsCount[0].cnt;
+$iTotalDisplayRecords = Array.size(@wmc_content_keywords_url);
+
+$json = WmtContentKw.getJSon($IN.sEcho, $iTotalRecords, $iTotalDisplayRecords,
+			@wmc_content_keywords_url, $IN.wmc_content_keywords_file_name);
+
+return $json;
+
+function WmtContentKw.getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @records, $wmc_content_keywords_file_name)
+{
+	$json = "{";
+	
+	$json = $json + '"sEcho":' +  $sEcho + ",\n";
+	$json = $json + '"iTotalRecords":' +  $iTotalRecords + ",\n";
+	$json = $json + '"iTotalDisplayRecords":' +  $iTotalRecords + ",\n";
+	
+	$json = $json + '"aaData": [' + "\n";
+	
+	$first = true;
+	$size = Array.size(@records);
+	for($i = 0; $i < $size; $i++){
+		if($first){
+			$first = false;
+		}else{
+			$json = $json + ',';
+		}
+		
+		$json = $json + '[' + "\n";
+		
+		$json = $json + '"' + $records[$i].hostname + '",' +  "\n";
+		$json = $json + '"' + $records[$i].path + '",' +  "\n";
+		$json = $json + '"' + $records[$i].kwcount + '",' +  "\n";
+		$json = $json + '"' + getKeywords($records[$i], $wmc_content_keywords_file_name) + '"' +  "\n";
+		
+		$json = $json + ']' + "\n";
+	}
+	
+	$json = $json + ']' + "\n";
+	
+	$json = $json + "}";
+	
+	return $json;
+}
+
+function getKeywords($record, $wmc_content_keywords_file_name)
+{
+	SELECT wmc_content_keywords.keyword INTO wmc_content_keywords
+	FROM
+		wmc_content_keywords LEFT JOIN wmc_content_keywords_url
+		ON
+			wmc_content_keywords.wmc_content_keywords_id = wmc_content_keywords_url.wmc_content_keywords_id
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $wmc_content_keywords_file_name AND
+		wmc_content_keywords_url.hostname = $record.hostname AND
+		wmc_content_keywords_url.path = $record.path
+	ORDER BY wmc_content_keywords.keyword;
+	
+	$str = "";
+	$size = Array.size(@wmc_content_keywords);
+	for($i = 0; $i < $size; $i++){
+		if($str != ""){
+			$str = $str + ",";
+			if($i % 5 == 0){
+				$str = $str + "<br />";
+			}
+		}
+		$str = $str + $wmc_content_keywords[$i].keyword;
+	}
+	
+	
+	return $str;
+}
+

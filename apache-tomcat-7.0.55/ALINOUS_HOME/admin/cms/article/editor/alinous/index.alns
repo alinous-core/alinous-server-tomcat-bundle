@@ -1,0 +1,94 @@
+
+
+initParams($IN, $SESSION);
+
+if($IN.inner == ""){
+	$paramSet = 0;
+	@primitives = innerPrimitives($IN, $SESSION);
+}else{
+	$paramSet = 1;
+	$path = getPath($IN.inner);
+	@params = getParams($IN.inner);
+	
+	$paramStr = "";
+	for($i = 0; $i < Array.size(@params); $i++){
+		if($i != 0){
+			$paramStr = $paramStr + ",";
+		}
+		$paramStr = $paramStr + $params[$i].name;
+	}
+}
+
+return 0;
+
+function innerPrimitives($IN, $SESSION)
+{
+	SELECT template_primitive.template_primitive_id,
+		template_primitive.template_primitive_name,
+		tree_model.page_path
+	INTO p
+	FROM
+		template_primitive LEFT JOIN tree_model
+		ON
+			template_primitive.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		template_primitive.is_embeded = 1;
+	
+	return @p;
+}
+
+function getPath($inner)
+{
+	@URL = String.split($inner, "\?");
+	return $URL[0];
+}
+
+function getParams($inner)
+{
+	@URL = String.split($inner, "\?");
+	$paramsStr = $URL[1];
+	
+	$idx = 0;
+	@params = String.split($paramsStr, "&");
+	$size = Array.size(@params);
+	for($i = 0; $i < $size; $i++){
+		@p = String.split($params[$i], "=");
+		
+		if($p[0] == "template_primitive_id"){
+			continue;
+		}
+		if($p[0] == "node_id"){
+			continue;
+		}
+		if($p[0] == "cms_page_id"){
+			continue;
+		}
+		if($p[0] == "page"){
+			continue;
+		}
+		if($p[0] == "publish"){
+			continue;
+		}
+		
+		$ret[$idx].name = $p[0];
+		$ret[$idx].value = $p[1];
+		if($ret[$idx].value == null){
+			$ret[$idx].value = "";
+		}
+		
+		$idx++;
+	}
+	
+	return @ret;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.inner == null){
+		$IN.inner = "";
+	}
+	if($IN.tagId == null){
+		$IN.tagId = "";
+	}
+}

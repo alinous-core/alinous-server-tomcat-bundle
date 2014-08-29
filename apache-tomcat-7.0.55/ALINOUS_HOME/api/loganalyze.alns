@@ -1,0 +1,52 @@
+/*
+include("/api/loganalyze.alns");
+*/
+
+include("/include/serialutils.alns");
+
+function PageAction.newUser()
+{
+	$user_id = Common.newSerial("wic_usr");
+	INSERT INTO wic_usr(
+		user_id,
+		total_count
+	)
+	VALUES(
+		$user_id,
+		0 // total_count
+	);
+	
+	return $user_id;
+}
+
+function PageAction.newPageAccessId($user_id)
+{
+	SELECT max(wic_user_page_access.access_id) as max INTO wic_user_page_access
+	FROM
+		wic_user_page_access
+	WHERE
+		wic_user_page_access.user_id = $user_id;
+	
+	if($wic_user_page_access[0].max == null){
+		return 1;
+	}
+	
+	return Cast.toNumber($wic_user_page_access[0].max) + 1;
+}
+
+function PageAction.getArchiveRound($user_id, $access_id, $motion_type)
+{
+	SELECT max(wic_user_motion_archive.round) as max INTO wic_user_motion_archive
+	from
+		wic_user_motion_archive
+	WHERE
+		wic_user_motion_archive.user_id = $user_id AND
+		wic_user_motion_archive.access_id = $access_id AND
+		wic_user_motion_archive.motion_type = $motion_type;
+	
+	if($wic_user_motion_archive[0].max == null){
+		return 1;
+	}
+	
+	return Cast.toNumber($wic_user_motion_archive[0].max) + 1;
+}

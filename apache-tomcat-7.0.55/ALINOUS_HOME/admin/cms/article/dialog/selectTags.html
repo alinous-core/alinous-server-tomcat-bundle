@@ -1,0 +1,62 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("#dlgtag").treetable({ expandable: true });
+	$("button").button();
+});
+
+function addSelectedTags(form)
+{
+	form.cmd.value = "add";
+	
+	var url = "/admin/cms/article/dialog/selectTags.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	})
+}
+
+-->
+</script>
+<form name="dlgfrm" action="selectTags.html" method="POST" style="margin: 0; padding: 0;">
+
+<button type="button" onclick="addSelectedTags(this.form)">Add CheckedTags</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Close</button>
+
+<table id="dlgtag" style="margin: 10px 5px 0 5px;">
+	<tr>
+		<th>Tag Name</th>
+	</tr>
+	<tr alns:iterate="@tags" alns:variable="t"
+		data-tt-id="{$t.cms_tag_id}" data-tt-parent-id="{$t.parentId}">
+		<td>
+			<img src="/admin/cms/tags/img/tag_red.png" style="margin: 0 4px 0 0;" />
+			<input type="checkbox" name="selectedTagIds[]" value="{$t.cms_tag_id}" />
+			{$t.tag_name}
+		</td>
+	</tr>
+</table>
+
+<br />
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="cms_page_id" value= "{$cms_page.cms_page_id}" />
+<input type="hidden" name="selectedNodeId" value= "{$IN.selectedNodeId}" />
+</form>
+
+</body>
+</html>

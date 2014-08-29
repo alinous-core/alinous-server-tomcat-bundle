@@ -1,0 +1,72 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("#dlgtag").treetable({ expandable: true });
+	$("button").button();
+});
+
+
+-->
+</script>
+<form name="dlgfrm" action="selectTags.html" method="POST" style="margin: 0; padding: 0;">
+
+<table width="100%">
+	<tr>
+		<td width="120">
+			<b>Select importer</b>
+		</td>
+		<td colspan="2">
+			<select name="content_importer_id" value="{$IN.content_importer_id}">
+			<option alns:iterate="@content_importer" alns:variable="imp" value="{$imp.content_importer_id}">{$imp.content_importer_name}</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Import URL:</b>
+		</td>
+		<td>
+			<input type="text" name="url" value="{$IN.url}" style="width:100%;"/>
+			<div alns:if="{BOOL($IN.error != '')}">
+				<b><font color="red">{$IN.error}</font></b>
+			</div>
+		</td>
+		<td width="140">
+			<button type="button" onclick="ImportContent.fetchContents(this.form)">Fetch Content</button>
+		</td>
+	</tr>
+	<tr alns:if="{BOOL($IN.htmlCode != '')}">
+		<td>
+			<b>Filter by xpath:</b>
+		</td>
+		<td>
+			<input type="text" name="xpath" value="{$IN.xpath}" style="width:100%;"/>
+		</td>
+		<td>
+			<button type="button" onclick="ImportContent.filterContents(this.form)">Filter Content</button>
+		</td>
+	</tr>
+</table>
+
+
+
+<center>
+<button type="button" onclick="ImportContent.import(this.form)" alns:if="{BOOL($IN.htmlCode != '')}">Import Contents below</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Close</button>
+</center>
+
+<div alns:if="{BOOL($IN.htmlCode != '')}">
+<textarea name="htmlCode" style="width:100%;" rows="18">{$IN.htmlCode}</textarea>
+</div>
+
+
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="cms_page_id" value= "{$cms_page.cms_page_id}" />
+<input type="hidden" name="selectedNodeId" value= "{$IN.selectedNodeId}" />
+</form>
+
+</body>
+</html>

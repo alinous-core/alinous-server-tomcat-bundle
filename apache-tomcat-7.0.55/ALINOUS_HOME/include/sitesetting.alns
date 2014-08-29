@@ -1,0 +1,158 @@
+/*
+include("/include/sitesetting.alns");
+*/
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/admin/cms/publish/publish.alns");
+include("/include/treemodel.alns");
+
+function SiteSetting.getSiteFromPages()
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		tree_model.page_depth = 1
+	ORDER BY tree_model.page_order;
+	
+	for($i = 0; $i < Array.size(@tree_model); $i++){
+		$sites[$i] = $tree_model[$i].page_path;
+	}
+	
+	
+	return @sites;
+}
+
+function SiteSetting.sync()
+{
+	SELECT * INTO site_setting
+	FROM
+		site_setting
+	ORDER BY site_setting.template_use;
+	
+	$filePath = "/log/sites/sites.txt";
+	File.makeDir("/log/sites/");
+	
+	$text = "";
+	
+	$size = Array.size(@site_setting);
+	for($i = 0; $i < $size; $i++){
+		$line = $site_setting[$i].site_domain
+			+ ","
+			+  $site_setting[$i].site_path
+			+ ","
+			+  $site_setting[$i].template_use
+			+ ","
+			+  $site_setting[$i].use_context
+			+ ","
+			+  $site_setting[$i].force_https
+			+ "\n";	
+		
+		$text = $text + $line;
+	}
+	
+	File.putText($filePath, $text, "utf-8");	
+}
+
+function SiteSetting.getSiteFromNodeId($node_id)
+{
+	$node = TreeModel.getNode("cms", $node_id);
+	
+	$idx = String.indexOf($node.page_path, "/", 1);
+	if($idx < 0){
+		return $node.page_path;
+	}
+	
+	return String.subString($node.page_path, 0, $idx);
+}
+
+function SiteSetting.generateSitemap($site)
+{
+	SELECT * INTO site_setting
+	FROM
+		site_setting
+	WHERE
+		site_setting.site_path = $site;
+	
+	SELECT * INTO sitemap_setting
+	FROM
+		sitemap_setting
+	WHERE
+		sitemap_setting.site_path = $site;
+	if(Array.size(@sitemap_setting) > 0){
+		$sitemapDomain = $sitemap_setting[0].site_domain;
+	}else{
+		$sitemapDomain = "";
+	}
+	
+	$now = Timestamp.now();
+	
+	$likeStr = $site + "/%";
+	SELECT cms_page.cms_page_id, cms_page.template_top_id
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.page_type IN(
+			SELECT page_type FROM sitemap_page_type
+			WHERE
+				sitemap_page_type.site_path = $site
+		)
+	ORDER BY tree_model.page_path;
+	
+	$xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+			'<urlset xmlns="http://www.google.com/schemas/sitemap/0.84">';
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		$pages = Publish.getPaging($cms_page[$i].template_top_id, $cms_page[$i].cms_page_id, "");
+		if($pages > 1){
+			for($p = 0; $p < $pages; $p++){	
+				$fileName = Publish.getPublishPageUrlPath($cms_page[$i].cms_page_id);
+				$fileName = String.replaceNoRegex($fileName, "index.html", "");			
+				
+				if($p > 0){
+					$fileName = $fileName + $p + "/";
+				}
+				
+				$xml = $xml + "\n	<url>\n";
+				$xml = $xml + "		<loc>" + $sitemapDomain +  $fileName + "</loc>\n";
+				$xml = $xml + "\n	</url>\n";
+				
+			}
+			
+			
+			continue;
+		}
+		
+		// not paging
+		$fileName = Publish.getPublishPageUrlPath($cms_page[$i].cms_page_id);
+		$fileName = String.replaceNoRegex($fileName, "index.html", "");
+		
+		
+		$xml = $xml + "\n	<url>\n";
+		$xml = $xml + "		<loc>" + $sitemapDomain + $fileName + "</loc>\n";
+		$xml = $xml + "\n	</url>\n";
+	}
+	
+	$xml = $xml + "\n</urlset>";
+	
+	$outFile = "/html_resource/page" + $site + "/sitemap.xml";
+	File.putText($outFile, $xml, "utf-8");
+	
+	BEGIN;
+	
+	UPDATE sitemap_setting
+	SET
+		update_time = $now
+	WHERE
+		sitemap_setting.site_path = $site;
+	
+	COMMIT;
+}
+

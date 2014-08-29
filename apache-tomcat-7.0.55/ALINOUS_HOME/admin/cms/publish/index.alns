@@ -1,0 +1,179 @@
+
+include("/include/progress.alns");
+
+include("/admin/cms/publish/publish.alns");
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+
+if($IN.cmd == "start"){
+	startPublish($IN, $SESSION);
+	redirect "/admin/cms/publish/index.html";
+}
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = 'manualpublish';
+	
+	if(Array.size(@job_progress) > 0){
+		return 1;
+	}
+	
+	return 0;
+}
+
+function startPublish($IN, $SESSION)
+{
+	if(ProgressJob.jobStarted("manualpublish")){
+		return 0;
+	}
+	
+	$jobMax = countLines($logfile);
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob("manualpublish", $jobMax, "backbroundWrapper", $params);
+	
+	return 0;
+}
+
+function backbroundWrapper($params)
+{
+	// do publish here
+	SELECT cms_page.cms_page_id INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.page_status IN ("published", "published-with-draft");
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		try{
+			checkAndPublish($cms_page[$i].cms_page_id);
+		}catch($e){
+			
+		}
+		ProgressJob.progress(1, "manualpublish");
+	}	
+	
+	ProgressJob.jobFinished("manualpublish");
+	
+	return 0;
+}
+
+function checkAndPublish($cms_page_id)
+{
+	SELECT dirty, published_time INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	$path = getPath($cms_page_id);
+	$site = getSite($cms_page_id);
+	
+	$fileName = "/html" + $site + $path;
+	
+	
+	if(!File.exists($fileName)){
+		Publish.publishPage($cms_page_id);		
+		return 0;
+	}	
+	
+	$lastModified = File.getTimestamp($fileName);
+	
+	
+	if(Timestamp.after($cms_page[0].dirty, $lastModified)){
+		// FIXME publish
+		System.println("Publish because dirty");
+		
+		Publish.publishPage($cms_page_id);
+		
+		return 0;
+	}
+	
+	if(Timestamp.after($cms_page[0].published_time, $lastModified)){
+		// FIXME publish
+		System.println("Publish because dirty");
+		
+		Publish.publishPage($cms_page_id);
+		
+		return 0;
+	}
+	return 0;
+}
+
+function getSite($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+    
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return $tree_model[0].page_path;
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, 0, $idx);
+    
+    return $path;
+}
+
+function getPath($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+  	
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return "/index.html";
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+    if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+    	return $path + "/index.html";
+    }
+    
+    return $path + ".html";
+}
+
+function countLines($logfile)
+{
+	SELECT count(*) AS cnt INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.page_status IN ("published", "published-with-draft");
+	
+	if($cms_page[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($cms_page[0].cnt);
+}

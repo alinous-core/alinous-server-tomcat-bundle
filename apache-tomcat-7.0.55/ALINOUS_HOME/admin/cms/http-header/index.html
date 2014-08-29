@@ -1,0 +1,163 @@
+<html>
+<head>
+<title>Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		modal: true,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+});
+
+function newHeader(form)
+{
+	var url = "/admin/cms/http-header/dialog/newHeader.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function deleteHeader(form, match_path)
+{
+	form.cmd.value = "delete";
+	form.arg_match_path.value = match_path;
+	
+	form.submit();
+}
+-->
+</script>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Http Header</h1>
+
+
+<blockquote>
+<form name="frm" action="index.html" method="POST">
+
+<table>
+	<tr>
+		<td>
+			<b>Select Site :</b>
+		</td>
+		<td>
+			<select name="site" id="site" value="{$IN.site}" style="width:100%;">
+			<option value="{$s}" alns:iterate="@sites" alns:variable="s">{$s}</option>
+			</select>
+		</td>
+		<td>
+			<button type="button" onclick="this.form.submit();">Select</button>
+		</td>
+	</tr>
+</table>
+
+<button type="button" onclick="newHeader(this.form)">New Header</button>
+<br />
+<br />
+
+<table width="100%" class="stdtable">
+	<tr>
+		<th>
+			Match Path
+		</th>
+		<th width="120">
+			MatchType
+		</th>
+		<th width="120">
+			Return Code
+		</th>
+		<th width="280">
+			Redirect Host
+		</th>
+		<th>
+			Redirect Path
+		</th>
+		<th width="120">
+			Delete
+		</th>
+	</tr>
+	<tr alns:iterate="@http_path_match" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.match_path}
+		</td>
+		<td>
+			{$oneRecord.match_type}
+		</td>
+		<td>
+			{$oneRecord.return_code}
+		</td>
+		<td>
+			{$oneRecord.redirect_host}<br />
+		</td>
+		<td>
+			{$oneRecord.redirect_path}
+		</td>
+		<td align="center">
+			<button type="button" onclick="deleteHeader(form, '{$oneRecord.match_path}')">Delete</button>
+		</td>
+	</tr>
+</table>
+
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="arg_match_path" value="" />
+</form>
+</blockquote>
+
+</div>
+
+</body>
+</html>

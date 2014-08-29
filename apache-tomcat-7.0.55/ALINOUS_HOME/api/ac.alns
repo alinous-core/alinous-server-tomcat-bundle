@@ -1,0 +1,253 @@
+
+include("/api/loganalyze.alns");
+include("/include/serialutils.alns");
+include("/admin/access/archiver/api/webarchive.alns");
+
+
+if($IN.cmd == "init"){
+	// archive in the background
+	parallel(1){
+		archive($IN, $SESSION);
+	}
+	
+	$jscript = File.readAllText("/api/addcookie.js", "utf-8");
+	
+	$code = getAccessCode($IN, $SESSION, $HTTP);
+	$jscript = String.replace($jscript, "##__VALUE__##", $code);
+	
+	return $jscript;
+}
+else if($IN.cmd == "sendClicked"){
+	parallel(1){
+		processClicked($IN.ev, $IN.accessserial);
+	}
+}
+else if($IN.cmd == "sendScrolled"){
+	parallel(1){
+		processScrolled($IN.ev, $IN.accessserial);
+	}
+}
+else if($IN.cmd == "sendMouseMoved"){
+	parallel(1){
+		processMouseMoved($IN.ev, $IN.accessserial);
+	}
+}
+else if($IN.cmd == "sendWindowResized"){
+	parallel(1){
+		procesWindowResized($IN.ev, $IN.accessserial);
+	}
+}
+
+return "";
+
+function archive($IN, $SESSION)
+{
+	$currentTime = Timestamp.now();
+	$archiveExpire = Timestamp.add($currentTime, -1, "DATE");
+	
+	SELECT archive_page.archive_page_id INTO archive_page
+	FROM
+		archive_page
+	WHERE
+		archive_page.page_url = $IN.url AND
+		archive_page.archived_time > $archiveExpire
+	LIMIT 1;
+	
+	if(Array.size(@archive_page) > 0){
+		return 0;
+	}
+	
+	// archive here
+	$encode = "utf-8";
+	WebArchive.archivePage($IN.url, $postParams, $encode, $SESSION);	
+}
+
+function getAccessCode($IN, $SESSION, $HTTP)
+{
+	$user_id = "";
+	if($IN.accessserial != null && $IN.accessserial != ""){
+		@codes = String.split($IN.accessserial, "_");
+		if(Array.size(@codes) >= 1){
+			$user_id = $codes[0];
+		}
+	}
+	
+	if($user_id == ""){
+		BEGIN;
+		$user_id = PageAction.newUser();
+		COMMIT;
+	}
+	
+	// new Page access id
+	BEGIN;
+	
+	$access_id = PageAction.newPageAccessId($user_id);
+	
+	COMMIT;	
+	
+	$retcode = $user_id + "_" + $access_id;
+	
+	BEGIN;
+	
+	INSERT INTO wic_user_page_access(
+		user_id,
+		access_id,
+		session_id,
+		remote_host,
+		lang,
+		platform,
+		useragent,
+		url,
+		referrer,
+		window_width,
+		window_height,
+		documet_width,
+		documet_height,
+		access_time
+	)
+	VALUES(
+		$user_id,
+		$access_id,
+		$SESSION, // session_id,
+		$HTTP.HEADER.REMOTE_HOST, //remote_host,
+		$IN.lang,
+		$IN.platform,
+		$IN.useragent,
+		$IN.url,
+		$IN.referrer,
+		$IN.windowWidth, // window_width,
+		$IN.windowHeight, // window_height,
+		$IN.documetWidth, // documet_width,
+		$IN.documetHeight, // documet_height,
+		now() // access_time
+	);
+	
+	COMMIT;
+	
+	return $retcode;
+}
+
+function processMouseMoved($eventsStr, $accessserial)
+{
+	if($accessserial == null || $accessserial == ""){
+		return 0;
+	}
+	@tokens = String.split($accessserial, "_");
+	$user_id = $tokens[0];
+	$access_id = $tokens[1];
+	
+	BEGIN;
+	
+	$round = PageAction.getArchiveRound($user_id, $access_id, "mousemoved");
+	
+	INSERT INTO wic_user_motion_archive(
+		user_id,
+		access_id,
+		motion_type,
+		round,
+		records
+	)
+	VALUES(
+		$user_id,
+		$access_id,
+		'mousemoved', // motion_type,
+		$round,
+		$eventsStr // records
+	);
+	
+	COMMIT;
+}
+
+function processScrolled($eventsStr, $accessserial)
+{
+	if($accessserial == null || $accessserial == ""){
+		return 0;
+	}
+	@tokens = String.split($accessserial, "_");
+	$user_id = $tokens[0];
+	$access_id = $tokens[1];
+	
+	BEGIN;
+	
+	$round = PageAction.getArchiveRound($user_id, $access_id, "scrolled");
+	
+	INSERT INTO wic_user_motion_archive(
+		user_id,
+		access_id,
+		motion_type,
+		round,
+		records
+	)
+	VALUES(
+		$user_id,
+		$access_id,
+		'scrolled', // motion_type,
+		$round,
+		$eventsStr // records
+	);
+	
+	COMMIT;
+}
+
+function processClicked($eventsStr, $accessserial)
+{
+	if($accessserial == null || $accessserial == ""){
+		return 0;
+	}
+	@tokens = String.split($accessserial, "_");
+	$user_id = $tokens[0];
+	$access_id = $tokens[1];
+	
+	BEGIN;
+	
+	$round = PageAction.getArchiveRound($user_id, $access_id, "clicked");
+	
+	INSERT INTO wic_user_motion_archive(
+		user_id,
+		access_id,
+		motion_type,
+		round,
+		records
+	)
+	VALUES(
+		$user_id,
+		$access_id,
+		'clicked', // motion_type,
+		$round,
+		$eventsStr // records
+	);
+	
+	COMMIT;
+}
+
+function procesWindowResized($eventsStr, $accessserial)
+{
+	if($accessserial == null || $accessserial == ""){
+		return 0;
+	}
+	@tokens = String.split($accessserial, "_");
+	$user_id = $tokens[0];
+	$access_id = $tokens[1];
+	
+	BEGIN;
+	
+	$round = PageAction.getArchiveRound($user_id, $access_id, "windowresized");
+	
+	INSERT INTO wic_user_motion_archive(
+		user_id,
+		access_id,
+		motion_type,
+		round,
+		records
+	)
+	VALUES(
+		$user_id,
+		$access_id,
+		'windowresized', // motion_type,
+		$round,
+		$eventsStr // records
+	);
+	
+	COMMIT;
+	
+}

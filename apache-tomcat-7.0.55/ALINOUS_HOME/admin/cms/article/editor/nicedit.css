@@ -1,0 +1,68 @@
+.nicEdit-componentImg {
+    background-image: url("/admin/cms/article/editor/ext/page_video.gif");
+    background-color: #FFFFCC;
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: 1px dotted #CC0000;
+}
+.nicEdit-alinousInnerImg {
+    background-image: url("/admin/cms/article/editor/ext/alinous.gif");
+    background-color: #FFFFCC;
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: 1px dotted #CC0000;
+}
+.nicEdit-anchor {
+	background-image: url("/admin/cms/article/editor/ext/anchor.png");
+	background-repeat: no-repeat;
+	background-position: left center;
+	padding: 0px 0px 0px 16px;
+}
+
+
+
+
+#wysiwyg {
+	width: 100%;
+	background-color:#ffffff;
+	padding: 0;
+	margin: 0;
+	min-height: 0;
+	
+}
+
+#wysiwyg h1{
+	font-weight: bold;
+	background: #ffffff;
+	width: auto;
+	border: 0px solid;
+	margin: 12px 0 12px 0;
+	padding: 0;
+	font-size: 32px;
+}
+
+#wysiwyg h2{
+	font-weight: bold;
+	background: #ffffff;
+	border: 0px solid;
+	margin: 12px 0 12px 0;
+	padding: 0;
+	font-size: 24px;
+}
+
+#wysiwyg h3{
+	font-weight: bold;
+	background: #ffffff;
+	border: 0px solid;
+	margin: 12px 0 12px 0;
+	padding: 0;
+	font-size: 20px;
+}
+
+#wysiwyg p{
+	margin-top: 0px;
+	margin: 20px 0 20px 0;
+	padding: 0;
+	
+	line-height: 150%;
+}

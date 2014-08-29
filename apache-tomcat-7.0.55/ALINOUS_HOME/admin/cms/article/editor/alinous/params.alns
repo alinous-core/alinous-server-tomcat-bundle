@@ -1,0 +1,34 @@
+
+include("/include/template_primitive.alns");
+
+SELECT * INTO template_primitive
+FROM
+	template_primitive
+WHERE
+	template_primitive.template_primitive_id = $IN.template_id;
+
+$path = PrimitiveTmpl.getPrimitiveDirPath($template_primitive[0].template_primitive_id);
+$path = $path + "index.html";
+
+SELECT * INTO template_primitive_parameter
+FROM
+	template_primitive_parameter
+WHERE
+	template_primitive_parameter.template_primitive_id = $IN.template_id;
+
+$params = ' "params": [';
+$first = true;
+for($i = 0; $i < Array.size(@template_primitive_parameter); $i++){
+	if($first){
+		$first = false;
+	}else{
+		$params = $params + ', ';
+	}
+	$params = $params + '{"name" : "' + $template_primitive_parameter[$i].parameter_name + '"}';
+}
+
+$params = $params + ']';
+
+$json = '{"path": "' + $path + '", "tagid": "10" ,' + $params + '}';
+
+return $json;

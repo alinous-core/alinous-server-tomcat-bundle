@@ -1,0 +1,177 @@
+
+if($IN.cmd == "update"){
+	updateRss($IN, $SESSION);
+}
+
+$rss_setting = getRss($IN.rss_setting_id);
+
+@types = String.split($rss_setting.page_types, ",");
+for($i = 0; $i < 6; $i++){
+	if($types[$i] != null){
+		$page_types[$i] = $types[$i];
+	}else{
+		$page_types[$i] = "";
+	}
+}
+
+SELECT * INTO rss_setting_tags
+FROM
+	rss_setting_tags
+WHERE
+	rss_setting_tags.rss_setting_id = $IN.rss_setting_id;
+
+@tags = getTags($IN.site);
+$size = Array.size(@tags);
+for($i = 0; $i < $size; $i++){
+	if(hasTag(@rss_setting_tags, $tags[$i].cms_tag_id)){
+		$tags[$i].checked = "checked";
+	}else{
+		$tags[$i].checked = false;
+	}
+}
+
+return 0;
+
+function updateRss($IN, $SESSION)
+{
+	BEGIN;
+	
+	$include_top = 0;
+	if($IN.include_top == 1){
+		$include_top = 1;
+	}
+	
+	$count = 0;
+	$page_types = "";
+	for($i = 0; $i < Array.size(@IN.page_types); $i++){
+		$page_type = String.trim($IN.page_types[$i]);
+		if($page_type == ""){
+			continue;
+		}
+		
+		if($count > 0){
+			$page_types = $page_types + ",";
+		}
+		$page_types = $page_types + $page_type;
+		$count++;
+	}
+	
+	UPDATE rss_setting
+	SET
+		feed_name = $IN.feed_name,
+		page_types = $page_types,
+		page_path = $IN.page_path,
+		include_top = $include_top,
+		pubsub = $IN.pubsub,
+		description = $IN.description,
+		copyright = $IN.copyright,
+		update_time = now()
+	WHERE
+		rss_setting.rss_setting_id = $IN.rss_setting_id;
+	
+	
+	DELETE FROM rss_setting_tags
+	WHERE
+		rss_setting_tags.rss_setting_id = $IN.rss_setting_id;
+		
+	for($i = 0; $i < Array.size(@IN.selectedTagIds); $i++){
+		INSERT INTO rss_setting_tags(
+			rss_setting_id,
+			cms_tag_id
+		)
+		VALUES(
+			$IN.rss_setting_id,
+			$IN.selectedTagIds[$i] // cms_tag_id
+		);
+	}
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function hasTag(@rss_setting_tags, $cms_tag_id)
+{
+	$size = Array.size(@rss_setting_tags);
+	for($i = 0; $i < $size; $i++){
+		if($rss_setting_tags[$i].cms_tag_id == $cms_tag_id){
+			return true;
+		}
+	}
+	return false;
+}
+
+
+function getRss($rss_setting_id)
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	WHERE
+		rss_setting.rss_setting_id = $rss_setting_id;
+	
+	if($rss_setting[0].include_top == 1){
+		$rss_setting[0].checked = "checked";
+	}else{
+		$rss_setting[0].checked = false;
+	}
+	
+	return $rss_setting[0];
+}
+
+function getTags($site)
+{
+	$sitePath = $site + "/%";
+	$page_depth = 2;
+	
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag LEFT JOIN tree_model
+		ON
+			cms_tag.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_depth = $page_depth AND
+		tree_model.page_path LIKE $sitePath
+	ORDER BY tree_model.page_order;
+	
+	$size = Array.size(@cms_tag);
+	for($i = 0; $i < $size; $i++){
+		$pos = Array.size(@tags);
+		$tags[$pos] = $cms_tag[$i];
+		$tags[$pos].parentId = "";
+		
+		// children
+		gatherChildPathes($cms_tag[$i], @tags);
+	}
+	
+	
+	return @tags;
+}
+
+function gatherChildPathes($parentTag, @tags)
+{
+	$likeStr = $parentTag.page_path + "/%";
+	$page_depth = $parentTag.page_depth + 1;
+	
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag LEFT JOIN tree_model
+		ON
+			cms_tag.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_depth = $page_depth AND
+		tree_model.page_path LIKE $likeStr
+	ORDER BY tree_model.page_order;
+	
+	$size = Array.size(@cms_tag);
+	for($i = 0; $i < $size; $i++){
+	$pos = Array.size(@tags);
+		$tags[$pos] = $cms_tag[$i];
+		$tags[$pos].parentId = $parentTag.cms_tag_id;
+		
+		// children
+		gatherChildPathes($cms_tag[$i], @tags);
+	}
+}

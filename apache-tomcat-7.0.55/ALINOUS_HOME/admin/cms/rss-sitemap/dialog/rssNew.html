@@ -1,0 +1,143 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("#dlgtag").treetable({ expandable: true });
+	$("button").button();
+	
+	var site = $("#site").val();
+	$("#page_path").autocomplete({
+		source: function( request, response )  {
+			
+			$.ajax({
+				url: "/admin/cms/article/autocomplete/pagepath.alns",
+				data: {
+					term: request.term,
+					site: site
+				},
+				dataType: "json",
+				success: function( data ) {
+					response( data );
+				}
+			});
+		},
+		minLength: 0
+	});
+	
+	$(".page_types").autocomplete({
+		source: "/admin/cms/article/autocomplete/pagetype.alns",
+		minLength: 0
+	});
+});
+
+
+function newRssCommit(form){
+	if(form.feed_name.value == ""){
+		alert("Input the Feed Name.");
+		return;
+	}
+	
+	if(form.feed_name.value.match(/[^A-Za-z0-9_-]+/)){
+		alert("Please input Feed Name code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	form.cmd.value = "add";
+	
+	var url = "/admin/cms/rss-sitemap/dialog/rssNew.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+-->
+</script>
+
+<form name="dlgfrm" action="rssNew.html" method="POST">
+<h3>New Rss File</h3>
+
+<table>
+	<tr>
+		<td width="200">
+			<b>Feed Name</b>
+		</td>
+		<td width="260">
+			/<input type="text" name="feed_name" value="" maxlength="255" style="width:180px;" />.rss
+		</td>
+		<td>
+			<button type="button" onclick="newRssCommit(this.form)">New Rss</button>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</td>
+	</tr>
+	<tr>
+		<td width="200" valign="center">
+			<b>Root Url</b>
+		</td>
+		<td colspan="2"  valign="center">
+			<input type="text" name="page_path" id="page_path" value="/" maxlength="255" style="width:420px;" />
+			<input type="checkbox" name="include_top" value="1" checked="checked" />
+			Include the root URL itself
+		</td>
+	</tr>
+	<tr>
+		<td width="200" valign="center">
+			<b>Page Types</b>
+		</td>
+		<td colspan="2"  valign="center">
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+			<input type="text" name="page_types[]" class="page_types" value="" maxlength="255" style="width:100px;" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Pubsubhubub</b>
+		</td>
+		<td colspan="2">
+			<textarea name="pubsub" rows="3" style="width:100%;"></textarea>
+		</td>
+	</tr>
+</table>
+
+<p>
+ If you don't specify tags, it means for all tags.<br style="clear:both;" />
+</p>
+
+<table id="dlgtag" style="margin: 10px 5px 0 5px;">
+	<tr>
+		<th>Tag Name</th>
+	</tr>
+	<tr alns:iterate="@tags" alns:variable="t"
+		data-tt-id="{$t.cms_tag_id}" data-tt-parent-id="{$t.parentId}">
+		<td>
+			<img src="/admin/cms/tags/img/tag_red.png" style="margin: 0 4px 0 0;" />
+			<input type="checkbox" name="selectedTagIds[]" value="{$t.cms_tag_id}" />
+			{$t.tag_name}
+		</td>
+	</tr>
+</table>
+
+<br style="clear:both;" />
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="site" value="{$IN.site}" />
+</form>
+
+</body>
+</html>

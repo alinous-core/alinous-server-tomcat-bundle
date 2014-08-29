@@ -1,0 +1,54 @@
+/*
+include("/include/paging.alns");
+*/
+
+function Paging.getNavi($page, $limit, $maxNumber, $maxShowPageNum)
+{
+	$offset = $limit * $page;
+	if($page != 0){
+		$retObj.prevPage = $page - 1;
+	}
+	if(($page + 1)* $limit < $maxNumber){
+		$retObj.nextPage = $page + 1;
+	}
+	
+	@retObj.pages = Paging.naviPages($maxNumber, $limit, $page, $maxShowPageNum);
+	
+	return $retObj;
+}
+
+function Paging.naviPages($maxNumber, $limit, $page, $maxShowPageNum)
+{
+	// minimum page
+	$minPage = $page - $maxShowPageNum / 2;
+	if($minPage < 0){
+		$minPage = 0;
+	}
+	
+	// max page
+	$maxPage = $maxNumber / $limit;
+	if($maxNumber % $limit != 0){
+		$maxPage++;
+	}
+	
+	if($minPage + $maxShowPageNum < $maxPage){
+		$maxPage = $minPage + $maxShowPageNum;
+	}
+	
+	// final adjust
+	if($maxPage - $maxShowPageNum < $minPage){
+		$minPage = $maxPage - $maxShowPageNum;
+		if($minPage < 0){
+			$minPage = 0;
+		}
+	}
+	
+	$idx = 0;
+	for($i = $minPage; $i < $maxPage; $i++){
+		$pages[$idx] = $i;
+		$pages[$idx].disp = $i + 1;
+		$idx++;
+	}
+	
+	return @pages;
+}

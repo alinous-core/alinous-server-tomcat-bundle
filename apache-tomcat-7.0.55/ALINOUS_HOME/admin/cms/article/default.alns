@@ -1,0 +1,250 @@
+
+include("/include/paging.alns");
+include("/admin/cms/article/editor/command.alns");
+
+include("/admin/cms/publish/publish.alns");
+
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+
+include("/include/sitesetting.alns");
+
+if($IN.selectedNodeId != null && $IN.selectedNodeId != 0){
+	return "/admin/cms/article/editor/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "search"){
+	Variable.release($IN.cms_page_ids);
+}
+else if($IN.cmd == "publish"){
+	publish($IN, $SESSION);
+	Variable.release($IN.cms_page_ids);
+}
+else if($IN.cmd == "apply_template"){
+	applyTemplate($IN, $SESSION);
+	Variable.release($IN.cms_page_ids);
+}
+else if($IN.cmd == "apply_page_type"){
+	applyPageType($IN, $SESSION);
+	Variable.release($IN.cms_page_ids);
+}
+
+$limit = 10;
+$offset = $IN.page * $limit;
+
+
+$params = searchParams($IN, $SESSION);
+@cms_page = getArticles($offset, $limit, $params);
+
+$size = Array.size(@cms_page);
+for($i = 0; $i < $size; $i++){
+	if(isChecked(@IN.cms_page_ids, $cms_page[$i].cms_page_id)){
+		$cms_page[$i].checked = "checked";
+	}else{
+		$cms_page[$i].checked = "false";
+	}
+	
+	SELECT template_top_name INTO template_top
+	FROM
+		template_top
+	WHERE
+		template_top.template_top_id = $cms_page[$i].template_top_id;
+		
+	$cms_page[$i].template_top_name = $template_top[0].template_top_name;
+	if($template_top[0].template_top_name == null){
+		$cms_page[$i].template_top_name = "Not Set";
+	}
+	
+	SELECT template_top_name INTO template_top
+	FROM
+		template_top
+	WHERE
+		template_top.template_top_id = $cms_page[$i].second_template_top_id;
+		
+	$cms_page[$i].second_template_top_name = $template_top[0].template_top_name;
+	if($template_top[0].template_top_name == null){
+		$cms_page[$i].second_template_top_name = "Not Set";
+	}
+}
+
+
+$maxNumber = getNumArticles($params);
+
+$navi = Paging.getNavi($IN.page, $limit, $maxNumber, 10);
+
+SELECT * INTO template_top
+FROM
+	template_top
+ORDER BY template_top.template_top_code;
+
+return 0;
+
+function applyPageType($IN, $SESSION)
+{
+	$size = Array.size(@IN.cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		BEGIN;
+		
+		UPDATE cms_page
+		SET
+			page_type = $IN.apply_page_type
+		WHERE
+			cms_page.cms_page_id = $IN.cms_page_ids[$i];
+		
+		COMMIT;
+	}
+}
+
+function applyTemplate($IN, $SESSION)
+{
+	$size = Array.size(@IN.cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		BEGIN;
+		
+		UPDATE cms_page
+		SET
+			template_top_id = $IN.apply_template_top_id,
+			second_template_top_id = $IN.apply_second_template_top_id,
+			dirty = now()
+		WHERE
+			cms_page.cms_page_id = $IN.cms_page_ids[$i];
+		
+		COMMIT;
+	}
+}
+
+function publish($IN, $SESSION)
+{
+	$size = Array.size(@IN.cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		SELECT cms_page.node_id INTO cms_page
+		FROM
+			cms_page
+		WHERE
+			cms_page.cms_page_id = $IN.cms_page_ids[$i];
+		
+		Editor.publish($cms_page[0].node_id, false, 0);
+	}
+	
+	// site
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		tree_model.page_depth = 1;
+	for($i = 0; $i < Array.size(@tree_model); $i++){
+		SiteSetting.generateSitemap($tree_model[$i].page_path);
+	}
+}
+
+
+function isChecked(@cms_page_ids, $cms_page_id)
+{
+	$size = Array.size(@cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		if($cms_page_id == $cms_page_ids[$i]){
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+function searchParams($IN, $SESSION)
+{
+	if($IN.page_status != ""){
+		$params.page_status = $IN.page_status;
+	}
+	if($IN.template_top_id != ""){
+		$params.template_top_id = $IN.template_top_id;
+	}
+	if($IN.page_type != ""){
+		if($IN.page_type == "''"){
+			$params.page_type = "";
+		}else{
+			$params.page_type = $IN.page_type;
+		}
+	}
+	if($IN.page_path != ""){
+		$params.page_path = "%" + $IN.page_path + "%";
+	}
+	
+	return $params;
+}
+
+
+function getNumArticles($params)
+{
+	SELECT count(*) as cnt INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.page_status = $params.page_status AND
+		cms_page.template_top_id = $params.template_top_id AND
+		cms_page.page_type = $params.page_type AND
+		tree_model.page_path LIKE $params.page_path
+	ADJUST_WHERE = true;
+	
+	if($cms_page[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($cms_page[0].cnt);
+}
+
+function getArticles($offset, $limit, $params)
+{
+	SELECT cms_page.cms_page_id, cms_page.page_title, cms_page.page_status, cms_page.template_top_id,
+		cms_page.second_template_top_id, cms_page.page_type,
+		tree_model.page_path, tree_model.node_id
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.page_status = $params.page_status AND
+		cms_page.template_top_id = $params.template_top_id AND
+		cms_page.page_type = $params.page_type AND
+		tree_model.page_path LIKE $params.page_path
+	ORDER BY tree_model.page_path
+	LIMIT $limit OFFSET $offset
+	ADJUST_WHERE = true;
+	
+	return @cms_page;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+	if($IN.page_status == null){
+		$IN.page_status = "";
+	}
+	if($IN.template_top_id == null){
+		$IN.template_top_id = "";
+	}
+	if($IN.page_type == null){
+		$IN.page_type = "";
+	}
+	if($IN.page_path == null){
+		$IN.page_path = "";
+	}
+	
+	if($IN.secondary_template == 1){
+		$IN.secondary_template = "checked";
+	}else{
+		$IN.secondary_template = "false";
+	}
+}
+

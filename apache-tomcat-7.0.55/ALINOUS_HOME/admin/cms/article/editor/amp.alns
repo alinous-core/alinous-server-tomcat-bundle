@@ -1,0 +1,122 @@
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+include("/include/serialutils.alns");
+
+$element = $args[0];
+$params = $args[1];
+@result =  $args[2];
+
+$dom = $args[0];
+$params = $args[1];
+
+if(String.toLowerCase($dom.name) == "div"){
+	return handlediv($dom, $params);
+}
+if(String.toLowerCase($dom.name) == "img"){
+	return handleImg($dom, $params);
+}
+
+return $dom;
+
+function handleImg($dom, $params)
+{
+	$idx = getAttributeIndex("src", $dom);
+	if($idx < 0){
+		return $dom;
+	}
+	
+	if($dom.attributes[$idx].value == null){
+		return $dom;
+	}
+	
+	// handle external Image
+	if(String.startsWith($dom.attributes[$idx].value, "http://") ||
+		String.startsWith($dom.attributes[$idx].value, "https://")){
+		
+		$idxTitle = getAttributeIndex("title", $dom);
+		$idxAlt = getAttributeIndex("alt", $dom);
+		
+		$src = $dom.attributes[$idx].value;
+		$resource_name = ImgResource.getLastPathSegment($src);
+		
+		$resource_title = "";
+		if($idxTitle >= 0){
+			$resource_title = $dom.attributes[$idxTitle].value;
+		}
+		if($idxAlt >= 0){
+			$resource_title = $dom.attributes[$idxAlt].value;
+		}
+		
+		try{
+			$cms_resource_id = ImgResource.fetchResource($src, $resource_name, $resource_title, "cms_page", $params.cms_page_id);
+			ImgResource.sync($cms_resource_id);
+			$src = CmsPath.getImageUrlPath("", $cms_resource_id);
+			
+			$dom.attributes[$idx].value = $src;
+		}catch($e){}
+		
+		return $dom;
+	}
+	
+	if(!String.startsWith($dom.attributes[$idx].value, "data:image/")){
+		return $dom;
+	}
+	
+	$headEnd = String.indexOf($dom.attributes[$idx].value, "/", 0);
+	$split1 = String.indexOf($dom.attributes[$idx].value, ";", 0);
+	$split2 = String.indexOf($dom.attributes[$idx].value, ",", $split1);
+	
+	$len = String.length($dom.attributes[$idx].value);
+	$type = String.subString($dom.attributes[$idx].value, $headEnd+1, $split1);
+	$data = String.subString($dom.attributes[$idx].value, $split2+1, $len);
+	
+	$resource_title = "";
+	$idxTitle = getAttributeIndex("title", $dom);
+	$idxAlt = getAttributeIndex("alt", $dom);
+	if($idxTitle >= 0 && $dom.attributes[$idxTitle].value != ""){
+		$resource_title = $dom.attributes[$idxTitle].value;
+	}
+	if($idxAlt >= 0 && $dom.attributes[$idxAlt].value != ""){
+		$resource_title = $dom.attributes[$idxAlt].value;
+	}
+	
+	BEGIN;
+	$cms_resource_id = ImgResource.createFromString($data, $type, $resource_title, "cms_page", $params.cms_page_id);
+	COMMIT;
+	
+	ImgResource.sync($cms_resource_id);
+	$filePath = CmsPath.getImageUrlPath("", $cms_resource_id);
+	
+	$dom.attributes[$idx].value = $filePath;
+	
+	return $dom;
+}
+
+function handlediv($dom, $params)
+{
+	$size = Array.size(@dom.attributes);
+	for($i = 0; $i < $size; $i++){
+		if($dom.attributes[$i].value != null){
+			$dom.attributes[$i].value = String.replaceNoRegex($dom.attributes[$i].value, "&amp;", "&");
+		}
+	}
+	
+	return $dom;
+}
+
+function getAttributeIndex($name, $dom)
+{
+	$size = Array.size(@dom.attributes);
+	for($i = 0; $i < $size; $i++){
+		$attr = $dom.attributes[$i];
+		$attrname = String.toLowerCase($attr.name);
+		if($name == $attrname){
+			return $i;
+		}
+	}
+	
+	return -1;	
+}
+
+

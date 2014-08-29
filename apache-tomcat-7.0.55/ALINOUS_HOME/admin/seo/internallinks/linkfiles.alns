@@ -1,0 +1,15 @@
+
+SELECT wmil_internal_link_file.internal_link_file_name
+INTO wmil_internal_link_file
+FROM
+	wmil_internal_link_file
+ORDER BY wmil_internal_link_file.internal_link_timestamp DESC;
+
+$size = Array.size(@wmil_internal_link_file);
+for($i = 0; $i < $size; $i++){
+	$ar[$i] = $wmil_internal_link_file[$i].internal_link_file_name;
+}
+
+$str = Record.dom2json(@ar);
+
+return $str;

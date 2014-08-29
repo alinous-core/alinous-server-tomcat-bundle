@@ -1,0 +1,26 @@
+
+SELECT * INTO hm_scroll_hm
+FROM
+	hm_scroll_hm
+WHERE
+	hm_scroll_hm.hm_scroll_hm_id = $IN.hm_scroll_hm_id;
+
+SELECT * INTO hm_scroll_result_image
+FROM
+	hm_scroll_result_image
+WHERE
+	hm_scroll_result_image.hm_scroll_hm_id = $IN.hm_scroll_hm_id;
+
+$file = "/tmp/sizetest" + $SESSION + ".png";
+
+Base64.decode2File($hm_scroll_result_image[0].image_base64, $file);
+
+$imsSize = Img.getSize($file);
+
+$hm_scroll_hm[0].imageWidth = $imsSize.width;
+
+File.remove($file);
+
+$json = Record.dom2json(@hm_scroll_hm);
+
+return $json;

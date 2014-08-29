@@ -1,0 +1,265 @@
+<html>
+<head>
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.mouse.js"></script>
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.resizable.js"></script>
+<script src="/jquery/ui/jquery.ui.button.js"></script>
+<script src="/jquery/ui/jquery.ui.dialog.js"></script>
+
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/jquery/ui/jquery.ui.progressbar.js"></script>
+
+
+<script src="/jquery/ui/jquery.ui.effect.js"></script>
+<script src="/jquery/ui/jquery.ui.effect-slide.js"></script>
+
+<script src="/jquery/ui/jquery.ui.datepicker.js"></script>
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+
+<script src="/admin/access/scrollmap/showScrollHm.js"></script>
+
+<script type="text/javascript">
+<!--
+$(function() {
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "slide",
+			direction: "left",
+			duration: 500
+		},
+		hide: {
+			effect: "slide",
+			direction: "right",
+			duration: 500
+		}
+	});
+	
+	$(".pageNavi a, button").button();
+	
+	// progress bar
+	var progressHidden = $("[name='progress_hm_scroll_hm_id[]']");
+	progressHidden.each(function() {
+		progressStart(this.getAttribute("value"));
+	});
+});
+function newHeatmap(form)
+{
+	var url = "/admin/access/scrollmap/new/selectPage.html";
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	$( "#dialog" ).dialog( "open" );
+}
+
+function progressStart(hm_scroll_hm_id)
+{
+	var query = "#progressbar" + hm_scroll_hm_id;
+	var progressLabelQuery = ".progress-label" + hm_scroll_hm_id;
+	
+	var progressbar = $(query);
+	var progressLabel = $(progressLabelQuery);
+	
+	//alert(progressbar);
+	
+	progressbar.progressbar({
+		value: false,
+		change: function() {
+			progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+		},
+		complete: function() {
+			progressLabel.text( "Complete!" );
+			
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		}
+	});
+	
+	var data = "job_id=scroll-heatmap-" + hm_scroll_hm_id;
+	
+	function progress() {
+		var val = progressbar.progressbar( "value" ) || 0;
+		
+		$.ajax({
+			type: "POST",
+			url: "/admin/access/scrollmap/watch.alns",
+			data: data,
+			processData: false,
+			success: function(msg)
+			{
+		    	//alert(msg);
+		    	
+		    	val = parseInt(msg,10);
+		    	
+		    	progressbar.progressbar( "value", val);
+		    	
+				if ( val < 100 ) {
+					setTimeout( progress, 1000 );
+				}
+			}
+		});
+	};
+	
+	progress();
+}
+
+
+function regenerate(form, hm_scroll_hm_id)
+{
+	form.hm_scroll_hm_id.value = hm_scroll_hm_id;
+	form.cmd.value = "regenerate";
+	form.submit();
+}
+function deleteHeatmap(form, hm_scroll_hm_id)
+{
+	var bl = confirm("Are you sure to delete?");
+	if(!bl){
+		return;
+	}
+	
+	form.hm_scroll_hm_id.value = hm_scroll_hm_id;
+	form.cmd.value = "delete";
+	form.submit();
+}
+
+function gotoPage(form, page)
+{
+	form.page.value = page;
+	form.cmd.value = "";
+	form.submit();
+}
+
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Access Recorder</h1>
+
+<h2>Scroll Heatmap</h2>
+
+<form name="frm" action="index.html" method="POST">
+
+<button type="button" onclick="newHeatmap(this.form)">Create new Heatmap</button><br />
+<br />
+
+<input type="hidden" name="page" value="{$IN.page}" />
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="hm_scroll_hm_id" value="" />
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+<table class="stdtable">
+	<tr>
+		<th>Heatmap Name</th>
+		<th>Heatmap URL</th>
+		<th width="160">Timespan</th>
+		<th width="100">Show</th>
+		<th width="160">Regenerate</th>
+		<th width="100">Delete</th>
+	</tr>
+	<tr alns:iterate="@hm_scroll_hm" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.hm_scroll_name}
+		</td>
+		<td>
+			{$oneRecord.page_url}
+		</td>
+		<td>
+			{$oneRecord.hm_start_fmt}<br />
+			{$oneRecord.hm_end_fmt}
+		</td>
+		<td align="center">
+			<button type="button" onclick="AlinousScrollHmViewer.show('{$oneRecord.hm_scroll_hm_id}')">Show</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="regenerate(this.form, '{$oneRecord.hm_scroll_hm_id}')"
+				alns:if="{BOOL($oneRecord.jobWorking == false)}">Regenerate</button>
+			<span onload="progressStart('{$oneRecord.hm_scroll_hm_id}')"
+				alns:if="{BOOL($oneRecord.jobWorking == true)}">
+			<div id="progressbar{$oneRecord.hm_scroll_hm_id}"><div class="progress-label{$oneRecord.hm_scroll_hm_id}">Loading...</div></div>
+			<input type="hidden" name="progress_hm_scroll_hm_id[]" value="{$oneRecord.hm_scroll_hm_id}" />
+			</span>
+		</td>
+		<td align="center">
+			<button type="button" onclick="deleteHeatmap(this.form, '{$oneRecord.hm_scroll_hm_id}')">Delete</button>
+		</td>
+	</tr>
+</table>
+
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+</form>
+
+</div>
+
+<div id="dialog"></div>
+
+</body>
+</html>

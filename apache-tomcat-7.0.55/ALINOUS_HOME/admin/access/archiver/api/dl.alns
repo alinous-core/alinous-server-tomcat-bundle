@@ -1,0 +1,56 @@
+
+
+if($IN.ar != null && $IN.item != null){
+	$res = downloaditem($IN, $SESSION);
+		
+	download $res.tmpFile, $res.name, $res.contentType;
+}else if($IN.ar != null){
+	return "/admin/access/archiver/api/dlhtml.alns?ar=" + $IN.ar;
+}
+
+return 0;
+
+function downloaditem($IN, $SESSION)
+{
+	SELECT * INTO archive_page_items
+	FROM
+		archive_page_items
+	WHERE
+		archive_page_items.archive_page_id = $IN.ar AND
+		archive_page_items.archive_serial = $IN.item;
+	
+	if(String.startsWith($archive_page_items[0].archive_type, "image/")){
+		@frags = String.split($archive_page_items[0].archive_type, "/");
+		$res.tmpFile = "/tmp/" + $SESSION + $IN.item + "." + $frags[1];
+		$res.name = $SESSION + $IN.item + "." + $frags[1];
+		$res.contentType = $archive_page_items[0].archive_type;
+		
+		Base64.decode2File($archive_page_items[0].content, $res.tmpFile);
+	}
+	else if(String.indexOf($archive_page_items[0].archive_type, "javascript", 0) > 0){
+		$res.tmpFile = "/tmp/" + $SESSION + $IN.item + ".js";
+		$res.name = $SESSION + $IN.item + ".js";
+		$res.contentType = $archive_page_items[0].archive_type;
+		
+		File.appendText($res.tmpFile, $archive_page_items[0].content, "utf-8");
+	}
+	else if(String.indexOf($archive_page_items[0].archive_type, "css", 0) > 0){
+		$res.tmpFile = "/tmp/" + $SESSION + $IN.item + ".css";
+		$res.name = $SESSION + $IN.item + ".css";
+		$res.contentType = $archive_page_items[0].archive_type;
+		
+		File.appendText($res.tmpFile, $archive_page_items[0].content, "utf-8");
+	}
+	else{
+		$res.tmpFile = "/tmp/" + $SESSION + $IN.item + ".txt";
+		$res.name = $SESSION + $IN.item + ".txt";
+		$res.contentType = $archive_page_items[0].archive_type;
+		
+		File.appendText($res.tmpFile, $archive_page_items[0].content, "utf-8");
+	}
+	
+	return $res;
+	
+}
+
+

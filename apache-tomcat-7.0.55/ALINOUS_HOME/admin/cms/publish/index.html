@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>RSS and Sitemap - Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/cms/tags/jqcookiestate.js"></script>
+<script src="/admin/cms/tags/jqtree.js"></script>
+
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.css">
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.theme.default.css">
+<script src="/jquery/tree-table/jquery.treetable.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	
+});
+
+function startPublish(form)
+{
+	form.cmd.value = "start";
+	form.submit();
+}
+-->
+</script>
+<style>
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Manual Publish</h1>
+
+<blockquote>
+
+	<form name="frm" action="index.html" method="POST" alns:if="{BOOL($showProgress == 0)}">
+	
+	<h2>Publish Webpage Manually</h2>
+	
+	
+	<button type="button" onclick="startPublish(this.form)">Start Publish</button>
+	
+	<input type="hidden" name="cmd" value="" />
+	</form>
+
+	<form name="frm" action="index.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress != 0)}">
+	
+	<h2>Now Publishing Webpage Manually</h2>
+	
+	<input type="hidden" name="cmd" value="" />
+	<input type="hidden" name="showProgress" value="{$showProgress}" />
+	<div id="progressbar"><div class="progress-label">Loading...</div></div>
+	<script>
+	<!--
+	$(function() {
+		var progressbar = $( "#progressbar" ),
+		progressLabel = $( ".progress-label" );
+		
+		progressbar.progressbar({
+			value: false,
+			change: function() {
+				progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+			},
+			complete: function() {
+				progressLabel.text( "Complete!" );
+				
+				document.frm.submit();
+			}
+		});
+	
+		function progress() {
+			var val = progressbar.progressbar( "value" ) || 0;
+			
+			$.ajax({
+				type: "POST",
+				url: "/admin/seo/robotlog/watch.alns",
+				data: "job_id=manualpublish",
+				processData: false,
+				success: function(msg)
+				{
+			    	val = parseInt(msg,10);
+			    	
+			    	progressbar.progressbar("value", val);
+			    	
+					if ( val < 100 ) {
+						setTimeout( progress, 1000 );
+					}				
+				}
+			});
+		};
+		
+		progress();
+		
+	});
+	-->
+	</script>
+	</form>
+
+</blockquote>
+
+</div>
+
+</body>
+</html>
+
+

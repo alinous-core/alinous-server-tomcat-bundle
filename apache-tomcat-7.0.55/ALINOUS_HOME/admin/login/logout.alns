@@ -1,0 +1,15 @@
+
+if($IN.cmd == "logout"){
+	logtout($IN, $SESSION);
+	redirect "/admin/";
+}
+
+
+return 0;
+
+function logtout($IN, $SESSION)
+{
+	Variable.release($SESSION.AUTH);
+	
+	return 0;
+}

@@ -1,0 +1,13 @@
+
+
+$path = "/tmp/hmdl" + $SESSION + $IN.hm_master_id + ".png";
+
+SELECT * INTO hm_scroll_result_image
+FROM
+	hm_scroll_result_image
+WHERE
+	hm_scroll_result_image.hm_scroll_hm_id = $IN.hm_scroll_hm_id;
+
+Base64.decode2File($hm_scroll_result_image[0].image_base64, $path);
+
+download $path, "heatmap.png";

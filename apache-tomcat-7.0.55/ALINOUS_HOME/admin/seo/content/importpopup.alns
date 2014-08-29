@@ -1,0 +1,256 @@
+
+include("/include/serialutils.alns");
+include("/include/progress.alns");
+
+if($IN.cmd == "uploadCsv"){
+	uploadCsv($IN, $SESSION);
+}
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = 'importcontents';
+	
+	if(Array.size(@job_progress) > 0){
+		return 1;
+	}
+	
+	return 0;
+}
+
+function uploadCsv($IN, $SESSION)
+{
+	$IN.uploadedFile = $IN.csvfile;
+
+	if(ProgressJob.jobStarted("importcontents")){
+		return 0;
+	}
+	
+	$csvfile = "/tmp/" + $SESSION + "_" + $IN.csvfile;
+	$jobMax = countLines($csvfile);
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob("importcontents", $jobMax, "backbroundWrapper", $params);
+}
+
+function countLines($csvfile)
+{
+	$count = 0;
+	Csv.openReadFile($csvfile, "utf-8");
+	
+	@FIELDS = Csv.readLine($csvfile);
+	while(Array.size(@FIELDS) > 0){
+		$count++;
+		@FIELDS = Csv.readLine($csvfile);
+	}
+	Csv.closeReadFile($csvfile);
+	
+	return $count;
+}
+
+function backbroundWrapper($params)
+{
+	doUploadCsv($params.IN, $params.SESSION);
+	
+	ProgressJob.jobFinished("importcontents");
+}
+
+function doUploadCsv($IN, $SESSION)
+{
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.csvfile; 
+	$fileName = $IN.csvfile;
+	
+	$fromName = parseFileName($fileName);
+	
+	// Clear if same file is uploaded
+	clearLastUpdate($fileName);
+	
+	Csv.openReadFile($tmpFile, "utf-8");
+	
+	@FIELDS = Csv.readLine($tmpFile); // Header
+	
+	@FIELDS = Csv.readLine($tmpFile);
+	while(Array.size(@FIELDS) > 0){
+		try{
+			handleOneRecord($fileName, $fromName, @FIELDS);
+		}catch($e){
+		
+		}
+		
+		ProgressJob.progress(1, "importcontents");
+		
+		// read next
+		@FIELDS = Csv.readLine($tmpFile);
+	}
+	
+	Csv.closeReadFile($tmpFile);
+	
+	File.remove($tmpFile);
+}
+
+function handleOneRecord($fileName, $fromName, @FIELDS)
+{
+	$lenTopUrl = String.length($FIELDS[3]);
+	$topUrls = String.subString($FIELDS[3], 1, $lenTopUrl - 1);
+	
+	@topUrlArray = GoogleContentKeywords.parseTopUrl($topUrls);
+	
+	BEGIN;
+	
+	$wmc_content_keywords_id = Common.newSerial("wmc_content_keywords");
+	
+	INSERT INTO wmc_content_keywords(
+		wmc_content_keywords_id,
+		wmc_content_keywords_file_name,
+		wmc_content_keywords_timestamp,
+		keyword,
+		occurrences,
+		variants_encountered
+	)VALUES(
+		$wmc_content_keywords_id,
+		$fileName, // wmc_content_keywords_file_name,
+		$fromName.tm, // wmc_content_keywords_timestamp,
+		$FIELDS[0], //keyword,
+		$FIELDS[1], //occurrences,
+		$FIELDS[2] //variants_encountered
+	);
+	
+	$size = Array.size(@topUrlArray);
+	for($i = 0; $i < $size; $i++){
+		$domain = getDomain($topUrlArray[$i]);
+		$path = getPath($topUrlArray[$i]);
+		
+		INSERT INTO wmc_content_keywords_url(
+			wmc_content_keywords_id,
+			hostname,
+			path
+		)
+		VALUES(
+			$wmc_content_keywords_id,
+			$domain, //hostname,
+			$path // path
+		);
+	}
+	
+	COMMIT;
+	
+	
+	return 0;	
+}
+
+function getPath($url)
+{
+	$len = String.length($url);
+	if(String.startsWith($url, "http://")){
+		$withoutScheme = String.subString($url, 7, $len);
+		@fragments = String.split($withoutScheme, "/");
+		
+		$len = String.length($withoutScheme);
+		$domainLength = String.length($fragments[0]);
+		
+		return String.subString($withoutScheme, $domainLength, $len);
+	}
+	else if(String.startsWith($url, "https://")){
+		$withoutScheme = String.subString($url, 8, $len);
+		@fragments = String.split($withoutScheme, "/");
+		
+		$len = String.length($withoutScheme);
+		$domainLength = String.length($fragments[0]);
+		
+		return String.subString($withoutScheme, $domainLength, $len);
+	}
+	
+	return $url;
+}
+
+function getDomain($url)
+{
+	$len = String.length($url);
+	if(String.startsWith($url, "http://")){
+		$withoutScheme = String.subString($url, 7, $len);
+		
+		@fragments = String.split($withoutScheme, "/");
+		return $fragments[0];
+	}
+	else if(String.startsWith($url, "https://")){
+		$withoutScheme = String.subString($url, 8, $len);
+		
+		@fragments = String.split($withoutScheme, "/");
+		return $fragments[0];
+	}
+	
+	return $url;
+}
+
+function clearLastUpdate($fileName)
+{
+	BEGIN;
+	
+	SELECT * INTO wmc_content_keywords
+	FROM wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $fileName
+	LIMIT 1;
+	
+	if(Array.size(@wmc_content_keywords) == 0){
+		ROLLBACK;
+		return 0;
+	}
+	
+	DELETE FROM wmc_content_keywords_url
+	WHERE
+		wmc_content_keywords_url.wmc_content_keywords_id IN(
+			SELECT wmc_content_keywords.wmc_content_keywords_id
+			FROM
+				wmc_content_keywords
+			WHERE
+				wmc_content_keywords.wmc_content_keywords_file_name = $fileName
+		);
+	
+	DELETE FROM wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $fileName;
+	
+
+	
+	COMMIT;
+}
+
+function parseFileName($fileName)
+{
+	@fragments = String.split($fileName, "_");
+	
+	$ret.siteid = $fragments[0];
+	
+	$ret.tm = getTimestampFromName($fragments[1]);
+	
+	return $ret;	
+}
+
+function getTimestampFromName($nameFragment)
+{
+	@fragments = String.split($nameFragment, "T");
+	
+	$year = String.subString($fragments[0], 0, 4);
+	$month = String.subString($fragments[0], 4, 6);
+	$date = String.subString($fragments[0], 6, 8);
+	
+	$hour = String.subString($fragments[1], 0, 2);
+	$minute = String.subString($fragments[1], 2, 4);
+	$second = String.subString($fragments[1], 4, 6);
+	
+	$timestamp = $year + "-" + $month + "-" + $date + " " + $hour + ":" + $minute + ":" + $second;
+	
+	return $timestamp;
+}
+
+

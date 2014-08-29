@@ -1,0 +1,47 @@
+
+include("/include/paging.alns");
+
+initParams($IN, $SESSION);
+
+$maxPagingNumberScroll = 10;
+$limit = 10;
+$pageNumber = $IN.page;
+
+@pageAccesses = getRecords($IN, $SESSION, $limit);
+$totalRecords = getNumRecord($IN, $SESSION);
+
+$navi = Paging.getNavi($pageNumber, $limit, $totalRecords, 10);
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+}
+
+function getRecords($IN, $SESSION, $limit)
+{
+	$offset = $limit * $IN.page;
+	SELECT * INTO wic_user_page_access
+	FROM
+		wic_user_page_access			
+	ORDER BY wic_user_page_access.access_time DESC
+	LIMIT $limit OFFSET $offset;
+	
+	return @wic_user_page_access;
+}
+
+function getNumRecord($IN, $SESSION)
+{
+	SELECT COUNT(*) AS cnt INTO wic_user_page_access
+	FROM
+		wic_user_page_access;
+	
+	if($wic_user_page_access[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($wic_user_page_access[0].cnt);
+}

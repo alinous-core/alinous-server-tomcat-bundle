@@ -1,0 +1,26 @@
+
+redirect "/admin/";
+
+
+redirect "/admin/";
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	SELECT * INTO records FROM auth_table
+	WHERE
+		auth_table.users = $IN.user_id AND
+		auth_table.passwords = $IN.password;
+	
+	$numRoles = Array.size(@records);
+	
+	if($numRoles == 0){
+		return "custom";
+	}
+	else{
+		$SESSION.AUTH.USER = $IN.user_id;
+		$SESSION.AUTH.ROLES[0] = "user";
+	}
+	
+	return 0;
+}
+

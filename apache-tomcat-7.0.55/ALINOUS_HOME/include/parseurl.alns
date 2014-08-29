@@ -1,0 +1,49 @@
+
+
+/*
+include("/include/parseurl.alns");
+*/
+
+function UrlParse.getPath($url)
+{
+	$len = String.length($url);
+	if(String.startsWith($url, "http://")){
+		$withoutScheme = String.subString($url, 7, $len);
+		@fragments = String.split($withoutScheme, "/");
+		
+		$len = String.length($withoutScheme);
+		$domainLength = String.length($fragments[0]);
+		
+		return String.subString($withoutScheme, $domainLength, $len);
+	}
+	else if(String.startsWith($url, "https://")){
+		$withoutScheme = String.subString($url, 8, $len);
+		@fragments = String.split($withoutScheme, "/");
+		
+		$len = String.length($withoutScheme);
+		$domainLength = String.length($fragments[0]);
+		
+		return String.subString($withoutScheme, $domainLength, $len);
+	}
+	
+	return $url;
+}
+
+function UrlParse.getDomain($url)
+{
+	$len = String.length($url);
+	if(String.startsWith($url, "http://")){
+		$withoutScheme = String.subString($url, 7, $len);
+		
+		@fragments = String.split($withoutScheme, "/");
+		return $fragments[0];
+	}
+	else if(String.startsWith($url, "https://")){
+		$withoutScheme = String.subString($url, 8, $len);
+		
+		@fragments = String.split($withoutScheme, "/");
+		return $fragments[0];
+	}
+	
+	return $url;
+}

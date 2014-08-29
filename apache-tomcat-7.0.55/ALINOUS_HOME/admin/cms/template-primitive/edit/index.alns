@@ -1,0 +1,93 @@
+
+
+include("/include/html.alns");
+include("/include/template_primitive.alns");
+
+$primitive = getPrimitive($IN.selectedNodeId);
+
+SELECT * INTO template_primitive_parameter
+FROM
+	template_primitive_parameter
+WHERE
+	template_primitive_parameter.template_primitive_id = $primitive.template_primitive_id
+ORDER BY template_primitive_parameter.parameter_name;
+
+// pathes
+$templatePath = PrimitiveTmpl.getPrimitiveDirPath($primitive.template_primitive_id);
+
+$modulePath = $templatePath + "indexpreview.alns";
+$moduleMaxPagePath = $templatePath + "maxpagepreview.alns";
+$htmlPath = $templatePath + "indexpreview.html";
+
+if(File.exists($modulePath)){
+	@scriptErrors = Debugger.checkScript($modulePath);
+}
+if(File.exists($htmlPath)){
+	@htmlErrors = Debugger.checkHtml($htmlPath);
+}
+
+$dirty = isDirty($primitive.template_primitive_id);
+
+return 0;
+
+
+function isDirty($template_primitive_id)
+{
+	$dir = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id);
+	
+	$preview = $dir + "indexpreview.html";
+	$normal = $dir + "index.html";
+	
+	if(!File.exists($preview)){
+		return false;
+	}
+	if(!File.exists($normal)){
+		return true;
+	}
+	
+	$previewTm = File.getTimestamp($preview);
+	$normalTm = File.getTimestamp($normal);
+	
+	if(Timestamp.before($normalTm, $previewTm)){
+		return true;
+	}
+	
+	return false;	
+}
+
+
+function getPrimitive($node_id)
+{
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $node_id;
+	
+	if($template_primitive[0].is_dynamic == 1){
+		$template_primitive[0].is_dynamic_chk = true;
+	}else{
+		$template_primitive[0].is_dynamic_chk = false;
+	}
+	
+	if($template_primitive[0].is_paging == 1){
+		$template_primitive[0].is_paging_chk = true;
+	}else{
+		$template_primitive[0].is_paging_chk = false;
+	}
+	
+	if($template_primitive[0].is_embeded == 1){
+		$template_primitive[0].is_embeded_chk = true;
+	}else{
+		$template_primitive[0].is_embeded_chk = false;
+	}
+	
+	// escape tags
+	//$template_primitive[0].code_css = Html.escapeTag($template_primitive[0].code_css);
+	//$template_primitive[0].code_js = Html.escapeTag($template_primitive[0].code_js);
+	$template_primitive[0].code_alinous = Html.escapeTag($template_primitive[0].code_alinous);
+	$template_primitive[0].code_html = Html.escapeTag($template_primitive[0].code_html);
+	//$template_primitive[0].code_max_page = Html.escapeTag($template_primitive[0].code_max_page);
+		
+	return $template_primitive[0];
+}

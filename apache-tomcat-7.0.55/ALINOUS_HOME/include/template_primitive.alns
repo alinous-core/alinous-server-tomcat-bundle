@@ -1,0 +1,192 @@
+
+/*
+include("/include/template_primitive.alns");
+*/
+
+function PrimitiveTmpl.syncAll()
+{
+	SELECT template_primitive.template_primitive_id INTO template_primitive
+	FROM
+		template_primitive;
+	
+	$size = Array.size(@template_primitive);
+	for($i = 0; $i < Array.size(@template_primitive); $i++){
+		PrimitiveTmpl.sync($template_primitive[$i].template_primitive_id, "preview");
+		PrimitiveTmpl.sync($template_primitive[$i].template_primitive_id, "");
+	}
+	
+}
+
+
+function PrimitiveTmpl.sync($template_primitive_id, $genCode)
+{
+	$primitive = PrimitiveTmpl.getTemplate($template_primitive_id);
+	
+	$savePath = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id);
+	File.makeDir($savePath);
+	
+	$htmlPath = $savePath + "index" + $genCode + ".html";
+	$alnsPath = $savePath + "index" + $genCode + ".alns";
+	$pagingPath = $savePath +  "maxpage" + $genCode + ".alns";
+	$dynPath = $savePath + "/dyn" + $genCode + ".alns";
+	$dynHtmlPath = $savePath + "/dyn" + $genCode + ".html";
+	
+	if($primitive.code_css != ""){
+		$primitive.code_css = '<style>\n<!--\n' +
+			$primitive.code_css +
+			'\n-->\n</style>\n';
+	}
+	if($primitive.code_js != ""){
+		$primitive.code_js = '<script>\n<!--\n' +
+				$primitive.code_js +
+			'\n-->\n</script>\n';
+	}
+	
+	// html
+	$html =  '<html>\n' + 
+		'<head>\n' + 
+		$primitive.code_html_header + '\n' + 
+			$primitive.code_css +
+			$primitive.code_js +
+		'</head>\n' + 
+		'<body>\n' + $primitive.code_html + "\n</body>\n</html>\n"; 
+	
+	$encode = "utf-8";
+	File.putText($htmlPath, $html, $encode);
+	
+	// alns
+	$alns = "return 0;";
+	if($primitive.code_alinous != ""){
+		$alns = $primitive.code_alinous;
+	}
+	File.putText($alnsPath, $alns, $encode);
+	
+	// paging
+	$alns = "return 0;";
+	if($primitive.code_max_page != ""){
+		$alns = $primitive.code_max_page;
+	}
+	File.putText($pagingPath, $alns, $encode);
+	
+	// dyn
+	$program = File.readAllText("/admin/cms/template-primitive/tmpl/dyn.txt", $encode);
+	$baseUrl = $savePath;
+	$program = String.replace($program, "#BASE_URL#", $baseUrl);
+	
+	$paramstr = PrimitiveTmpl.getParamValuesString($template_primitive_id);
+	$program = String.replaceNoRegex($program, "#PARAMS#", $paramstr);
+	
+	File.putText($dynPath, $program, $encode);
+	
+	$html = File.readAllText("/admin/cms/template-primitive/tmpl/dynhtml.txt", $encode);
+	File.putText($dynHtmlPath, $html, $encode);
+	
+	return 0;
+}
+
+function PrimitiveTmpl.getParamValuesString($template_primitive_id)
+{
+	SELECT * INTO template_primitive_parameter
+	FROM
+		template_primitive_parameter
+	WHERE
+		template_primitive_parameter.template_primitive_id = $template_primitive_id
+	ORDER BY template_primitive_parameter.parameter_name;
+	
+	$str = "";
+	$size = Array.size(@template_primitive_parameter);
+	for($i = 0; $i < $size; $i++){
+		$str = $str + "&" + $template_primitive_parameter[$i].parameter_name
+			+ "={$IN." + $template_primitive_parameter[$i].parameter_name + "}";
+	}
+	
+	return $str;
+}
+
+function PrimitiveTmpl.removeFiles($template_primitive_id)
+{
+	$primitive = PrimitiveTmpl.getTemplate($template_primitive_id);
+	
+	$savePath = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id);
+	File.remove($savePath);
+}
+
+function PrimitiveTmpl.path2TemplateId($path)
+{
+	$page_path = String.replace($path, "/html_tmpl/primitive", "");
+	$page_path = String.replace($page_path, "/index.html", "");
+	
+	$idx = String.indexOf($page_path, "?", 0);
+	if($idx > 0){
+		@pathes = String.split($page_path, "\?");
+		$page_path = $pathes[0];		
+	}
+	
+	SELECT template_primitive.template_primitive_id INTO tree_model
+	FROM
+		template_primitive LEFT JOIN tree_model
+		ON
+			template_primitive.node_id = tree_model.node_id			
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.page_path = $page_path;
+	
+	return $tree_model[0].template_primitive_id;
+}
+
+function PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id)
+{
+	SELECT tree_model.page_path, template_primitive.template_primitive_name INTO tree_model
+	FROM
+		template_primitive LEFT JOIN tree_model
+		ON
+			template_primitive.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'primitive'
+	WHERE
+		template_primitive.template_primitive_id = $template_primitive_id;
+	
+	$dir = "/html_tmpl/primitive" + $tree_model[0].page_path + "/";
+	
+	return $dir;
+}
+
+function PrimitiveTmpl.getPaging($template_primitive_id, @scripts, $genCode)
+{
+	$tmpl = PrimitiveTmpl.getTemplate($template_primitive_id);
+	if($tmpl.is_paging == 1){
+		$idx = Array.size(@scripts);
+		
+		$savePath = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id);
+		$pagingPath = $savePath +  "maxpage" + $genCode + ".alns";
+		
+		$scripts[$idx] = $pagingPath;
+	}
+}
+
+function PrimitiveTmpl.getParameters($template_primitive_id, @params)
+{
+	SELECT * INTO template_primitive_parameter
+	FROM
+		template_primitive_parameter
+	WHERE
+		template_primitive_parameter.template_primitive_id = $template_primitive_id
+	ORDER BY template_primitive_parameter.parameter_name;
+	
+	$size = Array.size(@template_primitive_parameter);
+	for($i = 0; $i < $size; $i++){
+		$idx = Array.size(@params);
+		$params[$idx] = $template_primitive_parameter[$i];
+	}
+	
+}
+
+function PrimitiveTmpl.getTemplate($template_primitive_id)
+{
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERe
+		template_primitive.template_primitive_id = $template_primitive_id;
+	
+	return $template_primitive[0];
+}

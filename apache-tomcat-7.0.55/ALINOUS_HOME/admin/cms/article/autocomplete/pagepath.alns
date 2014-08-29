@@ -1,0 +1,64 @@
+
+if($IN.site != null){
+	$IN.term = $IN.site + $IN.term;
+}
+$context = getContext($IN);
+
+SELECT DISTINCT tree_model.page_path INTO cms_page
+FROM
+	tree_model
+WHERE
+	tree_model.tree_id = 'cms' AND
+	tree_model.page_depth = $context.page_depth AND
+	tree_model.page_path LIKE $context.page_path
+ORDER BY tree_model.page_path;
+
+$size = Array.size(@cms_page);
+for($i = 0; $i < $size; $i++){
+	if($IN.site != null){
+		$len = String.length($IN.site);
+		$endIndex = String.length($cms_page[$i].page_path);
+		$ar[$i] = String.subString($cms_page[$i].page_path, $len, $endIndex);
+	}else{
+		$ar[$i] = $cms_page[$i].page_path;
+	}
+}
+
+if(Array.size(@ar) == 0){
+	return "[]";
+}
+
+$str = Record.dom2json(@ar);
+
+return $str;
+
+function getContext($IN)
+{
+	if($IN.term == null || $IN.term == ""){
+		$context.page_depth = 1;
+		$context.page_path = "/%";
+		
+		return $context;
+	}
+	
+	$context.page_depth = countDepth($IN.term);
+	$context.page_path = $IN.term + "%";
+		
+	return $context;
+}
+
+function countDepth($text)
+{
+	$count = 0;
+	$begin = 0;
+	$begin = String.indexOf($text, "/", $begin);
+	
+	while($begin >= 0){
+		$count++;
+		$begin++;
+		$begin = String.indexOf($text, "/", $begin);
+	}
+	
+	
+	return $count;
+}

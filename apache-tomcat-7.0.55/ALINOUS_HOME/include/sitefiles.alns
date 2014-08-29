@@ -1,0 +1,52 @@
+/*
+include("/include/sitefiles.alns");
+*/
+
+
+function Sitefiles.syncAll()
+{
+	SELECT * INTO site_resource
+	FROM
+		site_resource;
+	
+	for($i = 0; $i < Array.size(@site_resource); $i++){
+		Sitefiles.sync($site_resource[$i].site_resource_id);
+	}
+	
+}
+
+function Sitefiles.sync($site_resource_id)
+{
+	$path = Sitefiles.getPathFromFile($site_resource_id);
+	$dir = File.getDirectory($path);
+	File.makeDir($dir);
+	
+	SELECT * INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.site_resource_id = $site_resource_id;
+	
+	File.putText($path, $site_resource[0].file_text, "utf-8");
+}
+
+function Sitefiles.getPathFromFile($site_resource_id)
+{
+	SELECT * INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.site_resource_id = $site_resource_id;
+	
+	if(!String.startsWith($site_resource[0].file_name, "/")){
+		$site_resource[0].file_name = "/" + $site_resource[0].file_name;
+	}
+	
+	if(String.endsWith($site_resource[0].file_name, ".html")){
+
+		
+		return "/html" + $site_resource[0].site_path + $site_resource[0].file_name;
+	}
+	
+	return "/html_resource/page" + $site_resource[0].site_path + $site_resource[0].file_name;
+}

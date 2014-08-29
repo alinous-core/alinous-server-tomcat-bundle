@@ -1,0 +1,340 @@
+<html>
+<head>
+<title>RSS and Sitemap - Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/cms/tags/jqcookiestate.js"></script>
+<script src="/admin/cms/tags/jqtree.js"></script>
+
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.css">
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.theme.default.css">
+<script src="/jquery/tree-table/jquery.treetable.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		modal: true,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+	$(".sitemap_page_types").autocomplete({
+		source: "/admin/cms/article/autocomplete/pagetype.alns",
+		minLength: 0
+	});
+});
+
+function updateSitemapPageType(form)
+{
+	form.cmd.value = "updateSitemapPageType";
+	form.submit();
+}
+
+function updateRobotTxt(form)
+{
+	form.cmd.value = "updateRobotsTxt";
+	form.submit();
+}
+
+function newFile(form)
+{
+	var url = "/admin/cms/rss-sitemap/dialog/fileNew.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+function deleteFile(form, site_resource_id)
+{
+	var bl = confirm("Are you sure to delete the File ?");
+	if(!bl){
+		return;
+	}
+	
+	form.site_resource_id.value = site_resource_id;
+	form.cmd.value = "deleteFile";
+	form.submit();	
+}
+function editFile(form, site_resource_id)
+{
+	var url = "/admin/cms/rss-sitemap/dialog/fileEdit.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site,
+			site_resource_id: site_resource_id
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function newRss(form)
+{
+	var url = "/admin/cms/rss-sitemap/dialog/rssNew.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+function deleteRss(form, rss_setting_id)
+{
+	var bl = confirm("Are you sure to delete the Rss Setting ?");
+	if(!bl){
+		return;
+	}
+	
+	form.rss_setting_id.value = rss_setting_id;
+	form.cmd.value = "deleteRss";
+	form.submit();	
+}
+function editRss(form, rss_setting_id)
+{
+	var url = "/admin/cms/rss-sitemap/dialog/rssEdit.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site,
+			rss_setting_id: rss_setting_id
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function publishFile(form, rss_setting_id)
+{
+	var url = "/admin/cms/rss-sitemap/dialog/rssOperation.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site,
+			rss_setting_id: rss_setting_id
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+-->
+</script>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; RSS and Sitemap</h1>
+
+<blockquote>
+
+<form name="frm" action="index.html" method="POST">
+
+<table>
+	<tr>
+		<td>
+			<b>Select Site :</b>
+		</td>
+		<td>
+			<select name="site" id="site" value="{$IN.site}" style="width:100%;">
+			<option value="{$s}" alns:iterate="@sites" alns:variable="s">{$s}</option>
+			</select>
+		</td>
+		<td>
+			<button type="button" onclick="this.form.submit();">Select</button>
+		</td>
+	</tr>
+</table>
+
+<h2>Sitemap pages</h2>
+
+<table>
+	<tr>
+		<td>
+			<b>Site Domain and Scheme</b>
+		</td>
+		<td>
+			<input type="text" name="site_domain" value="{$IN.site_domain}" style="width:400px" />
+		</td>
+	</tr>
+</table>
+
+<p>
+	Input the page types to include in the sitemap.xml.
+</p>
+
+<input type="text" name="sitemap_types[]" alns:iterate="@sitemap_types" alns:variable="t"
+		class="sitemap_page_types" value="{$t}" maxlength="255" style="width:100px;" />
+<button type="button" onclick="updateSitemapPageType(this.form)">Save</button>
+
+<h2>Robot.txt Setting</h2>
+
+<textarea name="robot_file_text" cols="100" rows="10">{$robot.file_text}</textarea><br />
+
+<button type="button" onclick="updateRobotTxt(this.form)">Save File</button>
+
+
+<h2>RSS Setting</h2>
+
+<table class="stdtable" style="width:800px;">
+	<tr>
+		<th >
+			RSS Name
+		</th>
+		<th width="240">
+			Publish and Push
+		</th>
+		<th width="120">
+			Edit
+		</th>
+		<th width="120">
+			Delete
+		</th>
+	</tr>
+	<tr alns:iterate="@rss_setting" alns:variable="r">
+		<td>
+			{$r.feed_name}.rss
+		</td>
+		<td align="center">
+			<button type="button" onclick="publishFile(this.form, {$r.rss_setting_id})">Publish and Push</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="editRss(this.form, {$r.rss_setting_id})">Edit</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="deleteRss(this.form, {$r.rss_setting_id})">Delete</button>
+		</td>
+	</tr>
+</table>
+<button type="button" onclick="newRss(this.form);">New Rss</button>
+
+<h2>Search Engine Authfiles and PAD</h2>
+
+<table class="stdtable" style="width:800px;">
+	<tr>
+		<th width="400">
+			File Name
+		</th>
+		<th>
+			Edit
+		</th>
+		<th>
+			Delete
+		</th>
+	</tr>
+	<tr alns:iterate="@site_resource" alns:variable="sr">
+		<td>
+			{$sr.file_name}
+		</td>
+		<td align="center">
+			<button type="button" onclick="editFile(this.form, {$sr.site_resource_id})">Edit</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="deleteFile(this.form, {$sr.site_resource_id})">Delete</button>
+		</td>
+	</tr>
+</table>
+<button type="button" onclick="newFile(this.form)">New File</button>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="robots" value="{$IN.robots}" />
+<input type="hidden" name="rss_setting_id" value="" />
+<input type="hidden" name="site_resource_id" value="" />
+
+</form>
+
+</blockquote>
+
+</div>
+
+</body>
+</html>

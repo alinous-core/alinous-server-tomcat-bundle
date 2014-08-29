@@ -1,0 +1,89 @@
+/*
+include("/admin/cms/template-top/edit/command.alns");
+*/
+
+include("/include/template_top.alns");
+include("/include/template_container.alns");
+include("/include/template_primitive.alns");
+
+include("/include/pagedirty.alns");
+
+function executeCommand($IN, $SESSION)
+{
+	if($IN.cmd == "edit.save"){
+		editSave($IN, $SESSION);
+		return "edit save";
+	}
+	else if($IN.cmd == "apply"){
+		apply($IN, $SESSION);
+	}	
+	
+	return 0;
+}
+
+function apply($IN, $SESSION)
+{
+	TopTmpl.sync($IN.currentTemplateId, "");
+	
+	BEGIN;
+	PageDirty.detectTop($IN.currentTemplateId, 0);
+	COMMIT;
+}
+
+function editSave($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE template_top
+	SET
+		div_id = $IN.div_id,
+		code_css = $IN.code_css,
+		code_html = $IN.code_html,
+		code_alinous = $IN.code_alinous
+	WHERE
+		template_top.template_top_id = $IN.currentTemplateId;
+	
+	// reset children
+	DELETE FROM template_top_children
+	WHERE
+		template_top_children.template_top_id = $IN.currentTemplateId;
+	
+	$size = Array.size(@IN.left_tmpls);
+	for($i = 0; $i < $size; $i++){
+		@vals = String.split($IN.left_tmpls[$i], ",");
+		if($vals[1] == "primitive"){
+			INSERT INTO template_top_children(
+				template_top_id,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$IN.currentTemplateId, // template_top_id,
+				$i, // position_order,
+				0, // inner_template_container_id,
+				$vals[0] // inner_template_primitive_id
+			);
+		}
+		else if($vals[1] == "container"){
+			INSERT INTO template_top_children(
+				template_top_id,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$IN.currentTemplateId, // template_top_id,
+				$i, // position_order,
+				$vals[0], // inner_template_container_id,
+				0 // inner_template_primitive_id
+			);
+		}
+	}
+	
+	COMMIT;
+	
+	TopTmpl.sync($IN.currentTemplateId, "preview");
+	
+	return 0;
+}

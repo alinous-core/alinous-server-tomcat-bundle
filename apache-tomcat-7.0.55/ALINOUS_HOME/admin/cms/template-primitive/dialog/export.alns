@@ -1,0 +1,16 @@
+
+
+SELECT * INTO tree_model
+FROM
+	tree_model
+WHERE
+	tree_model.tree_id = 'primitive' AND
+	tree_model.node_id = $IN.selectedNodeId;
+
+@elements = String.split($tree_model[0].page_path, "/");
+$idx = Array.size(@elements) - 1;
+
+$template_code = $elements[$idx];
+
+
+return 0;

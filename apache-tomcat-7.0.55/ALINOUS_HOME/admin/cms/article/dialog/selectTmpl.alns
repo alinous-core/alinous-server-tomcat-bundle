@@ -1,0 +1,7 @@
+
+SELECT * INTO template_top
+FROM
+	template_top
+ORDER BY template_top.template_top_code;
+
+return 0;

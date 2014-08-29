@@ -1,0 +1,135 @@
+
+include("/include/paging.alns");
+include("/include/heatmap.alns");
+include("/include/progress.alns");
+include("/include/heatmapscroll.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "regenerate"){
+	regenerate($IN, $SESSION);
+}
+else if($IN.cmd == "delete"){
+	deleteScrollHeatmap($IN, $SESSION);
+}
+
+$maxPagingNumberScroll = 20;
+$limit = 20;
+$pageNumber = $IN.page;
+
+
+@hm_scroll_hm = getRecords($IN, $SESSION, $limit);
+$totalRecords = getNumRecord($IN, $SESSION);
+
+$navi = Paging.getNavi($pageNumber, $limit, $totalRecords, 10);
+
+return 0;
+
+function deleteScrollHeatmap($IN, $SESSION)
+{
+	BEGIN;
+	
+	HeatmapScroll.deleteScroll($IN.hm_scroll_hm_id);
+	
+	COMMIT;
+}
+
+function regenerate($IN, $SESSION)
+{
+	// $IN.hm_scroll_hm_id
+	SELECT hm_scroll_hm.hm_scroll_hm_id, hm_scroll_hm.hm_start, hm_scroll_hm.hm_end,
+		archive_page.page_url
+	INTO
+		hm_scroll_hm
+	FROM
+		hm_scroll_hm LEFT JOIN archive_page
+		ON
+			hm_scroll_hm.archive_page_id = archive_page.archive_page_id
+	WHERE
+		hm_scroll_hm.hm_scroll_hm_id = $IN.hm_scroll_hm_id;
+	
+	$docSize = Heatmap.getDocumentSize($hm_scroll_hm[0].page_url);
+	$start = $hm_scroll_hm[0].hm_start;
+	$end = $hm_scroll_hm[0].hm_end;
+	
+	$numPages = Heatmap.countPageAccesses($hm_scroll_hm[0].page_url, $start, $end);
+	$jobMax = 20 + $docSize.height + $numPages + 50;
+	
+	$params.jobId = "scroll-heatmap-" + $hm_scroll_hm[0].hm_scroll_hm_id;
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	$params.hm_scroll_hm_id = $hm_scroll_hm[0].hm_scroll_hm_id;
+	$params.docSize = $docSize;
+	$params.page_url = $hm_scroll_hm[0].page_url;
+	$params.start = $start;
+	$params.end = $end;
+	
+	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
+	
+	return 0;
+}
+
+function backgroundJob($params)
+{
+	$IN = $params.IN;
+	$SESSION = $params.SESSION;
+	
+	try{
+		BEGIN;
+		HeatmapScroll.initRecords($params.hm_scroll_hm_id, $params.docSize.height, $params.docSize.width);
+		COMMIT;
+		
+		HeatmapScroll.makeScrollData($params.hm_scroll_hm_id, $params.page_url,
+						$params.start, $params.end,
+						$params.jobId, $SESSION);
+		
+		HeatmapScroll.generateImage($params.hm_scroll_hm_id, $params.docSize.width, $SESSION);
+	}finally{
+		ProgressJob.jobFinished($params.jobId);
+	}
+}
+
+
+function getRecords($IN, $SESSION, $limit)
+{
+	$offset = $limit * $IN.page;
+	SELECT * INTO hm_scroll_hm
+	FROM
+		hm_scroll_hm LEFT JOIN archive_page
+		ON
+			hm_scroll_hm.archive_page_id = archive_page.archive_page_id
+	ORDER BY hm_scroll_hm.hm_scroll_hm_id DESC
+	LIMIT $limit OFFSET $offset;
+	
+	$size = Array.size(@hm_scroll_hm);
+	for($i = 0; $i < $size; $i++){
+		$hm_scroll_hm[$i].hm_start_fmt = Timestamp.format($hm_scroll_hm[$i].hm_start, "MM'/'dd'/'yyyy HH:mm");
+		$hm_scroll_hm[$i].hm_end_fmt = Timestamp.format($hm_scroll_hm[$i].hm_end, "MM'/'dd'/'yyyy HH:mm");
+		
+		// progress bar
+		$jobId = "scroll-heatmap-" + $hm_scroll_hm[$i].hm_scroll_hm_id;
+		$hm_scroll_hm[$i].jobWorking = ProgressJob.jobWorking($jobId);
+	}
+	
+	return @hm_scroll_hm;
+}
+
+function getNumRecord($IN, $SESSION)
+{
+	SELECT count(*) AS cnt INTO hm_scroll_hm
+	FROM
+		hm_scroll_hm;
+	
+	if($hm_scroll_hm[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($hm_scroll_hm[0].cnt);
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+}

@@ -1,0 +1,208 @@
+<html>
+<head>
+<title>Primitive - Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<!-- script src="/jquery/jquery-migrate-1.0.0.js"></script -->
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/cms/template-primitive/jqcookiestate.js"></script>
+<script src="/admin/cms/template-primitive/jqtree.js"></script>
+
+<script src="/jquery/codemirror/lib/codemirror.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+<script src="/jquery/codemirror/mode/alinous/alinous.js"></script>
+<script src="/jquery/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="/jquery/codemirror/mode/css/css.js"></script>
+<script src="/jquery/codemirror/mode/xml/xml.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+
+<script src="/jquery/codemirror/addon/hint/show-hint.js"></script>
+
+<script src="/admin/cms/codemirror/alinoushint.js"></script>
+<link rel="stylesheet" href="/admin/cms/codemirror/alinoushint.css">
+
+<link rel="stylesheet" href="/jquery/codemirror/addon/hint/show-hint.css">
+
+
+<script src="/jquery/contextMenu/jquery.contextMenu.js"></script>
+<link rel="stylesheet" href="/jquery/contextMenu/jquery.contextMenu.css">
+
+<script src="/admin/cms/template-primitive/edit/savescrolleditor.js"></script>
+
+<script src="/admin/cms/debugger/debugger.js"></script>
+
+<link rel="stylesheet" href="/jquery/codemirror/lib/codemirror.css">
+
+<script type="text/javascript" charset="utf-8">
+<!--
+
+$(function() {
+	$("button").button();
+	
+	$('#left-menu-handle-tab').click( function() {
+    	 $("#left-menu-contents").animate({
+    	 	 width: 'toggle'
+    	 }, 400, function() {
+    	 	var marginWidth = this.clientWidth + 35;
+			    	 	
+    	 	$("#right-body").css("margin-left", marginWidth + "px");
+    	 	$("#lq_content_wrap").css("margin-left", marginWidth + "px");
+    	 });
+	});
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		modal: true,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+	initJqTree();
+});
+
+function firstCategory()
+{
+	var url = "/admin/cms/template-primitive/dialog/firstCategory.html";
+
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	
+	$( "#dialog" ).dialog( "open" );
+}
+-->
+</script>
+<style>
+
+  .CodeMirror { height: 680px; border: 1px solid #ddd; }
+  .CodeMirror-scroll { max-height: 680px; }
+  .CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+  .breakpoints {width: .8em;}
+
+#scroll-container {
+    height: 800px;
+    overflow-y: scroll;
+    overflow-x: none;
+    position: relative;
+}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Primitive Template Parts</h1>
+
+
+<div id="left-menu">
+	<div id="left-menu-contents">
+		<h2>Primitive Parts</h2>
+		<div alns:if="{BOOL($sizeCategory != 0)}">
+			<form name="partsFrm" action="index.html" method="POST">
+				<div id="scroll-container">
+					<div id="pageTree" data-url="/admin/cms/template-primitive/makejson.alns"
+						style="width:100%; padding: 0 0 0 12px; width: 328px;"></div>
+				</div>
+				
+				<input type="hidden" name="cmd" value="" />
+				
+				<input type="hidden" id="position" name="position" value="" />
+				<input type="hidden" id="nodeId" name="nodeId" value="" />
+				<input type="hidden" id="categoryNodeId" name="categoryNodeId" value="" />
+				
+				<input type="hidden" name="category_code" value="" />
+				<input type="hidden" name="category_name" value="" />
+				
+				<input type="hidden" name="template_primitive_code" value="" />
+				<input type="hidden" name="template_primitive_name" value="" />
+				<input type="hidden" name="is_dynamic" value="" />
+				<input type="hidden" name="is_paging" value="" />
+				
+				
+				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />
+			</form>
+
+		</div>
+		<div alns:if="{BOOL($sizeCategory == 0)}">
+			<form name="firstfrm" action="index.html" method="POST">
+			<center><button type="button" onclick="firstCategory()">Create First Tag</button></center>
+			<input type="hidden" name="cmd" value="" />
+			
+			<input type="hidden" name="category_code" value="" />
+			<input type="hidden" name="category_name" value="" />
+			
+			<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="" />
+			
+			
+			</form>
+		</div>
+	</div>
+	<div id="left-menu-handle">
+		<div id="left-menu-handle-tab">
+			<img src="/admin/cms/img/leftmenu.png" width="20" /><br />
+			<div id="left-menu-handle-tab-string">
+			M<br />
+			E<br />
+			N<br />
+			U<br />
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="lq_content_wrap">
+	<div id="right-body">
+		<div id="editor-area" alns:tagid="editor-area"
+			alns:inner="/admin/cms/template-primitive/default.html?selectedNodeId={$IN.selectedNodeId}"></div>
+	</div>
+</div>
+
+
+</div>
+
+</body>
+</html>

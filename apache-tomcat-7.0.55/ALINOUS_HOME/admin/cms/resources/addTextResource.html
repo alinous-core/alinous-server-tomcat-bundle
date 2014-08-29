@@ -1,0 +1,74 @@
+<html>
+<body>
+<script>
+<!--
+function addNewResource(form)
+{
+	if(form.resource_name.value == ""){
+		alert("Input resource name.");
+		return;
+	}
+
+
+	form.cmd.value = "upload";
+	
+	var fd = new FormData(form);
+	var url = "/admin/cms/resources/addTextResource.html";
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: afterUploadResource,
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+
+function afterUploadResource()
+{
+	document.frm.cmd.value = "";
+	document.frm.submit();
+}
+-->
+</script>
+
+<h3>Add Text Resource</h3>
+<form name="resourcefrm" action="/admin/cms/resources/addTextResource.html" method="POST" enctype="multipart/form-data">
+
+<table width="100%">
+	<tr>
+		<td width="120">
+			Text Name
+		</td>
+		<td>
+			<input type="text" name="resource_name" value="" style="width:100%;" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Text
+		</td>
+		<td>
+			<textarea name="resource_binary" style="width:100%;height:300px;"></textarea>
+		</td>
+	</tr>
+</table>
+
+<center>
+<button type="button" onclick="addNewResource(this.form);">Update Text</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="resource_owner_type" value="{$IN.resource_owner_type}" />
+<input type="hidden" name="resource_owner_id" value="{$IN.resource_owner_id}" />
+<input type="hidden" name="cmd" value="" />
+</form>
+
+
+</body>
+</html>

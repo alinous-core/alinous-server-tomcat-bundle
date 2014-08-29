@@ -1,0 +1,34 @@
+
+if($IN.cmd == "update"){
+	updateResource($IN, $SESSION);
+}
+
+$cms_resource = getResource($IN, $SESSION);
+
+return 0;
+
+function updateResource($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE cms_resource
+	SET
+		resource_binary = $IN.resource_binary
+	WHERE
+		cms_resource.cms_resource_id = $IN.cms_resource_id;
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getResource($IN, $SESSION)
+{
+	SELECT * INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.cms_resource_id = $IN.cms_resource_id;
+	
+	return $cms_resource[0];
+}

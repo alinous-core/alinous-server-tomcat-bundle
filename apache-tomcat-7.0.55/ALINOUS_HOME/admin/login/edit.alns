@@ -1,0 +1,46 @@
+
+if($IN.cmd == "back"){
+	redirect "/admin/login/index.html";
+}
+else if($IN.cmd == "update"){
+	updateUser($IN, $SESSION);
+	redirect "/admin/login/index.html";
+}
+
+
+return 0;
+
+function updateUser($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE auth_table
+	SET
+		passwords = $IN.passwords
+	WHERE
+		auth_table.users = $IN.users;
+	
+	COMMIT;
+}
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($inputName == "passwords"){
+		return validate_passwords($formName, $inputName, $value, $IN, $SESSION);
+	}
+		
+	return 0;
+}
+
+function validate_passwords($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($value == ""){
+		return "notnull";
+	}
+	
+	if($IN.passwords != $IN.passwords2){
+		return "notsame";
+	}
+	
+	return 0;
+}

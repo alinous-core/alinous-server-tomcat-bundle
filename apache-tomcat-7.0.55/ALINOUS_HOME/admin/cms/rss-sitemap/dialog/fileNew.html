@@ -1,0 +1,71 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("button").button();
+});
+
+function newFileCommit(form){
+	if(form.file_name.value == ""){
+		alert("Input the Feed Name.");
+		return;
+	}
+	
+	if(form.file_name.value.match(/[^./A-Za-z0-9_-]+/)){
+		alert("Please input Feed Name code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	form.cmd.value = "add";
+	
+	var url = "/admin/cms/rss-sitemap/dialog/fileNew.html";
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+-->
+</script>
+
+<form name="dlgfrm" action="rssNew.html" method="POST">
+<h3>New File</h3>
+
+<table>
+	<tr>
+		<td width="200">
+			<b>File Name</b>
+		</td>
+		<td width="260">
+			<input type="text" name="file_name" value="" maxlength="255" style="width:180px;" />
+		</td>
+		<td>
+			<button type="button" onclick="newFileCommit(this.form)">New File</button>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</td>
+	</tr>
+</table>
+
+<b>File Text</b>
+<textarea name="file_text" rows="16" style="width:100%;"></textarea>
+
+
+<br style="clear:both;" />
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="site" value="{$IN.site}" />
+</form>
+
+</body>
+</html>

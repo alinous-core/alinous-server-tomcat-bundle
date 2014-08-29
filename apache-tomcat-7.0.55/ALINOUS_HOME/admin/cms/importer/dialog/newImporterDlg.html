@@ -1,0 +1,55 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("button").button();
+});
+
+
+function submitNewForm(form)
+{
+	if(form.content_importer_name.value == ""){
+		alert("Input the Importer Name.");
+		return;
+	}
+	
+	if(form.content_importer_name.value.match(/[^./A-Za-z0-9_-]+/)){
+		alert("Please input Importer Name code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	
+	document.frm.content_importer_name.value = form.content_importer_name.value;
+	document.frm.cmd.value = "new";
+	document.frm.submit();	
+}
+
+-->
+</script>
+
+
+<form name="dlgfrm" action="index.html" method="POST">
+
+<h3>New Importer</h3>
+
+<table>
+	<tr>
+		<td>
+			Importer Name
+		</td>
+		<td>
+			<input type="text" name="content_importer_name" value="" style="width:200px;"/>
+		</td>
+	</tr>
+</table>
+
+<center>
+<button type="button" onclick="submitNewForm(this.form);">Create a new Importer</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="cmd" value="newImporter" />
+</form>
+
+</body>
+</html>

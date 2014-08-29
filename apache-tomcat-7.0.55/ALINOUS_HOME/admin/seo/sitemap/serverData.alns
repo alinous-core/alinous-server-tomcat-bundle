@@ -1,0 +1,90 @@
+
+$offset = $IN.iDisplayStart;
+$limit = $IN.iDisplayLength;
+
+// iSortCol_0;
+$ORDER[0] = "wmc_sitemap.sitemap_path";
+if($IN.iSortCol_0 == 0){
+	$ORDER[0] = "wmc_sitemap.sitemap_path";
+}
+else if($IN.iSortCol_0 == 1){
+	$ORDER[0] = "wmc_sitemap.last_robot_crawl";
+}
+else if($IN.iSortCol_0 == 2){
+	$ORDER[0] = "wmc_sitemap.occurrences";
+}
+else if($IN.iSortCol_0 == 3){
+	$ORDER[0] = "wmc_sitemap.internal_links";
+}
+$orderDirection = $IN.sSortDir_0;
+$ORDER[0].ORDER = $orderDirection;
+
+if($IN.sSearch != null && $IN.sSearch != ""){
+	$likeStr = "%" + $IN.sSearch + "%";
+}
+
+SELECT * INTO wmc_sitemap
+FROM
+	wmc_sitemap
+WHERE
+	wmc_sitemap.sitemap_path LIKE $likeStr
+ORDER BY @ORDER
+LIMIT $limit OFFSET $offset
+ADJUST_WHERE = true;
+
+SELECT count(*) as cnt INTO recordsCount
+FROM
+	wmc_sitemap
+WHERE
+	wmc_sitemap.sitemap_path LIKE $likeStr
+ADJUST_WHERE = true;
+
+$iTotalRecords = $recordsCount[0].cnt;
+$iTotalDisplayRecords = Array.size(@wmc_sitemap);
+
+$json = getJSon($IN.sEcho, $iTotalRecords, $iTotalDisplayRecords, @wmc_sitemap);
+
+return $json;
+
+function getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @records)
+{
+	$json = "{";
+	
+	$json = $json + '"sEcho":' +  $sEcho + ",\n";
+	$json = $json + '"iTotalRecords":' +  $iTotalRecords + ",\n";
+	$json = $json + '"iTotalDisplayRecords":' +  $iTotalRecords + ",\n";
+	
+	$json = $json + '"aaData": [' + "\n";
+	
+	$first = true;
+	$size = Array.size(@records);
+	for($i = 0; $i < $size; $i++){
+		if($first){
+			$first = false;
+		}else{
+			$json = $json + ',';
+		}
+		
+		$json = $json + '[' + "\n";
+		
+		$json = $json + '"' + $records[$i].sitemap_path + '",' +  "\n";
+		
+		if($records[$i].last_robot_crawl == "2000-01-01 00:00:00"){
+			$json = $json + '"Not Yet",' +  "\n";
+		}else{
+			$json = $json + '"' + $records[$i].last_robot_crawl + '",' +  "\n";
+		}
+		
+		$json = $json + '"' + $records[$i].occurrences + '",' +  "\n";
+		$json = $json + '"' + $records[$i].internal_links + '"' +  "\n";
+		
+		$json = $json + ']' + "\n";
+	}
+	
+	
+	$json = $json + ']' + "\n";
+	$json = $json + "}";
+	
+	return $json;
+}
+

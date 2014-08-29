@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Manage login users</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+
+<script type="text/javascript" charset="utf-8">
+<!--
+function backPage(form)
+{
+	form.cmd.value = "back";
+	form.submit();
+}
+function updateUser(form)
+{
+	form.cmd.value = "update";
+	form.submit();
+}
+
+$(function() {
+	$("button").button();
+});
+-->
+</script>
+
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+<h1><a href="/admin/">Document CMS</a> &gt; Manage users</h1>
+
+<blockquote>
+
+<h2>Edit User</h2>
+
+<form name="frm" action="edit.html" method="POST">
+<table>
+	<tr>
+		<td width="170">
+			User Id :
+		</td>
+		<td>
+			{$IN.users}
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Password :
+		</td>
+		<td>
+			<input type="password" name="passwords" value="" size="32"
+				alns:validate="custom" alns:validateif="{BOOL($IN.cmd == 'update')}"
+				maxlength="255" style="width:250px;" />
+			<span alns:msg="passwords" alns:form="frm" alns:validate="notnull">
+				<br /><font color="#FF0000">Input the password.</font>
+			</span>
+			<span alns:msg="passwords" alns:form="frm" alns:validate="notsame">
+				<br /><font color="#FF0000">Input the same password into the text input below.</font>
+			</span>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Password(confirm) :
+		</td>
+		<td>
+			<input type="password" name="passwords2" value="" size="32"
+				maxlength="255" style="width:250px;" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			
+		</td>
+		<td>
+			<button type="button" onclick="updateUser(this.form)">Update User</button>
+			<button type="button" onclick="backPage(this.form)">Cancel</button>
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="users" value="{$IN.users}" />
+<input type="hidden" name="cmd" value="" />
+</form>
+
+</blockquote>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,578 @@
+/*
+include("/include/treemodel.alns");
+*/
+
+
+$path = "/test";
+
+$idx = String.lastIndexOf($path, "/");
+
+return String.subString($path, 0, $idx);
+
+function TreeModel.getOpenListById($treeId, $nodeId)
+{
+	$idx = 0;
+	$node = TreeModel.getParentNode($treeId, $nodeId);
+	while($node.node_id != null){
+		$ids[$idx++] = $node;
+		$node = TreeModel.getParentNode($treeId, $node.node_id);
+	}
+	
+	$size = Array.size(@ids);
+	for($i = 0; $i < $size; $i++){
+		$ret[$i] = $ids[$size - $i - 1];
+	}
+	
+	
+	return @ret;
+}
+
+function TreeModel.removeNode($treeId, $nodeId, $resetParent, $callbackModule)
+{
+	$originalNode = TreeModel.getNode($treeId, $nodeId);
+	@originalChildren = TreeModel.getChildren($treeId, $nodeId);
+	
+	$parentNode = TreeModel.getParentNode($treeId, $nodeId);
+	
+	// handle children
+	$size = Array.size(@originalChildren);
+	for($i = 0; $i < $size; $i++){
+		TreeModel.removeNode($treeId, $originalChildren[$i].node_id, false, $callbackModule);
+	}
+	
+	// remove self
+	DELETE FROM tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	synchronized(1){
+		$httpParams.cmd = "delete";
+		$httpParams.treeId = $treeId;
+		$httpParams.nodeId = $nodeId;
+		Plugin.call($callbackModule, $httpParams);
+	}
+	
+	if(!$resetParent){
+		return 0;
+	}
+	
+	TreeModel.shiftUp($treeId, $parentNode.page_path, $originalNode.page_order);
+	
+	if($parentNode.page_path != null){
+		TreeModel.updateChildren($treeId, $parentNode.node_id);
+	}
+	
+}
+
+function TreeModel.moveAfter($treeId, $targetNodeId, $nodeId, $callbackModule)
+{
+	// Get curent and children nodes
+	$originalNode = TreeModel.getNode($treeId, $nodeId);
+	@originalChildren = TreeModel.getChildren($treeId, $nodeId);
+	$originalParent = TreeModel.getParentNode($treeId, $nodeId);
+	
+	$elderBrothNode = TreeModel.getNode($treeId, $targetNodeId);
+	$parentNode = TreeModel.getParentNode($treeId, $elderBrothNode.node_id);
+	
+	
+	if($parentNode.node_id == null){
+		$parentPagePath = "/";
+		$page_path = "/" + TreeModel.getLastPathSegment($originalNode.page_path);
+		$page_depth = $elderBrothNode.page_depth;
+		$page_order = $elderBrothNode.page_order + 1;
+	}else{
+		$parentPagePath = $parentNode.page_path;
+		$page_path = $parentPagePath + "/" + TreeModel.getLastPathSegment($originalNode.page_path);
+		$page_depth = $elderBrothNode.page_depth;
+		$page_order = $elderBrothNode.page_order + 1;
+	}
+	
+	$order = $elderBrothNode.page_order + 1;
+	
+	TreeModel.shiftDown($treeId, $parentPagePath, $order);
+	
+	// update self
+	UPDATE tree_model
+	SET
+		page_path = $page_path,
+		page_depth = $page_depth,
+		page_order = $page_order
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	$httpParams.cmd = "moved";
+	$httpParams.treeId = $treeId;
+	$httpParams.nodeId = $nodeId;
+	$httpParams.lastPagePath = $originalNode.page_path;
+	$httpParams.pagePath = $page_path;
+	$httpParams.pageDepth = $page_depth;
+	Plugin.call($callbackModule, $httpParams);
+	
+	// update parent
+	if($originalParent.node_id != null){
+		TreeModel.updateChildren($treeId, $originalParent.node_id);
+	}
+	if($parentNode.node_id != null){
+		TreeModel.updateChildren($treeId, $parentNode.node_id);
+	}
+	
+	// handle children
+	$size = Array.size(@originalChildren);
+	for($i = 0; $i < $size; $i++){
+		TreeModel.followParentMove($treeId, $originalChildren[$i].node_id, $page_path, $page_depth, $callbackModule);
+	}
+	
+	return 0;
+	
+}
+
+function TreeModel.moveInside($treeId, $targetNodeId, $nodeId, $callbackModule)
+{
+	// Get curent and children nodes
+	$originalNode = TreeModel.getNode($treeId, $nodeId);
+	$originapParent = TreeModel.getParentNode($treeId, $nodeId);
+	@originalChildren = TreeModel.getChildren($treeId, $nodeId);
+	
+	$parentNode = TreeModel.getNode($treeId, $targetNodeId);
+	
+	
+	TreeModel.shiftDown($treeId, $parentNode.page_path, 0);
+		
+	$page_path = $parentNode.page_path + "/" + TreeModel.getLastPathSegment($originalNode.page_path);
+	$page_depth = $parentNode.page_depth + 1;
+	$page_order = 1;
+	
+	// update self
+	UPDATE tree_model
+	SET
+		page_path = $page_path,
+		page_depth = $page_depth,
+		page_order = $page_order
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	$httpParams.cmd = "moved";
+	$httpParams.treeId = $treeId;
+	$httpParams.nodeId = $nodeId;
+	$httpParams.lastPagePath = $originalNode.page_path;
+	$httpParams.pagePath = $page_path;
+	$httpParams.pageDepth = $page_depth;
+	Plugin.call($callbackModule, $httpParams);
+	
+	// handle children
+	$size = Array.size(@originalChildren);
+	for($i = 0; $i < $size; $i++){
+		TreeModel.followParentMove($treeId, $originalChildren[$i].node_id, $page_path, $page_depth, $callbackModule);
+	}
+
+	// update parent
+	TreeModel.updateChildren($treeId, $targetNodeId);
+	if($originapParent.node_id != null){
+		TreeModel.updateChildren($treeId, $originapParent.node_id);
+	}
+	
+	return 0;
+}
+
+
+function TreeModel.moveBefore($treeId, $targetNodeId, $nodeId, $callbackModule)
+{
+	// Get curent and children nodes
+	$originalNode = TreeModel.getNode($treeId, $nodeId);
+	@originalChildren = TreeModel.getChildren($treeId, $nodeId);
+	$originalParent = TreeModel.getParentNode($treeId, $nodeId);
+	
+	$elderBrothNode = TreeModel.getNode($treeId, $targetNodeId);
+	$parentNode = TreeModel.getParentNode($treeId, $elderBrothNode.node_id);
+	
+	
+	if($parentNode.node_id == null){
+		$parentPagePath = "/";
+		$page_path = "/" + TreeModel.getLastPathSegment($originalNode.page_path);
+		$page_depth = $elderBrothNode.page_depth;
+		$page_order = $elderBrothNode.page_order;
+	}else{
+		$parentPagePath = $parentNode.page_path;
+		$page_path = $parentPagePath + "/" + TreeModel.getLastPathSegment($originalNode.page_path);
+		$page_depth = $elderBrothNode.page_depth;
+		$page_order = $elderBrothNode.page_order;
+	}
+	
+	$order = $elderBrothNode.page_order;
+	
+	TreeModel.shiftDown($treeId, $parentPagePath, $order);
+	
+	// update self
+	UPDATE tree_model
+	SET
+		page_path = $page_path,
+		page_depth = $page_depth,
+		page_order = $page_order
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	$httpParams.cmd = "moved";
+	$httpParams.treeId = $treeId;
+	$httpParams.nodeId = $nodeId;
+	$httpParams.lastPagePath = $originalNode.page_path;
+	$httpParams.pagePath = $page_path;
+	$httpParams.pageDepth = $page_depth;
+	Plugin.call($callbackModule, $httpParams);
+	
+	$size = Array.size(@originalChildren);
+	for($i = 0; $i < $size; $i++){
+		TreeModel.followParentMove($treeId, $originalChildren[$i].node_id, $page_path, $page_depth, $callbackModule);
+	}
+	
+	TreeModel.updateChildren($treeId, $nodeId);
+	if($originalParent.node_id != null){
+		TreeModel.updateChildren($treeId, $originalParent.node_id);
+	}
+	
+}
+
+function TreeModel.followParentMove($treeId, $childNodeId, $parentDstPath, $parentDstDepth, $callbackModule)
+{
+	$node = TreeModel.getNode($treeId, $childNodeId);
+
+	// Get child nodes before change self
+	@children = TreeModel.getChildren($treeId, $childNodeId);
+	
+	$page_path =  $parentDstPath + "/" + TreeModel.getLastPathSegment($node.page_path);
+	$page_depth = $parentDstDepth + 1;
+	
+	UPDATE tree_model
+	SET
+		page_path = $page_path,
+		page_depth = $page_depth
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $childNodeId;
+	
+	$httpParams.cmd = "moved";
+	$httpParams.treeId = $treeId;
+	$httpParams.nodeId = $childNodeId;
+	$httpParams.lastPagePath = $node.page_path;
+	$httpParams.pagePath = $page_path;
+	$httpParams.pageDepth = $page_depth;
+	Plugin.call($callbackModule, $httpParams);
+	
+	$size = Array.size(@children);
+	for($i = 0; $i < $size; $i++){
+		TreeModel.followParentMove($treeId, $children[$i].node_id, $page_path, $page_depth, $callbackModule);
+	}
+}
+
+function TreeModel.getLastPathSegment($page_path)
+{
+	$idx = String.lastIndexOf($page_path, "/");
+	$idx++;
+	$length = String.length($page_path);
+	
+	return String.subString($page_path, $idx, $length);
+}
+
+function TreeModel.removeLastPathSegment($page_path, $numRemove)
+{
+	@elements = String.split($page_path, "/");
+	
+	$ret = "";
+	$size = Array.size(@elements) - $numRemove;
+	for($i = 1; $i < $size; $i++){
+		if($elements[$i] == ""){
+			continue;
+		}
+		$ret = $ret + "/" + $elements[$i];
+	}
+	
+	return $ret;
+}
+
+function TreeModel.getChildren($treeId, $nodeId)
+{
+	$node = TreeModel.getNode($treeId, $nodeId);
+	
+	$pageDepth = $node.page_depth + 1;
+	$likeStr = $node.page_path + "/%";
+	
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_depth = $pageDepth AND
+		tree_model.page_path LIKE $likeStr
+	ORDER BY tree_model.page_order;
+	
+	return @tree_model;
+}
+
+
+/**
+Create a new node
+*/
+function TreeModel.newNode($treeId, $parentNodeId, $nodeCode, $pageOrder)
+{
+	$nodeId = TreeModel.newSerial($treeId);
+	
+	$parentNode = TreeModel.getNode($treeId, $parentNodeId);
+	if($parentNode.page_path == null){
+		$page_path = "/" + $nodeCode;
+		$page_depth = 1;
+	}else{
+		$page_path = $parentNode.page_path + "/" + $nodeCode;
+		$page_depth = $parentNode.page_depth + 1;
+	}	
+	
+	INSERT INTO tree_model(
+		tree_id,
+		node_id,
+		page_path,
+		page_depth,
+		page_order,
+		page_children
+	)
+	VALUES(
+		$treeId, // tree_id,
+		$nodeId, // node_id,
+		$page_path,
+		$page_depth,
+		$pageOrder, // page_order,
+		0 // page_children
+	);
+	
+	return $nodeId;
+}
+
+
+function TreeModel.insertAfter($treeId, $targetNodeId, $nodeCode)
+{
+	$targetNode = TreeModel.getNode($treeId, $targetNodeId);
+	
+	$parentNode = TreeModel.getParentNode($treeId, $targetNodeId);
+	
+	TreeModel.shiftDown($treeId, $parentNode.page_path, $targetNode.page_order + 1);
+	
+	$nodeId = TreeModel.newNode($treeId, $parentNode.node_id, $nodeCode, $targetNode.page_order + 1);
+	
+	if($parentNode.node_id != null){
+		TreeModel.updateChildren($treeId, $parentNode.node_id);
+	}
+	
+	return $nodeId;
+}
+
+function TreeModel.insertBefore($treeId, $targetNodeId, $nodeCode)
+{
+	$targetNode = TreeModel.getNode($treeId, $targetNodeId);
+	
+	$parentNode = TreeModel.getParentNode($treeId, $targetNodeId);
+	
+	TreeModel.shiftDown($treeId, $parentNode.page_path, $targetNode.page_order);
+	
+	$nodeId = TreeModel.newNode($treeId, $parentNode.node_id, $nodeCode, $targetNode.page_order);
+	
+	if($parentNode.node_id != null){
+		TreeModel.updateChildren($treeId, $parentNode.node_id);
+	}
+	
+	return $nodeId;
+}
+
+function TreeModel.insertInside($treeId, $targetNodeId, $nodeCode)
+{
+	$parentNode = TreeModel.getNode($treeId, $targetNodeId);
+	
+	TreeModel.shiftDown($treeId, $parentNode.page_path, 1);
+	
+	$nodeId = TreeModel.newNode($treeId, $parentNode.node_id, $nodeCode, 1);
+	
+	if($parentNode.node_id != null){
+		TreeModel.updateChildren($treeId, $parentNode.node_id);
+	}
+	
+	return $nodeId;
+}
+
+
+function TreeModel.updateChildren($treeId, $nodeId)
+{
+	$nodeObj = TreeModel.getNode($treeId, $nodeId);
+	if($nodeObj.tree_id == null){
+		return 0;
+	}
+	
+	$page_depth = $nodeObj.page_depth + 1;
+	$likeStr = $nodeObj.page_path + "/%";
+	
+	SELECT count(*) AS cnt INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_depth = $page_depth AND
+		tree_model.page_path LIKE $likeStr;
+	
+	if(Array.size(@tree_model) == 0){
+		$page_children = 0;
+	}else{
+		$page_children = Cast.toNumber($tree_model[0].cnt);
+	}
+	
+	UPDATE tree_model
+	SET
+		page_children = $page_children
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+}
+
+function TreeModel.getNode($treeId, $nodeId)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	return $tree_model[0];
+}
+
+function TreeModel.getNodeByPath($treeId, $page_path)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_path = $page_path;
+	
+	return $tree_model[0];
+}
+
+function TreeModel.shiftDown($treeId, $parentPagePath, $order)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_path = $parentPagePath;
+	
+	if($tree_model[0].page_depth == null){
+		$pageDepth = 1;
+		$likeStr = "/%";
+	}else{
+		$pageDepth = $tree_model[0].page_depth + 1;
+		$likeStr = $parentPagePath + "/%";
+	}
+	
+	UPDATE tree_model
+	SET
+		page_order = page_order + 1
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_depth = $pageDepth AND
+		tree_model.page_path LIKE $likeStr AND
+		tree_model.page_order >= $order;
+}
+
+function TreeModel.shiftUp($treeId, $parentPagePath, $order)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_path = $parentPagePath;
+	
+	if($tree_model[0].page_depth == null){
+		$pageDepth = 1;
+		$likeStr = "/%";
+	}else{
+		$pageDepth = $tree_model[0].page_depth + 1;
+		$likeStr = $parentPagePath + "/%";
+	}
+	
+	UPDATE tree_model
+	SET
+		page_order = page_order - 1
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_depth = $pageDepth AND
+		tree_model.page_path LIKE $likeStr AND
+		tree_model.page_order >= $order;
+}
+
+
+function TreeModel.getParentNode($treeId, $nodeId)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.node_id = $nodeId;
+	
+	if(Array.size(@tree_model) == 0){
+		return null;
+	}
+	
+	$path = $tree_model[0].page_path;
+	
+	$idx = String.lastIndexOf($path, "/");
+	$page_path = String.subString($path, 0, $idx);
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = $treeId AND
+		tree_model.page_path = $page_path;
+	
+	
+	return $tree_model[0];
+}
+
+
+function TreeModel.newSerial($treeId)
+{
+	synchronized($treeId)
+	{
+		SELECT * INTO tree_model_serial
+		FROM
+			tree_model_serial
+		WHERE
+			tree_model_serial.tree_id = $treeId;
+		
+		if(Array.size(@tree_model_serial) == 0){
+			INSERT INTO tree_model_serial(
+				tree_id,
+				serial_no
+			)
+			VALUES(
+				$treeId, // tree_id,
+				1 // serial_no
+			);
+			
+			return 1;
+		}
+		else{
+			$retSerial = $tree_model_serial[0].serial_no + 1;
+			
+			UPDATE tree_model_serial
+			SET
+				serial_no = $retSerial
+			WHERE
+				tree_model_serial.tree_id = $treeId;
+			
+			return $retSerial;
+		}
+	}
+}

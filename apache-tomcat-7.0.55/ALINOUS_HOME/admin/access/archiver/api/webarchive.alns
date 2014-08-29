@@ -1,0 +1,245 @@
+/*
+include("/admin/access/archiver/api/webarchive.alns");
+*/
+
+include("/include/serialutils.alns");
+
+
+function WebArchive.getArchivedId($url, $access_tm)
+{
+	SELECT archive_page_id, page_url INTO archive_page
+	FROM
+		archive_page
+	WHERE
+		archive_page.page_url = $url and
+		archive_page.archived_time < $access_tm
+	ORDER BY archive_page.archived_time DESC
+	LIMIt 1;
+	
+	if(Array.size(@archive_page) > 0){
+		return $archive_page[0].archive_page_id;
+	}
+	
+	SELECT archive_page_id, page_url INTO archive_page
+	FROM
+		archive_page
+	WHERE
+		archive_page.page_url = $url
+	ORDER BY archive_page.archived_time ASC
+	LIMIt 1;
+	
+	if(Array.size(@archive_page) > 0){
+		return $archive_page[0].archive_page_id;
+	}
+	
+	return null;	
+}
+
+function WebArchive.archivePage($url, $postParams, $encode, $SESSION)
+{
+	$archive_page_id = Common.newSerial("archive_page");
+	
+	
+	$replaceBase = "/admin/access/archiver/api/dl.alns?ar=" + $archive_page_id + "&item=";
+	$serial = 10;	
+	
+	// add through(no replace and archive)
+	$idx = Array.size(@through);
+	$through[$idx] = "http://schema.org";
+	
+	// ignore
+	$idx = Array.size(@ignore);
+	$ignore[$idx] = "api/log.js";
+	
+	$html = Http.access($url, "GET", $postParams, $encode, null, null);
+	$res = AlinousArchiver.convertHtml($html, $url, $replaceBase, $serial, @through, @ignore);
+	
+	BEGIN;
+	
+	INSERT INTO archive_page(
+		archive_page_id,
+		page_url,
+		page_html,
+		archived_time
+	)
+	VALUES(
+		$archive_page_id,
+		$url, // page_url,
+		$res.html, // page_html,
+		now() // archived_time
+	);
+	
+	COMMIT;
+	
+	$serial = $res.nextSerial;	
+	
+	$size = Array.size(@res.replaced);
+	for($i = 0; $i < $size; $i++){
+		$var = $res.replaced[$i];
+		
+		if($var.tag == "script" ){
+			$serial = WebArchive.archiveScript($archive_page_id, $var.originalUrl, $var.replacedSerial, $serial, $encode);
+		}else if($var.tag == "img" ){
+			$serial = WebArchive.archiveImage($archive_page_id, $var.originalUrl, $var.replacedSerial, $serial, $encode, $SESSION);
+		}else{
+			$serial = WebArchive.archiveTextItem($archive_page_id, $var.originalUrl, $replaceBase, $var.replacedSerial
+						, $serial, $encode, $SESSION);
+		}
+	}
+		
+	return 0;
+}
+
+function WebArchive.archiveScript($archive_page_id, $originalUrl, $replaceSerial, $serial, $encode)
+{
+	$html = Http.access($originalUrl, "GET", $postParams, $encode, null, null);
+	
+	// Content-Type : application/x-javascript RESPONSE HTTP/1.1 200 OK
+	if($html != null && String.indexOf($html.RESPONSE, "200", 0) > 0){
+		$contentType = Variable.get("html.Content-Type");
+		
+		BEGIN;
+		
+		INSERT INTO archive_page_items(
+			archive_page_id,
+			archive_serial,
+			archive_type,
+			content
+		)VALUES(
+			$archive_page_id,
+			$replaceSerial, // archive_serial,
+			$contentType, // archive_type,
+			$html // content
+		);
+		
+		COMMIT;
+	}
+	
+	
+	return $serial;
+}
+
+function WebArchive.archiveImage($archive_page_id, $originalUrl, $replaceSerial ,$serial, $encode, $SESSION)
+{
+	$idx = String.lastIndexOf($originalUrl, ".");
+	$ext = ".png";
+	if($idx > 0){
+		$ext = String.subString($originalUrl, $idx, String.length($originalUrl));
+	}
+	$storePath = "/tmp/img" + $SESSION + $ext;
+	
+	Http.fetch($originalUrl, "GET", $postParams, $storePath, "Alinous-Core Http", null);
+	
+	$encodedImage = Base64.encodeFromFile($storePath);
+	File.remove($storePath);
+	
+	if($encodedImage != null && $encodedImage != ""){
+		$contentType = WebArchive.getContentTypeFromExtention($ext);
+		
+		BEGIN;
+		
+		INSERT INTO archive_page_items(
+			archive_page_id,
+			archive_serial,
+			archive_type,
+			content
+		)VALUES(
+			$archive_page_id,
+			$replaceSerial, // archive_serial,
+			$contentType, // archive_type,
+			$encodedImage // content
+		);
+		
+		COMMIT;
+	}
+	
+	return $serial;
+}
+
+function WebArchive.getContentTypeFromExtention($ext)
+{
+	$loExt = String.toLowerCase($ext);
+	if(String.endsWith($loExt, "jpeg") || String.endsWith($loExt, "jpg")){
+		return "image/jpeg";
+	}else if(String.endsWith($loExt, "png")){
+		return "image/png";
+	}else if(String.endsWith($loExt, "gif")){
+		return "image/gif";
+	}else if(String.endsWith($loExt, "bmp")){
+		return "image/bmp";
+	}
+	
+	return "image/png";
+}
+
+function WebArchive.archiveTextItem($archive_page_id, $originalUrl, $replaceBase, $replaceSerial,
+						$serial, $encode, $SESSION)
+{
+	$html = Http.access($originalUrl, "GET", $postParams, $encode, null, null);
+	
+	if($html != null && String.indexOf($html.RESPONSE, "200", 0) > 0){
+		$contentType = Variable.get("html.Content-Type");
+		
+		if(String.indexOf($contentType, "css", 0) > 0){
+			$serial = WebArchive.archiveCss($archive_page_id, $originalUrl, $replaceBase, $html, $replaceSerial,
+							$serial, $encode, $SESSION);
+			return $serial;
+		}
+		
+		BEGIN;
+		
+		INSERT INTO archive_page_items(
+			archive_page_id,
+			archive_serial,
+			archive_type,
+			content
+		)VALUES(
+			$archive_page_id,
+			$replaceSerial, // archive_serial,
+			$contentType, // archive_type,
+			$html // content
+		);
+		
+		COMMIT;
+	}
+	
+	return $serial;
+}
+
+function WebArchive.archiveCss($archive_page_id, $originalUrl, $replaceBase, $cssText, $replaceSerial,
+				 $serial, $encode, $SESSION)
+{
+	$css = AlinousArchiver.convertCss($cssText, $originalUrl, $replaceBase, $serial);
+	
+	BEGIN;
+	
+	INSERT INTO archive_page_items(
+		archive_page_id,
+		archive_serial,
+		archive_type,
+		content
+	)VALUES(
+		$archive_page_id,
+		$replaceSerial, // archive_serial,
+		'text/css', // archive_type,
+		$css.css // content
+	);
+	
+	COMMIT;
+	
+	$serial = $css.nextSerial;
+	
+	$size = Array.size(@css.results);
+	for($i = 0; $i < $size; $i++){
+		if(String.indexOf($css.results[$i].originalUrl, "css", 0) > 0){
+		
+		}else{
+			$serial = WebArchive.archiveImage($archive_page_id, $css.results[$i].originalUrl,
+				$css.results[$i].serial ,$serial, $encode, $SESSION);
+		}
+	}
+	
+	return $serial;
+}
+
+

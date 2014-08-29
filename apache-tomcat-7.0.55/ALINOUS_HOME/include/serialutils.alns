@@ -1,0 +1,73 @@
+
+/*
+include("/include/serialutils.alns");
+*/
+
+
+function Common.newSerial($serial_code)
+{
+	$sync = parallel(1){
+		BEGIN;
+
+		SELECT * INTO serial FROM serial WHERE serial_id = $serial_code
+		FOR UPDATE;
+		
+		if(Array.size(@serial) == 0){
+			INSERT INTO serial(
+					serial_id, number
+				)
+				VALUES(
+					$serial_code, 10
+				);
+			
+			// INSERT 
+			SELECT * INTO serial FROM serial WHERE serial_id = $serial_code
+			FOR UPDATE;
+			$new_id = 10;
+		}else{
+			$new_id = $serial[0].number;
+		}
+		
+		$new_sel_id = $new_id + 1;
+		
+		UPDATE serial SET number = $new_sel_id WHERE serial_id = $serial_code;
+	
+		COMMIT;
+	};
+	
+	Parallel.join($sync);
+
+	return $new_id;
+}
+
+function cyclicSerial($serial_code, $max_value)
+{
+	synchronized{
+		SELECT * INTO serial FROM serial WHERE serial_id = $serial_code
+		FOR UPDATE;
+		
+		if(Array.size(@serial) == 0){
+			INSERT INTO serial(
+					serial_id, number
+				)
+				VALUES(
+					$serial_code, 1
+				);
+			
+			$new_id = 1;
+		}else{
+			$new_id = $serial[0].number;
+		}
+		
+		$new_sel_id = $new_id + 1;
+		
+		if($new_sel_id >= $max_value){
+			$new_sel_id = 1;
+		}
+		
+		UPDATE serial SET number = $new_sel_id WHERE serial_id = $serial_code;
+	}
+	
+	return $new_id;
+}
+

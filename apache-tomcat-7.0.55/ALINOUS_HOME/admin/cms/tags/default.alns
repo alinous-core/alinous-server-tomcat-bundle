@@ -1,0 +1,8 @@
+
+if($IN.selectedNodeId != null && $IN.selectedNodeId != 0){
+	return "/admin/cms/tags/edit/index.html?selectedNodeId=" + $IN.selectedNodeId
+			+ "&site=" + $IN.site;
+}
+
+return 0;
+

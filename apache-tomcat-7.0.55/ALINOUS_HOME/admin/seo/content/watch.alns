@@ -1,0 +1,6 @@
+
+include("/include/progress.alns");
+
+$progress = ProgressJob.getParsentage($IN.job_id);
+
+return $progress;

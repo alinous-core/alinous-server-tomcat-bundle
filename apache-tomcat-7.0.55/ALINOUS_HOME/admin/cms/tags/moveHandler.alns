@@ -1,0 +1,29 @@
+
+include("/include/treemodel.alns");
+
+if($IN.cmd == "move"){
+	moveNodes($IN, $SESSION);	
+}
+
+
+return 0;
+
+
+function moveNodes($IN, $SESSION)
+{
+	$callback = "/admin/cms/tags/moveCallback.alns";
+	
+	BEGIN;
+	
+	if($IN.position == "inside"){
+		TreeModel.moveInside($IN.treeId, $IN.targetNodeId, $IN.movedNodeId, $callback);
+	}
+	else if($IN.position == "after"){
+		TreeModel.moveAfter($IN.treeId, $IN.targetNodeId, $IN.movedNodeId, $callback);
+	}
+	else if($IN.position == "before"){
+		TreeModel.moveBefore($IN.treeId, $IN.targetNodeId, $IN.movedNodeId, $callback);
+	}
+	
+	COMMIT;
+}

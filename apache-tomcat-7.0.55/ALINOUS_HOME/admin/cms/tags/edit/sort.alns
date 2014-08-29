@@ -1,0 +1,25 @@
+
+
+SELECT * INTO cms_tag_page
+FROM
+	cms_tag_page
+WHERE
+	cms_tag_page.cms_page_id IN(@IN.result) AND
+	cms_tag_page.cms_tag_id = $IN.cms_tag_id
+ORDER BY cms_tag_page.page_order DESC;
+
+BEGIN;
+
+$size = Array.size(@IN.result);
+for($i = 0; $i < $size; $i++){
+	UPDATE cms_tag_page
+	SET
+		page_order = $cms_tag_page[$i].page_order
+	WHERE
+		cms_tag_page.cms_tag_id = $IN.cms_tag_id AND
+		cms_tag_page.cms_page_id = $IN.result[$i];
+}
+
+COMMIT;
+
+return 0;

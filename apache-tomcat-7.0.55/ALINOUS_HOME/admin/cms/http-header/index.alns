@@ -1,0 +1,43 @@
+
+include("/include/sitesetting.alns");
+include("/include/httpheader.alns");
+
+if($IN.cmd == "delete"){
+	deleteHeader($IN, $SESSION);
+}
+
+
+
+@sites = SiteSetting.getSiteFromPages();
+initParams($IN, $SESSION, @sites);
+
+Redirects.sync($IN.site);
+
+
+SELECT * INTO http_path_match
+FROM
+	http_path_match
+WHERE
+	http_path_match.site_path = $IN.site
+ORDER BY http_path_match.match_path;
+
+return 0;
+
+function deleteHeader($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM http_path_match
+	WHERE
+		http_path_match.site_path = $IN.site AND
+		http_path_match.match_path = $IN.arg_match_path;
+	
+	COMMIT;
+}
+
+function initParams($IN, $SESSION, @sites)
+{
+	if($IN.site == null){
+		$IN.site = $sites[0];
+	}
+}

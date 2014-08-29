@@ -1,0 +1,71 @@
+
+include("/include/treemodel.alns");
+
+
+// $IN.nodeId
+
+$thisNode = TreeModel.getNode("primitive", $IN.nodeId);
+
+if($thisNode.page_depth == 1){
+	// is category
+	$categoryNodeId = $thisNode.node_id;
+	$deletable = templateDeletable($thisNode.node_id);
+	$isCategory = true;
+}else{
+	$cat = TreeModel.getParentNode("primitive", $IN.nodeId);
+	$categoryNodeId = $cat.node_id;
+	$deletable = primitiveDeletable($thisNode.node_id);
+	$isCategory = false;
+}
+
+
+return 0;
+
+function primitiveDeletable($node_id)
+{
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $node_id;
+	
+	SELECT * INTO template_container_children
+	FROM
+		template_container_children
+	WHERE
+		template_container_children.inner_template_primitive_id = $template_primitive[0].template_primitive_id;
+	
+	if(Array.size(@template_container_children) > 0){
+		return false;
+	}
+	
+	SELECT * INTO template_top_children
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.inner_template_primitive_id = $template_primitive[0].template_primitive_id;
+	
+	if(Array.size(@template_top_children) > 0){
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+	If Category
+*/
+function templateDeletable($node_id)
+{
+	@nodes = TreeModel.getChildren("primitive", $node_id);
+	$size = Array.size(@nodes);
+	for($i = 0; $i < $size; $i++){
+		$bl = primitiveDeletable($nodes[$i].node_id);
+		if(!$bl){
+			return false;
+		}
+	}
+	
+	
+	return true;
+}

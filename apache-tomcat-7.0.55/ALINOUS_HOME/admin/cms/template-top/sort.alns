@@ -1,0 +1,26 @@
+
+
+for($i = 0; $i < Array.size(@IN.result); $i++){
+	$ids[$i] = String.subString($IN.result[$i], 5, String.length($IN.result[$i]));
+}
+
+SELECT * INTO template_top
+FROm
+	template_top
+WHERE
+	template_top.template_top_id IN (@ids)
+ORDER BY template_top.position_order;
+
+BEGIN;
+
+for($i = 0; $i < Array.size(@IN.result); $i++){
+	UPDATE template_top
+	SET
+		position_order = $template_top[$i].position_order
+	WHERE
+		template_top.template_top_id = $ids[$i];
+}
+
+COMMIT;
+
+return 0;

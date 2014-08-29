@@ -1,0 +1,157 @@
+
+function WmcContentKeywords.ddl()
+{
+	/*
+	Sitemap
+	*/
+	CREATE TABLE wmc_sitemap(
+		sitemap_host varchar(255),
+		sitemap_path varchar(255),
+		
+		last_robot_crawl timestamp,
+		occurrences int not null default 0,
+		internal_links int not null default 0,
+		
+		PRIMARY KEY(sitemap_host, sitemap_path)
+	);
+	
+	/*
+	Content Keywords
+	*/
+	CREATE TABLE wmc_content_keywords(
+		wmc_content_keywords_id int,
+		
+		wmc_content_keywords_file_name varchar(255) not null default '',
+		wmc_content_keywords_timestamp timestamp not null default now(),
+		
+		keyword varchar(255) not null default '',
+		occurrences int not null default 1,
+		variants_encountered varchar(255) not null default '',
+		
+		PRIMARY KEY(wmc_content_keywords_id)
+	);
+	
+	CREATE TABLE wmc_content_keywords_url(
+		wmc_content_keywords_id int,
+		hostname varchar(255) not null default '',
+		path varchar(255) not null default '',
+		
+		PRIMARY KEY(wmc_content_keywords_id, hostname, path)
+	);
+	
+	
+	CREATE TABLE wmc_robot_access(
+		remote_host varchar(255) not null default '',
+		access_time varchar(255) not null default '',
+		
+		robot_type varchar(255) not null default 'Googlebot',
+		
+		user_name varchar(255) not null default '',
+		path varchar(255) not null default '',
+		protocol varchar(255) not null default '',
+		method varchar(255) not null default '',
+		bytes int not null default 0,
+		referer text not null default '',
+		response_status varchar(255) not null default '',
+		user_agent varchar(255) not null default '',
+		
+		PRIMARY KEY(remote_host, access_time, path)
+	);
+	
+	CREATE TABLE wmc_robot_accesslog_setting(
+		item_used int not null default 0,
+		item_type varchar(255) not null default '',
+		item_type_desc varchar(255) not null default '',
+				
+		item_order int not null default 0,
+		
+		item_essential int not null default 0,
+		
+		PRIMARY KEY(item_used, item_type)
+	);
+	
+	WmcContentKeywords.makeItems();
+	
+	
+	CREATE TABLE wmc_robot_ip_domain(
+		ip_addr varchar(255) not null default '',
+		resolved_name varchar(255) not null default '',
+		
+		resolved_time timestamp not null default now(),
+		
+		PRIMARY KEY(ip_addr)
+	);
+	
+	// internal links
+	CREATE TABLE wmil_internal_link_file(
+		internal_link_file_id int,
+		internal_link_file_name varchar(255) not null default '',
+		internal_link_timestamp timestamp not null default now(),
+		internal_link_host varchar(255) not null default '',
+		
+		PRIMARY KEY(internal_link_file_id)
+	);
+	
+	CREATE TABLE wmil_internal_link(
+		internal_link_file_id int,
+		target_page varchar(255) not null default '',
+		num_links int not null default 0,
+		
+		PRIMARY KEY(internal_link_file_id, target_page)
+	);
+	
+	// user access
+	CREATE TABLE wmc_user_access(
+		remote_host varchar(255) not null default '',
+		access_time varchar(255) not null default '',
+		
+		path varchar(255) not null default '',
+		protocol varchar(255) not null default '',
+		method varchar(255) not null default '',
+		bytes int not null default 0,
+		referer text not null default '',
+		response_status varchar(255) not null default '',
+		user_agent varchar(255) not null default '',
+		
+		PRIMARY KEY(remote_host, access_time, path)
+	);
+}
+
+function WmcContentKeywords.makeItems()
+{
+	$idx = 0;
+	WmcContentKeywords.insertItems("remote-host", "%h", 1, $idx++, 1);
+	WmcContentKeywords.insertItems("local-client-id", "%l", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("user-name", "%u", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("time", "%t", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("request-first-line", "%r", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("status", "%s", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("bytes", "%b", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("referer", "%{Referer}i", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("user-agent", "%{User-Agent}i", 1, $idx++, 0);
+	
+	$idx = 0;
+	WmcContentKeywords.insertItems("apache-Ip", "%A", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("bytes-with-header", "%B", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("requested-file", "%f", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("request_protocol", "%H", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("method", "%m", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("query-string", "%q", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("status-last", "%>S", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("time-spent", "%T", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("url-path", "%u", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("virtual-host", "%v", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("virtual-host-canonical", "%V", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("connection-statsus", "%X", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-1", "ignore1", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-2", "ignore2", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-3", "ignore3", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-4", "ignore4", 0, $idx++, 0);
+}
+
+function WmcContentKeywords.insertItems($item_type, $item_type_desc, $item_used, $item_order, $item_essential)
+{
+	INSERT INTO wmc_robot_accesslog_setting(item_type, item_type_desc, item_used, item_order, item_essential)
+	VALUES($item_type, $item_type_desc, $item_used, $item_order, $item_essential);
+}
+

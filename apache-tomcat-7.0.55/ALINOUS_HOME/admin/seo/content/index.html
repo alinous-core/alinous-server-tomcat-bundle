@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Content Keywords of the Web Master tools</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<style type="text/css" title="currentStyle">
+	@import "/jquery/datatables/media/css/demo_page.css";
+	@import "/jquery/datatables/media/css/demo_table.css";
+</style>
+
+<script type="text/javascript" language="javascript" src="/jquery/datatables/media/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf-8">
+<!--
+$(document).ready(function() {
+	var oTable = $('#sitecontent').dataTable({
+		"iDisplayLength": 25,
+		"aaSorting": [[1,'asc']],
+		"aoColumns": [
+			null,
+			{ "asSorting": [ "desc", "asc", "asc" ] },
+			null,
+			{ "bSortable": false },
+		],
+		"bProcessing": false,
+		"bServerSide": true,
+		"sAjaxSource": "/admin/seo/content/serverData.alns",
+		"fnServerParams": function ( aoData ) {
+			var wmc_content_keywords_file_name = 
+				$("#ajx_wmc_content_keywords_file_name").val();
+			aoData.push( { "name": "wmc_content_keywords_file_name",
+					"value": wmc_content_keywords_file_name } );
+		}
+	});
+	
+	$.ajax({
+		url: "/admin/seo/content/kwfiles.alns",
+		dataType: "json",
+		success: function( data ) {
+			$( "#wmc_content_keywords_file_name" ).autocomplete({
+				source: data,
+				minLength: 0
+			});
+		}
+	});
+});
+-->
+</script>
+
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+<h2>Analyze Content Keywords of the Web Master tools</h2>
+
+<form name="frm" action="index.html" method="POST">
+
+<input type="hidden" name="cmd" value="" />
+
+<input type="text" name="wmc_content_keywords_file_name" id="wmc_content_keywords_file_name"
+	value="{$IN.wmc_content_keywords_file_name}" maxlength="255"
+	style="width:420px;" alns:validate="notnull,custom"/>
+<button type="button" onclick="ImportKeywords.selectCsv(this.form)">Go</button>
+<button type="button" onclick="ImportKeywords.back2Top(this.form)">Back</button>
+<button type="button" onclick="ImportKeywords.importCsv(this.form)">Import Content Keywords Csv</button>
+<span alns:validate="notnull" alns:msg="wmc_content_keywords_file_name" alns:form="frm">
+<br /><font color="red">please input file name</font>
+</span>
+<span alns:validate="wrongformat" alns:msg="wmc_content_keywords_file_name" alns:form="frm">
+<br /><font color="red">format of the file is wrong</font>
+</span>
+<span alns:validate="notexists" alns:msg="wmc_content_keywords_file_name" alns:form="frm">
+<br /><font color="red">The file does not exists</font>
+</span>
+
+<br />
+<b>Statistics</b>
+Totalkeywords : {$statistic.totalKeywords}
+Totalkeywords Occur: {$statistic.totalKeywords_occur}
+
+<div id="contentkeywords" style="width:100%;">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="sitecontent" width="100%">
+	<thead>
+		<tr>
+			<th>Host</th>
+			<th width="580">Path</th>
+			<th width="80">Count</th>
+			<th>Keywords</th>
+		</tr>
+	</thead>
+	<tbody>
+		
+	</tbody>
+	<tfoot>
+		<tr>
+			<th>Host</th>
+			<th>Path</th>
+			<th>Count</th>
+			<th>Keywords</th>
+		</tr>
+	</tfoot>
+</table>
+</div>
+
+<input type="hidden" name="ajx_wmc_content_keywords_file_name"
+	id="ajx_wmc_content_keywords_file_name"
+	value="{$IN.wmc_content_keywords_file_name}" />
+</form>
+
+
+<p>
+<a href="/">Back</a>
+</p>
+
+<script type="text/javascript">
+<!--
+var ImportKeywords = new Object();
+
+ImportKeywords.selectCsv = function (form)
+{
+	form.submit();
+}
+
+ImportKeywords.back2Top = function (form)
+{
+	form.cmd.value = "back";
+	form.submit();
+}
+
+ImportKeywords.importCsv = function (form)
+{
+	param = "?";	
+	myWin = window.open("importpopup.html" + param,
+	                       "csvimport",
+	                       "toolbar=no,location=no,left=150,top=100,status=no,menubar=no,scrollbars=yes,width=800,height=600");
+	
+	myWin.focus();
+}
+-->
+</script>
+
+</div>
+
+</body>
+</html>

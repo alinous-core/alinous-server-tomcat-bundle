@@ -1,0 +1,316 @@
+<html>
+<body>
+<style>
+#template { float:left; width: 700px; margin:1em 10px 0 0; }
+#template h1 { padding: 0; margin: 0; font-size: 14px; width: 698px; }
+#template li { list-style:none}
+#contents1 { float:left; display:block; width: 700px; margin: 0; padding 0;border 0;}
+
+
+#items h1 { padding: .2em; margin: 0; font-size: 14px;}
+#items h2 { padding: 0; margin: 0; font-size: 18px; width:298px;}
+#items h2 a { padding: 0; margin: 0 0 0 28px; width:auto;}
+#items { width: 300px; float: left; margin-top: 1em; }
+#items { width: 300px; float: left; margin-top: 1em; }
+#items ul { margin: 0; padding: 0; }
+
+.ui-widget-content ol {margin: 0; padding: 0;}
+.placeholder { padding: 15px 0 0 10px;  height: 50px;}
+</style>
+<style>
+  .CodeMirror { height: 680px; border: 1px solid #ddd; }
+  .CodeMirror-scroll { max-height: 680px; }
+  .CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+  .breakpoints {width: .8em;}
+</style>
+<script>
+<!--
+$(function() {
+	$( "#tabs" ).tabs({
+		activate: function( event, ui ) {
+			var index = ui.newPanel.attr("order");
+			$.cookie("top-edit-tab", index , {expires: 7});
+			
+			if(index == 0){
+				
+			}
+			else if(index == 1){
+				editorCss.refresh();
+			}
+
+			else if(index == 3){
+				editorHtml.refresh();
+			}
+			else if(index == 4){
+				editorJavascript.refresh();
+			}
+			else if(index == 5){
+				editorAlinous.refresh();
+			}
+		}
+	});
+	
+	var editorCss = CodeMirror.fromTextArea(document.getElementById("code_css"),
+	{
+		mode: "css",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	var editorAlinous = CodeMirror.fromTextArea(document.getElementById("code_alinous"),
+	{
+		mode: "alinous",
+		lineNumbers: true,
+		extraKeys: {"Ctrl-Space": "autocomplete"},
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorAlinous.on("gutterClick", function(cm, n) {
+	  var info = cm.lineInfo(n);
+	  cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ?
+	  		removeMarker(n, document.frm.modulePath.value) : makeMarker(n, document.frm.modulePath.value));
+	});
+	editorAlinous.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	initBreakpoints(editorAlinous, document.frm.modulePath.value);
+	
+	var editorHtml = CodeMirror.fromTextArea(document.getElementById("code_html"),
+	{
+		mode: "htmlmixed",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	var editorJavascript = CodeMirror.fromTextArea(document.getElementById("code_js"),
+	{
+		mode: "javascript",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+
+	
+	var activeEditTabIdx = $.cookie("top-edit-tab");
+	if(activeEditTabIdx){
+		$("#tabs").tabs('option', 'active', parseInt(activeEditTabIdx));
+		
+		var index = parseInt(activeEditTabIdx);
+		if(index == 0){
+			
+		}
+		else if(index == 1){
+			editorCss.refresh();
+		}
+		else if(index == 3){
+			editorHtml.refresh();
+		}
+		else if(index == 4){
+			editorJavascript.refresh();
+		}
+		else if(index == 5){
+			editorAlinous.refresh();
+		}
+	}
+	
+	$(".rundebug").click(function (){
+		if(document.frm.dirty.value == 1){
+			alert("Save before debugging by the button below.");
+			return;
+		}
+	
+		var cookieName = "param_top_" + document.frm.currentTemplateId.value;
+		
+		var paramSetting = $.cookie(cookieName);
+		
+		if(paramSetting == null){
+			alert("Setup parameters to debug before do it.");
+			return;
+		}
+		
+		var templatePath = "/admin/cms/template-top/debug/index.html";
+		var previewPath = templatePath + "?" + paramSetting + "&modulePath=" + document.frm.modulePath.value
+				+ "&currentTemplateId=" + document.frm.currentTemplateId.value;
+		//alert(previewPath);
+		
+		var winHeight = document.body.clientHeight;
+		var winWidth = document.body.clientWidth;
+		
+		
+		var w = ( screen.width-winWidth ) / 2;
+		var h = ( screen.height-winHeight ) / 2;
+		
+		myWin = window.open(previewPath, "preview",
+		            "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,width=" + winWidth + ",height=" + winHeight +
+		           	+",left="+w+",top="+h);
+		
+		myWin.focus();
+	});
+	
+});
+-->
+</script>
+
+<form name="frm" action="index.html" method="POST" alns:alinousform="false">
+
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1"><img src="/admin/cms/article/img/page_white_code.png" style="margin: 0 4px 0 0;" />Template Layout</a></li>
+		<li><a href="#tabs-2"><img src="/admin/cms/template-primitive/img/css.png" style="margin: 0 4px 0 0;" />Css</a></li>
+		<li><a href="#tabs-3"><img src="/admin/cms/article/img/image.png" style="margin: 0 4px 0 0;" />Resources</a></li>
+		<li><a href="#tabs-4"><img src="/admin/cms/template-primitive/img/page_code.png" style="margin: 0 4px 0 0;" />Html</a></li>
+		<li><a href="#tabs-5"><img src="/admin/cms/template-primitive/img/script_edit.png" style="margin: 0 4px 0 0;" />JavaScript</a></li>
+		<li><a href="#tabs-6"><img src="/admin/cms/article/img/page_white_edit.png" style="margin: 0 4px 0 0;" />Server Code</a></li>
+		
+	</ul>
+	<div id="tabs-1" order="0">
+	
+		<table>
+			<tr>
+				<td>
+					<b>Wrapper div id :</b>
+				</td>
+				<td>
+					<input type="text" name="div_id" value="{$tmpl.div_id}" style="width:120px;" />
+				</td>
+				<td>
+					<button type="button" onclick="TemplateCallback.submit(this.form, 'edit.save')">Save</button>
+					<button type="button" class="apply" style="color: red;"
+							alns:if="{BOOL($dirty == true)}">Apply</button>
+					<button type="button" class="previewbtn">Preview</button>
+					<button type="button" class="paramsettingbtn">Set Preview Input</button>
+				</td>
+			</tr>
+		</table>
+		
+		
+		<div id="template">
+		<h1 class="ui-widget-header">Web Templates</h1>
+			<div class="ui-widget-content" id="contents1">
+				<ol>
+					<li alns:iterate="@left" alns:variable="t"
+						style="padding: 5px 5px 5px 5px; border: 1px solid orange; height: {$t.estimated_height};">
+						<table class="stdtable">
+							<tr>
+								<td width="130">
+									<b>Template Type:</b>
+								</td>
+								<td>
+									<span alns:if="{BOOL($t.tmpltype == 'primitive')}">Primitive Part</span>
+									<span alns:if="{BOOL($t.tmpltype == 'container')}">Container Part</span>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<b>Template Name:</b>
+								</td>
+								<td>
+									{$t.name}
+								</td>
+							</tr>
+						
+						</table>
+						
+						<input type="hidden" name="left_tmpls[]" value="{$t.tmplid},{$t.tmpltype}" />
+						
+						<button type="button" onclick="TemplateCallback.remove(this)">remove</button>
+						<button type="button" onclick="javascript:window.open('/admin/cms/template-primitive/index.html?selectedNodeId={$t.node_id}')" 
+							alns:if="{BOOL($t.tmpltype == 'primitive')}">Open and Edit</button>
+						<button type="button" onclick="javascript:window.open('/admin/cms/template-container/index.html?selectedNodeId={$t.node_id}')" 
+							alns:if="{BOOL($t.tmpltype == 'container')}">Open and Edit</button>
+					</li>
+					<li class="placeholder" alns:if="{BOOL($sizeLeft == 0)}" >Add your items here</li>
+				</ol>
+			</div>
+					
+		</div>
+		
+		<div id="items">
+			<h1 class="ui-widget-header">Web Items</h1>
+			<div id="items-catalog">
+				<span alns:iterate="@template_primitive_category" alns:variable="c" alns:ignoreself="true">
+					<h2><a href="#">{$c.category_name}</a></h2>
+					<div>
+						<ul>
+							<li alns:iterate="@c.tmpl" alns:variable="p"
+									tmplid="{$p.template_primitive_id}"
+									tmpltype="primitive"
+									estimated-height="{$p.estimated_height}">
+								{$p.template_primitive_name}</li>
+						</ul>
+						<br style="clear:both;" />
+					</div>
+				</span>
+				<span alns:iterate="@template_container_category" alns:variable="c" alns:ignoreself="true">
+					<h2><a href="#">{$c.category_name}</a></h2>
+					<div>
+						<ul>
+							<li alns:iterate="@c.tmpl" alns:variable="p"
+									tmplid="{$p.template_container_id}"
+									tmpltype="container"
+									estimated-height="{$p.estimated_height}">
+								{$p.template_container_name}</li>
+						</ul>
+						<br style="clear:both;" />
+					</div>
+				</span>
+			</div>
+		</div>
+		
+		<br style="clear:both;" />
+		
+	</div>
+	<div id="tabs-2" order="1">
+		<div>
+			<button type="button" class="savebtn" onclick="TemplateCallback.submit(this.form, 'edit.save')">Save</button>
+			<button type="button" class="apply" style="color: red;"
+							alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Set Preview Input</button>
+		</div>
+		<textarea id="code_css" name="code_css">{$tmpl.code_css}</textarea>
+	</div>
+	<div id="tabs-3" order="2">
+		<div id="reource-area" alns:tagid="reource-area"
+			alns:inner="/admin/cms/resources/index.html?resource_owner_id={$tmpl.template_top_id}&resource_owner_type=template_top"></div>
+	</div>
+		<div id="tabs-4" order="3">
+		<div>
+			<button type="button" class="savebtn" onclick="TemplateCallback.submit(this.form, 'edit.save')">Save</button>
+			<button type="button" class="apply" style="color: red;"
+							alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Set Preview Input</button>
+		</div>
+		<textarea id="code_html" name="code_html">{$tmpl.code_html}</textarea>
+	</div>
+	<div id="tabs-5" order="4">
+		<div>
+			<button type="button" class="savebtn" onclick="TemplateCallback.submit(this.form, 'edit.save')">Save</button>
+			<button type="button" class="apply" style="color: red;"
+							alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Set Preview Input</button>
+		</div>
+		<textarea id="code_js" name="code_js">{$tmpl.code_js}</textarea>
+	</div>
+	<div id="tabs-6" order="5">
+		<div>
+			<button type="button" class="savebtn" onclick="TemplateCallback.submit(this.form, 'edit.save')">Save</button>
+			<button type="button" class="apply" style="color: red;"
+							alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="rundebug">Debug</button>
+			<button type="button" class="paramsettingbtn">Set Preview Input</button>
+		</div>
+		<textarea id="code_alinous" name="code_alinous">{$tmpl.code_alinous}</textarea>
+	</div>
+</div>
+
+
+<input type="hidden" name="currentTemplateId" value="{$IN.currentTemplateId}" />
+<input type="hidden" name="dirty" value="0" />
+
+<input type="hidden" name="modulePath" value="{$modulePath}" />
+
+<input type="hidden" name="cmd" value="" />
+</form>
+
+</body>
+</html>

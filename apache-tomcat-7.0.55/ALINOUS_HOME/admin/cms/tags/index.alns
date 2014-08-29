@@ -1,0 +1,115 @@
+include("/admin/cms/tags/edit/commands.alns");
+
+include("/include/serialutils.alns");
+include("/include/treemodel.alns");
+
+include("/include/sitesetting.alns");
+
+@sites = SiteSetting.getSiteFromPages();
+initParams($IN, $SESSION, @sites);
+
+$url = Tags.exexuteCommand($IN, $SESSION);
+if($url != null){
+	redirect $url, 302;
+}
+
+if($IN.cmd =="createFirst"){
+	createFirst($IN, $SESSION);
+}
+else if($IN.cmd == "addNode"){
+	addNode($IN, $SESSION);
+}
+else if($IN.cmd == "deleteNode"){
+	deleteNode($IN, $SESSION);
+	redirect "/admin/cms/tags/index.html";
+}
+
+SELECT * INTO cms_tag
+FROM
+	cms_tag
+ORDER BY cms_tag.tag_name;
+
+$sizeTag = Array.size(@cms_tag);
+
+
+
+return 0;
+
+function deleteNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	$callbackModule = "/admin/cms/tags/moveCallback.alns";
+	TreeModel.removeNode("tag", $IN.nodeId, true, $callbackModule);	
+	
+	COMMIT;
+}
+
+function addNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	if($IN.position == "after"){
+		$nodeId = TreeModel.insertAfter('tag', $IN.nodeId, $IN.tag_code);
+	}
+	else if($IN.position == "inside"){
+		$nodeId = TreeModel.insertInside('tag', $IN.nodeId, $IN.tag_code);
+	}
+	
+	$cms_tag_id = Common.newSerial("cms_tag");
+	
+	INSERT INTO cms_tag(
+		cms_tag_id,
+		node_id,
+		tag_code,
+		tag_name,
+		tag_cms_page_id
+	)VALUES(
+		$cms_tag_id,
+		$nodeId, // node_id,
+		$IN.tag_code,
+		$IN.tag_name,
+		0 // tag_cms_page_id
+	);
+	
+	COMMIT;
+}
+
+function initParams($IN, $SESSION, @sites)
+{
+	if($IN.selectedNodeId == null){
+		$IN.selectedNodeId = "";
+	}
+	if($IN.site == null){
+		$IN.site = $sites[0];
+	}
+}
+
+function createFirst($IN, $SESSION)
+{
+	BEGIN;
+	
+	
+	$rootCode = String.subString($IN.site, 1, String.length($IN.site));
+	$nodeId = TreeModel.newNode("tag", 0, $rootCode, 1);
+	
+	$nodeId = TreeModel.insertInside('tag', $nodeId, $IN.tag_code);
+	
+	$cms_tag_id = Common.newSerial("cms_tag");
+	
+	INSERT INTO cms_tag(
+		cms_tag_id,
+		node_id,
+		tag_code,
+		tag_name,
+		tag_cms_page_id
+	)VALUES(
+		$cms_tag_id,
+		$nodeId, // node_id,
+		$IN.tag_code,
+		$IN.tag_name,
+		0 // tag_cms_page_id
+	);
+	
+	COMMIT;
+}

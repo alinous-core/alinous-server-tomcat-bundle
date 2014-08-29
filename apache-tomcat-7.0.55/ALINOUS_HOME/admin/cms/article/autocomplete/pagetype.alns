@@ -1,0 +1,40 @@
+
+SELECT DISTINCT page_type INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.page_type <> ''
+ORDER BY cms_page.page_type;
+
+$size = Array.size(@cms_page);
+for($i = 0; $i < $size; $i++){
+	$ar[$i] = $cms_page[$i].page_type;
+}
+
+addPageType(@ar, "contents");
+addPageType(@ar, "blog");
+addPageType(@ar, "blog-category");
+addPageType(@ar, "module");
+addPageType(@ar, "tag");
+
+
+if(Array.size(@cms_page) == 0){
+	return "[]";
+}
+
+$str = Record.dom2json(@ar);
+
+return $str;
+
+function addPageType(@ar, $type)
+{
+	$size = Array.size(@ar);
+	for($i = 0; $i < $size; $i++){
+		if($ar[$i] == $type){
+			return 0;
+		}		
+	}
+	
+	$ar[$size] = $type;
+	
+}

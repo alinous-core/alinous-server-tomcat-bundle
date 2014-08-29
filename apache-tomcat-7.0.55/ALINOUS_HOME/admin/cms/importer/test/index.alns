@@ -1,0 +1,153 @@
+
+/*
+/admin/cms/importer/test/index.alns
+*/
+include("/include/page.alns");
+include("/include/treemodel.alns");
+include("/include/serialutils.alns");
+
+/*
+$url = "http://127.0.0.1:1111/alinous/";
+$destPath = "/alinous.org/alinous";
+
+
+$url = "http://127.0.0.1:1111/web-developer/";
+$destPath = "/alinous.org/web-developer";
+
+
+$url = "http://127.0.0.1:1111/";
+$destPath = "/alinous.org";
+
+
+$url = "http://localhost:1111/web-developer/software-test/create-project.html";
+$destPath = "/alinous.org/web-developer/software-test/create-project";
+
+$xpath = "// div[@id='main-contents']";
+Importer.importUrl($url, "utf-8", $xpath, $destPath);
+*/
+
+
+$urlStr = "http://127.0.0.1:1111/sitemap.xml";
+$RET = Http.access($urlStr, "GET", $postParams, "utf-8", "Alinous-CMS", "Alinous-CMS");
+
+@desc = DomXpath.getParts($RET, "loc");
+$xpath = "// div[@id='main-contents']";
+
+$size = Array.size(@desc);
+for($i = 1; $i < $size; $i++){
+	$url = DomXpath.stripTopTag($desc[$i]);
+	
+	$ret = CmsPage.parseUrl($url);
+	
+	$ret.path = String.replaceNoRegex($ret.path, ".html", "");
+	
+	//File.appendText("/admin/cms/importer/test/log.txt", $ret.path + "\n", "utf-8");
+	
+	Importer.importUrl($url, "utf-8", $xpath, "/alinous.org" + $ret.path);
+//	Thread.sleep(600);
+}
+
+return 0;
+
+function Importer.importUrl($url, $encode, $xpath, $destPath)
+{
+	$html = Http.access($url, "GET", $postParams, $encode, "Alinous-CMS", "");
+	
+	if($html.RESPONSE == null || String.indexOf($html.RESPONSE, "200", 0) < 0){
+		return -1;
+	}
+	
+	@parts = DomXpath.getParts($html, $xpath);
+	
+	if(Array.size(@parts) == 0){
+		return -1;
+	}
+	
+	BEGIN;
+	
+	$ret = CmsPage.parseUrl($url);
+	$node = CmsPage.createBrankPage($destPath, "draft", 0);
+	CmsPage.resetPage($node.node_id);
+	
+	COMMIT;
+	
+	$divHtml = $parts[0];
+	
+	$description = "";
+	@desc = DomXpath.getParts($html, "meta[@name='description']");
+	if($desc[0] != null){
+		$description = DomXpath.getAttribute($desc[0], "content");
+		if($description == null){
+			$description = "";
+		}
+	}
+	
+	$title = "";
+	$subtitle = "";
+	@title = DomXpath.getParts($html, "title");
+	if(Array.size(@title) > 0){
+		$title = DomXpath.stripTopTag($title[0]);
+	
+		if(String.indexOf($title, " - ", 0) >= 0){
+			@el = String.split($title, " - ");
+			$title = String.trim($el[0]);
+			$subtitle = String.trim($el[1]);
+		}	
+		else if(String.indexOf($title, "|", 0) >= 0){
+			@el = String.split($title, " - ");
+			$title = String.trim($el[0]);
+			$subtitle = String.trim($el[1]);
+		}
+	}
+	
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $node.node_id;
+	
+	$params.node_id = $node.node_id;
+	$params.cms_page_id = $cms_page[0].cms_page_id;
+	$params.importHost = $ret.host;
+	$params.path = $ret.path;
+	$params.scheme = $ret.scheme;
+	
+	$callback = "/admin/cms/importer/test/policy.alns";
+	$page_body = DomXpath.rewrite($divHtml, $params, $callback);
+	
+	$page_body =DomXpath.stripTopTag($page_body);
+	
+	BEGIN;
+	
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $node.node_id
+	FOR UPDATE;
+	
+	UPDATE cms_page
+	SET
+		page_body = $page_body,
+		page_title = $title,
+		page_sub_title = $subtitle,
+		page_description = $description,
+		
+		force_folder = 0,
+		draft_page_body = $page_body,
+		draft_page_title = $title,
+		draft_page_sub_title = $subtitle,
+		draft_page_description = $description,
+		last_edit_time = now()
+	WHERE
+		cms_page.node_id = $node.node_id;	
+	
+	COMMIT;
+	
+	
+	return 0;	
+}
+
+
+
+

@@ -1,0 +1,30 @@
+
+
+function Debugger.ddl()
+{
+	BEGIN;
+	
+	CREATE TABLE debug_thread_status(
+		module_path text,
+		thread_id varchar(64) not null default '0',
+		
+		/*
+			BREAK
+			RUNNING
+			TERMINATED
+		*/
+		thread_status varchar(32) not null default 'TERMINATED',
+				
+		PRIMARY KEY(module_path)
+	);
+	
+	CREATE TABLE debug_break_points(
+		module_path text,
+		line int not null default 0,
+		
+		PRIMARY KEY(module_path, line)
+	);
+	
+	
+	COMMIT;
+}

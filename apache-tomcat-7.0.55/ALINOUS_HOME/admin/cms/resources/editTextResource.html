@@ -1,0 +1,43 @@
+<html>
+<body>
+<script>
+<!--
+function updateTextResource(form)
+{
+	var fd = new FormData(form);
+	var url = "/admin/cms/resources/editTextResource.html";
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function(){
+			$("#dialog").dialog("close");
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+-->
+</script>
+
+<h3>Edit Text Resource</h3>
+
+<form name="dlgfrm" action="/admin/cms/resources/editTextResource.html" method="POST">
+
+<textarea name="resource_binary" style="width:100%;height:300px;">{$cms_resource.resource_binary}</textarea>
+
+<center>
+<button type="button" onclick="updateTextResource(this.form);">Create a new Resource</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="cms_resource_id" value="{$IN.cms_resource_id}" />
+<input type="hidden" name="cmd" value="update" />
+</form>
+
+</body>
+</html>

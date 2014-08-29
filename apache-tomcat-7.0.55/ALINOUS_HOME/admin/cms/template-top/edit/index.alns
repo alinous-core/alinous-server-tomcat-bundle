@@ -1,0 +1,163 @@
+
+include("/include/treemodel.alns");
+include("/include/template_top.alns");
+
+$tmpl = getTopTemplate($IN, $SESSION);
+
+@template_primitive_category = getPrimitiveTemplates($IN, $SESSION);
+@template_container_category = getContainerTemplates($IN, $SESSION);
+
+@left = getChildParts($IN.currentTemplateId);
+$sizeLeft = Array.size(@left);
+
+$dirty = isDirty($IN.currentTemplateId);
+
+$templatePath = TopTmpl.getTopDirPath($IN.currentTemplateId);
+$modulePath = $templatePath + "indexpreview.alns";
+
+return 0;
+
+function isDirty($template_top_id)
+{
+	$dir = TopTmpl.getTopDirPath($template_top_id);
+	
+	$preview = $dir + "indexpreview.html";
+	$normal = $dir + "index.html";
+	
+	if(!File.exists($preview)){
+		return false;
+	}
+	if(!File.exists($normal)){
+		return true;
+	}
+	
+	$previewTm = File.getTimestamp($preview);
+	$normalTm = File.getTimestamp($normal);
+	
+	if(Timestamp.before($normalTm, $previewTm)){
+		return true;
+	}
+	
+	return false;	
+}
+
+function getChildParts($template_top_id)
+{
+	SELECT  
+		template_top_children.inner_template_primitive_id, template_top_children.inner_template_container_id,
+		template_primitive.template_primitive_name, template_primitive.template_primitive_id,
+		template_primitive.node_id AS p_node_id,
+		template_primitive.estimated_height,
+		template_container.template_container_name, template_container.template_container_id,
+		template_container.estimated_height AS c_estimated_height,
+		template_container.node_id AS c_node_id
+	INTO ch
+	FROM
+		(template_top_children LEFT JOIN template_primitive
+		ON
+			template_top_children.inner_template_primitive_id = template_primitive.template_primitive_id)
+		LEFT JOIN template_container
+		ON
+			template_top_children.inner_template_container_id = template_container.template_container_id
+	WHERE
+		template_top_children.template_top_id = $template_top_id
+	ORDER BY template_top_children.position_order;
+	
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			$tmpl[$i].name = $ch[$i].template_primitive_name;
+			$tmpl[$i].tmpltype = "primitive";
+			$tmpl[$i].tmplid = $ch[$i].template_primitive_id;
+			$tmpl[$i].estimated_height = $ch[$i].estimated_height / 2;
+			$tmpl[$i].node_id = $ch[$i].p_node_id;
+		}else if($ch[$i].inner_template_container_id != 0){
+			$tmpl[$i].name = $ch[$i].template_container_name;
+			$tmpl[$i].tmpltype = "container";
+			$tmpl[$i].tmplid = $ch[$i].template_container_id;
+			$tmpl[$i].estimated_height = $ch[$i].c_estimated_height / 2;
+			$tmpl[$i].node_id = $ch[$i].c_node_id;
+		}
+	}
+	
+	return @tmpl;
+}
+
+function getContainerTemplates($IN, $SESSION)
+{
+	$treeId = "container";
+	
+	SELECT * INTO template_container_category
+	FROM
+		template_container_category LEFT JOIN tree_model
+		ON
+			template_container_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = $treeId
+	WHERE
+		tree_model.tree_id = $treeId
+	ORDER BY tree_model.page_path;
+	
+	$size = Array.size(@template_container_category);
+	for($i = 0; $i < $size; $i++){
+		@nodes = TreeModel.getChildren($treeId, $template_container_category[$i].node_id);
+		
+		$sizeNode = Array.size(@nodes);
+		for($j = 0; $j < $sizeNode; $j++){
+			SELECT node_id, template_container_id, template_container_name, estimated_height
+			INTO template_container
+			FROM
+				template_container
+			WHERE
+				template_container.node_id = $nodes[$j].node_id;
+			
+			$template_container_category[$i].tmpl[$j] = $template_container[0];
+		}
+	}
+	
+	return @template_container_category;
+}
+
+function getPrimitiveTemplates($IN, $SESSION)
+{
+	$treeId = "primitive";
+	
+	SELECT * INTO template_primitive_category
+	FROM
+		template_primitive_category LEFT JOIN tree_model
+		ON
+			template_primitive_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = $treeId
+	WHERE
+		tree_model.tree_id = $treeId
+	ORDER BY tree_model.page_path;
+	
+	$size = Array.size(@template_primitive_category);
+	for($i = 0; $i < $size; $i++){
+		@nodes = TreeModel.getChildren($treeId, $template_primitive_category[$i].node_id);
+		
+		$sizeNode = Array.size(@nodes);
+		for($j = 0; $j < $sizeNode; $j++){
+			SELECT node_id,template_primitive_id, template_primitive_name, estimated_height
+			INTO template_primitive
+			FROM
+				template_primitive
+			WHERE
+				template_primitive.node_id = $nodes[$j].node_id;
+			
+			$template_primitive_category[$i].tmpl[$j] = $template_primitive[0];
+		}
+	}
+	
+	return @template_primitive_category;
+}
+
+function getTopTemplate($IN, $SESSION)
+{
+	SELECT* INTO template_top
+	FROM
+		template_top
+	WHERE
+		template_top.template_top_id = $IN.currentTemplateId;
+	
+	return $template_top[0];
+}

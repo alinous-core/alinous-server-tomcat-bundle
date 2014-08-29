@@ -1,0 +1,84 @@
+
+include("/include/serialutils.alns");
+include("/include/imageresource.alns");
+
+include("/include/pathutils.alns");
+
+if($IN.cmd == "upload"){
+	uploadImg($IN, $SESSION);
+}else if($IN.cmd == "delete"){
+	deleteImage($IN, $SESSION);
+}
+
+@cms_resource = getImages($IN, $SESSION);
+
+return 0;
+
+function deleteImage($IN, $SESSION)
+{
+	BEGIN;
+	
+	ImgResource.deleteImage($IN.cms_resource_id);
+	
+	COMMIT;
+}
+
+function getImages($IN, $SESSION)
+{
+	SELECT * INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'cms_page' AND
+		cms_resource.resource_owner_id = $IN.cms_page_id AND
+		cms_resource.resource_type = 'image';
+	
+	$max = 150;
+	
+	$size = Array.size(@cms_resource);
+	for($i = 0; $i < $size; $i++){
+		ImgResource.sync($cms_resource[$i].cms_resource_id);
+		
+		$filePath = CmsPath.getimagePath("/html_resource", $cms_resource[$i].cms_resource_id);
+		$cms_resource[$i].url = CmsPath.getImageUrlPath("", $cms_resource[$i].cms_resource_id);
+		
+		$imgSize = Img.getSize($filePath);
+		
+		if($imgSize.width > $imgSize.height){
+			$cms_resource[$i].height = $imgSize.height * $max / $imgSize.width;
+			$cms_resource[$i].width = $max;
+		}
+		else{
+			$cms_resource[$i].width = $imgSize.width * $max / $imgSize.height;
+			$cms_resource[$i].height = $max;
+		}
+	}
+	
+	
+	return @cms_resource;
+}
+
+
+function uploadImg($IN, $SESSION)
+{
+	if($IN.imgFile == null || $IN.imgFile == ""){
+		return 0;
+	}
+
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.imgFile;
+	
+	$base64binary = Base64.encodeFromFile($tmpFile);
+	
+	BEGIN;
+	
+	$img = Img.getSize($tmpFile);
+	
+	ImgResource.createFromFile($tmpFile, $IN.imgFile, $IN.title, "cms_page", $IN.cms_page_id);
+	
+	COMMIT;	
+	
+	File.remove($tmpFile);
+	
+	return 0;
+}
+

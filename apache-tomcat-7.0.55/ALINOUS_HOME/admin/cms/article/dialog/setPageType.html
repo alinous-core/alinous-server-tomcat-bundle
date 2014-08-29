@@ -1,0 +1,55 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$.ajax({
+		url: "/admin/cms/article/autocomplete/pagetype.alns",
+		dataType: "json",
+		success: function( data ) {
+			$( ".page_type" ).autocomplete({
+				source: data,
+				minLength: 0
+			});
+		}
+	});
+});
+
+function applyPageType(form)
+{
+	document.frm.apply_page_type.value = form.page_type.value;
+	document.frm.cmd.value = "apply_page_type";
+	document.frm.page.value = 0;
+	document.frm.submit();
+}
+-->
+</script>
+
+<h1>Set Page Type</h1>
+<p>
+	Specify page type to apply for selected pages.
+</p>
+
+<form name="dlgfrm" action="index.html">
+<blockauote>
+
+<table>
+	<tr>
+		<td>
+			<b>Page Type:</b>
+		</td>
+		<td>
+			<input type="text" name="page_type" class="page_type" value="" style="width:200px;"
+				onfocus="$('.page_type').autocomplete('search');"  />
+		</td>
+		<td>
+			<button type="button" onclick="applyPageType(this.form)">Apply</button>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</td>
+	</tr>
+</table>
+</blockauote>
+</form>
+
+</body>
+</html>

@@ -1,0 +1,217 @@
+
+include("/include/serialutils.alns");
+include("/include/parseurl.alns");
+include("/include/progress.alns");
+
+
+if($IN.cmd == "uploadCsv"){
+	uploadCsv($IN, $SESSION);
+}
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = 'importinternallinks';
+	
+	if(Array.size(@job_progress) > 0){
+		return 1;
+	}
+	
+	return 0;
+}
+
+function uploadCsv($IN, $SESSION)
+{
+	$IN.uploadedFile = $IN.csvfile;
+	
+	if(ProgressJob.jobStarted("importinternallinks")){
+		return 0;
+	}
+	
+	$csvfile = "/tmp/" + $SESSION + "_" + $IN.csvfile;
+	$jobMax = countLines($csvfile);
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob("importinternallinks", $jobMax, "backbroundWrapper", $params);
+}
+
+function backbroundWrapper($params)
+{
+	doUploadCsv($params.IN, $params.SESSION);
+	
+	ProgressJob.jobFinished("importinternallinks");
+}
+
+function countLines($csvfile)
+{
+	$count = 0;
+	Csv.openReadFile($csvfile, "utf-8");
+	
+	@FIELDS = Csv.readLine($csvfile);
+	while(Array.size(@FIELDS) > 0){
+		$count++;
+		@FIELDS = Csv.readLine($csvfile);
+	}
+	Csv.closeReadFile($csvfile);
+	
+	return $count;
+}
+
+function doUploadCsv($IN, $SESSION)
+{
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.csvfile; 
+	$fileName = $IN.csvfile;
+	
+	$fromName = parseFileName($fileName);
+	
+	clearLastUpdate($fileName);
+	
+	$hostName = detectHostName($tmpFile);
+	
+	BEGIN;
+	
+	$internal_link_file_id = Common.newSerial("wmil_internal_link_file");
+	
+	INSERT INTO wmil_internal_link_file(
+		internal_link_file_id,
+		internal_link_file_name,
+		internal_link_timestamp,
+		internal_link_host
+	)
+	VALUES(
+		$internal_link_file_id,
+		$fileName, // internal_link_file_name,
+		now(), // internal_link_timestamp
+		$hostName // internal_link_host
+	);
+	
+	COMMIT;
+	
+	Csv.openReadFile($tmpFile, "utf-8");
+	
+	@fields = Csv.readLine($tmpFile); // Header
+	
+	@fields = Csv.readLine($tmpFile);
+	while(Array.size(@fields) > 0){
+		
+		handleOneRecord($internal_link_file_id, @fields);
+		
+		ProgressJob.progress(1, "importinternallinks");
+		
+		// read next
+		@fields = Csv.readLine($tmpFile);
+	}
+	
+	Csv.closeReadFile($tmpFile);
+	
+	File.remove($tmpFile);
+}
+
+function detectHostName($tmpFile)
+{
+	Csv.openReadFile($tmpFile, "utf-8");
+	@fields = Csv.readLine($tmpFile); // Header
+	
+	@fields = Csv.readLine($tmpFile);
+	while(Array.size(@fields) > 0){
+		if(String.startsWith($fields[0], "http://") || String.startsWith($fields[0], "https://")){
+			try{
+				$hostName = UrlParse.getDomain($fields[0]);
+			}finally{
+				Csv.closeReadFile($tmpFile);
+			}
+			
+			return $hostName;
+		}
+		
+		
+		// read next
+		@fields = Csv.readLine($tmpFile);
+	}
+	
+	Csv.closeReadFile($tmpFile);
+}
+
+function handleOneRecord($internal_link_file_id, @fields)
+{
+	BEGIN;
+	
+	if(String.startsWith($fields[0], "http://") || String.startsWith($fields[0], "https://")){
+		$fields[0] = "/";
+	}
+	
+	INSERT INTO wmil_internal_link(
+		internal_link_file_id,
+		target_page,
+		num_links
+	)
+	VALUES(
+		$internal_link_file_id,
+		$fields[0], // target_page,
+		$fields[1] // num_links
+	);
+	
+	COMMIT;
+}
+
+function clearLastUpdate($fileName)
+{
+	SELECT * INTO wmil_internal_link_file
+	FROM
+		wmil_internal_link_file
+	WHERE
+		wmil_internal_link_file.internal_link_file_name = $fileName;
+	
+	if(Array.size(@wmil_internal_link_file) == 0){
+		return 0;
+	}
+	
+	BEGIN;
+	
+	DELETE FROM wmil_internal_link_file
+	WHERE
+		wmil_internal_link_file.internal_link_file_name = $fileName;
+	
+	DELETE FROM wmil_internal_link
+	WHERE
+		wmil_internal_link.internal_link_file_id = $wmil_internal_link_file[0].internal_link_file_id;
+	
+	COMMIT;
+}
+
+function parseFileName($fileName)
+{
+	@fragments = String.split($fileName, "_");
+	
+	$ret.siteid = $fragments[0];
+	
+	$ret.tm = getTimestampFromName($fragments[1]);
+	
+	return $ret;	
+}
+
+function getTimestampFromName($nameFragment)
+{
+	@fragments = String.split($nameFragment, "T");
+	
+	$year = String.subString($fragments[0], 0, 4);
+	$month = String.subString($fragments[0], 4, 6);
+	$date = String.subString($fragments[0], 6, 8);
+	
+	$hour = String.subString($fragments[1], 0, 2);
+	$minute = String.subString($fragments[1], 2, 4);
+	$second = String.subString($fragments[1], 4, 6);
+	
+	$timestamp = $year + "-" + $month + "-" + $date + " " + $hour + ":" + $minute + ":" + $second;
+	
+	return $timestamp;
+}

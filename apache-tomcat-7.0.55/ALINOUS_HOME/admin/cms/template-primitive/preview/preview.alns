@@ -1,0 +1,33 @@
+
+include("/admin/cms/publish/publish_primitive.alns");
+include("/admin/cms/publish/publish_inline.alns");
+
+include("/include/template_primitive.alns");
+
+SELECT template_primitive_id INTO template_primitive
+FROM
+	template_primitive
+WHERE
+	template_primitive.node_id = $IN.selectedNodeId;
+
+if(Array.size(@template_primitive) == 0){
+	return "error";
+}
+
+$valuePath = "COOKIE.param_primitive_" + $IN.selectedNodeId;
+$cookieStr = Variable.get($valuePath);
+$cookieStr = UrlEncode.decode($cookieStr, "utf-8");
+
+@values = String.split($cookieStr, "&");
+for($i = 0; $i < Array.size(@values); $i++){
+	@pair = String.split($values[$i], "=");
+	
+	$script = '$params.' + $pair[0] + '= "' + $pair[1] + '";';
+	Script.evaluate($script);
+}
+
+$params.page = 0;
+$file = Publish.previewPrimitive($SESSION, $template_primitive[0].template_primitive_id, $params);
+
+
+return $file;

@@ -1,0 +1,78 @@
+
+include("/include/html.alns");
+include("/include/treemodel.alns");
+
+include("/include/sitesetting.alns");
+
+$cms_page = getPage($IN, $SESSION);
+
+SELECT template_top_id, template_top_name INTO template_top
+FROM
+	template_top
+ORDER BY template_top.template_top_code;
+
+$node = TreeModel.getNode("cms", $cms_page.node_id);
+if($node.page_depth == 1){
+	SELECT * INTO site_setting
+	FROM
+		site_setting
+	WHERE
+		site_setting.site_path = $node.page_path
+	ORDER BY site_setting.template_use, site_setting.site_domain;
+	
+	SiteSetting.sync();
+}
+
+@cms_tag = getTags($cms_page.cms_page_id);
+
+return 0;
+
+function getTags($cms_page_id)
+{
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag_page LEFT JOIN cms_tag
+		ON
+			cms_tag_page.cms_tag_id = cms_tag.cms_tag_id
+	WHERE
+		cms_tag_page.cms_page_id = $cms_page_id;
+	
+	return @cms_tag;
+}
+
+
+function getPage($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	
+	$cms_page[0].page_title = $cms_page[0].draft_page_title;
+	$cms_page[0].page_short_title = $cms_page[0].draft_page_short_title;
+	$cms_page[0].page_sub_title = $cms_page[0].draft_page_sub_title;
+	$cms_page[0].page_description = $cms_page[0].draft_page_description;
+	$cms_page[0].page_body_headline = $cms_page[0].draft_page_body_headline;
+	$cms_page[0].page_body = $cms_page[0].draft_page_body;
+	$cms_page[0].page_addtional_code = $cms_page[0].draft_page_addtional_code;
+	
+	
+	$cms_page[0].page_title  = Html.escapeTag($cms_page[0].page_title );
+	$cms_page[0].page_sub_title = Html.escapeTag($cms_page[0].page_sub_title);
+	$cms_page[0].page_body = Html.escapeTag($cms_page[0].page_body);
+	$cms_page[0].page_addtional_code = Html.escapeTag($cms_page[0].page_addtional_code);
+	
+	
+	$cms_page[0].created_time_date = Timestamp.format($cms_page[0].created_time, "MM/dd/yyyy");
+	$cms_page[0].created_time_time = Timestamp.format($cms_page[0].created_time, "HH:mm");
+	
+	if($cms_page[0].updated_time == null){
+		$cms_page[0].updated_time = Timestamp.now();
+	}
+	$cms_page[0].updated_time_date = Timestamp.format($cms_page[0].updated_time, "MM/dd/yyyy");
+	$cms_page[0].updated_time_time = Timestamp.format($cms_page[0].updated_time, "HH:mm");
+	
+	return $cms_page[0];
+}

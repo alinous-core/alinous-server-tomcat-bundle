@@ -1,0 +1,57 @@
+/*
+include("/admin/cms/publish/publish_primitive.alns");
+*/
+
+include("/include/template_primitive.alns");
+include("/admin/cms/publish/publish_inline.alns");
+
+function Publish.previewPrimitive($SESSION, $template_primitive_id, $params)
+{
+	File.makeDir("/html_preview/");	
+	$tmpFile = "/html_preview/" + $SESSION + "meta.html";
+	$tmpAlnsFile = "/html_preview/" + $SESSION + "meta.alns";
+	
+	File.remove($tmpFile);
+	File.remove($tmpAlnsFile);	
+	
+	File.putText($tmpAlnsFile, "return 0;", "utf-8");
+	
+	
+	
+	// conbine with article
+	$templatePath = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id);
+	$htmlPath = $templatePath + "indexpreview.html";
+	
+	$params.publish = "preview-meta";
+	Html.outputHtml($htmlPath, $tmpFile, $params, false, "utf-8");
+	
+	// insert header
+	$headers = Publish.getInlineTemplateHeaders($params.cms_page_id, false, $template_primitive_id);
+	
+	$css = "<style>\n<!--\n" + Publish.joinArray(@headers.css) + "\n-->\n</style>\n";
+	$js = "<script>\n<!--\n" + Publish.joinArray(@headers.js) + "\n-->\n</script>\n";
+	$header = Publish.joinArray(@headers.header);
+	$total = $header + "\n" + $css + "\n" + $js + "\n";
+	
+	$html = File.readAllText($tmpFile, "utf-8");
+	$offset = String.indexOf($html, "</head>", 0);
+	$html = String.insert($html, $total, $offset);
+	
+	File.putText($tmpFile, $html, "utf-8");
+	
+	// real publish
+	$publishedFile = "/html_preview/" + $SESSION + ".html";
+	File.remove($publishedFile);
+	
+	$params.publish = "preview";
+	Html.outputHtml($tmpFile, $publishedFile, $params, false, "utf-8");
+	
+	File.remove($tmpFile);
+	File.remove($tmpAlnsFile);
+	
+	return $publishedFile;
+}
+
+
+
+

@@ -1,0 +1,51 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("button").button();
+});
+
+
+function submitEditForm(form)
+{
+	var url = "/admin/cms/importer/dialog/editImporterDlg.html";
+	
+	form.cmd.value = "updateCode";
+	
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			document.frm.cmd.value = "";
+			document.frm.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+-->
+</script>
+
+
+<form name="dlgfrm" action="index.html" method="POST">
+
+<textarea name="content_importer_code" rows="20" style="width:100%;">{$content_importer.content_importer_code}</textarea>
+
+<center>
+<button type="button" onclick="submitEditForm(this.form);">Update Code</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="content_importer_id" value="{$IN.content_importer_id}" />
+</form>
+
+</body>
+</html>

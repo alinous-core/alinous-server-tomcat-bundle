@@ -1,0 +1,52 @@
+
+include("/include/serialutils.alns");
+
+if($IN.cmd == "upload"){
+	uploadImageResource($IN, $SESSION);
+}
+
+return 0;
+
+
+function uploadImageResource($IN, $SESSION)
+{
+	if($IN.imgFile == null || $IN.imgFile == ""){
+		return 0;
+	}
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.imgFile;
+	
+	$base64binary = Base64.encodeFromFile($tmpFile);
+	
+	BEGIN;
+	
+	$cms_resource_id = Common.newSerial("cms_resource");
+	
+	INSERT INTO cms_resource(
+		cms_resource_id,
+		position,
+		resource_owner_type,
+		resource_owner_id,
+		resource_type,
+		resource_name,
+		resource_title,
+		resource_description,
+		resource_binary
+	)
+	VALUES(
+		$cms_resource_id,
+		$cms_resource_id,
+		$IN.resource_owner_type,
+		$IN.resource_owner_id,
+		'image', // resource_type,
+		$IN.resource_name,
+		'', // resource_title,
+		'', // resource_description,
+		$base64binary // resource_binary
+	);
+	
+	COMMIT;	
+	
+	File.remove($tmpFile);
+	
+	return 0;
+}

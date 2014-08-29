@@ -1,0 +1,46 @@
+include("/include/debugger.alns");
+
+if($IN.cmd == "add"){
+	addBreakpoint($IN, $SESSION);
+}
+else if($IN.cmd == "remove"){
+	removeBreakpoint($IN, $SESSION);
+}
+else if($IN.cmd == "clear"){
+	clearBreakpoints($IN, $SESSION);
+}
+else if($IN.cmd == "getBreakpoints"){
+	@debug_break_point = getBreakpoints($IN, $SESSION);
+	$json = Record.dom2json(@debug_break_point);
+	
+	return $json;
+}
+
+return 0;
+
+function getBreakpoints($IN, $SESSION)
+{
+	@debug_break_points = WebDebugger.getBreakpoints($IN.modulePath);
+	return @debug_break_points;
+}
+
+function addBreakpoint($IN, $SESSION)
+{
+	BEGIN;
+	WebDebugger.addBreakpoint($IN.modulePath, $IN.line);
+	COMMIT;
+}
+
+function removeBreakpoint($IN, $SESSION)
+{
+	BEGIN;
+	WebDebugger.removeBreakpoint($IN.modulePath, $IN.line);
+	COMMIT;
+}
+
+function clearBreakpoints($IN, $SESSION)
+{
+	BEGIN;
+	WebDebugger.clearBreakpoints($IN.modulePath);
+	COMMIT;
+}

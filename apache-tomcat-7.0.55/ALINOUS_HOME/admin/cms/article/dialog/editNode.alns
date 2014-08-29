@@ -1,0 +1,19 @@
+
+include("/include/treemodel.alns");
+
+$node = TreeModel.getNode("cms", $IN.nodeId);
+
+SELECT * INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.node_id = $IN.nodeId;
+
+SELECT * INTO template_top
+FROM
+	template_top
+ORDER BY template_top.position_order DESC;
+
+return 0;
+
+

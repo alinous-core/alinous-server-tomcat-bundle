@@ -1,0 +1,272 @@
+
+
+function AccessLog.readConfig()
+{
+	SELECT * INTO wmc_robot_accesslog_setting
+	FROM
+		wmc_robot_accesslog_setting
+	WHERE
+		wmc_robot_accesslog_setting.item_used = 1
+	ORDER BY wmc_robot_accesslog_setting.item_order;
+	
+	$config.time = -1;
+	$config.referer = -1;
+	$config.requestFirstLine = -1;
+	$config.remoteHost = -1;
+	$config.userAgent  = -1;
+	$config.bytes  = -1;
+	$config.status = -1;
+	
+	$size = Array.size(@wmc_robot_accesslog_setting);
+	for($i = 0; $i < $size; $i++){
+		if($wmc_robot_accesslog_setting[$i].item_type == "remote-host"){
+			$config.remoteHost = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "request-first-line"){
+			$config.requestFirstLine = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "referer"){
+			$config.referer = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "user-agent"){
+			$config.userAgent = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "time"){
+			$config.time = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "bytes"){
+			$config.bytes = $i;
+		}
+		else if($wmc_robot_accesslog_setting[$i].item_type == "status"){
+			$config.status = $i;
+		}
+		
+	}
+	
+	@config.items = @wmc_robot_accesslog_setting;
+	
+	return $config;
+}
+
+function AccessLog.analyze($logline, $config)
+{
+	@logArray = AccessLogLineReader.parseLine($logline);
+	/*
+	$isRobot = AccessLog.isRobot(@logArray, $config);
+	if(!$isRobot){
+		return 0;
+	}
+	*/
+	$remoteHost = $logArray[$config.remoteHost];
+	$remoteHost = AccessLog.resolveIp($remoteHost);
+	$access_time =  $logArray[$config.time];
+	$access_time = AccessLogLineReader.parseTime($access_time);
+	
+	$user_name = "";
+	$path = "";
+	$protocol = "";
+	$method = "";
+	
+	$requestFirstLine = $logArray[$config.requestFirstLine];
+	@firstlines = String.split($requestFirstLine, " ");
+	
+	if($firstlines[1] != null){
+		$path = $firstlines[1];
+	}
+	if($firstlines[0] != null){
+		$method = $firstlines[0];
+	}
+	if($firstlines[2] != null){
+		$protocol = $firstlines[2];
+	}
+	
+	$bytes = 0;
+	$referer = "";
+	if($config.referer >= 0){
+		$referer = $logArray[$config.referer];
+	}
+	$response_status = "";
+	if($config.status >= 0){
+		$response_status = $logArray[$config.status];
+	}
+	
+	$robot_type = "googlebot";
+	$user_agent = "";
+	if($config.userAgent >= 0){
+		$user_agent = $logArray[$config.userAgent];
+		$rb = AccessLog.getRobotType($user_agent);
+		if($rb != null){
+			$robot_type = AccessLog.getRobotType($user_agent);
+		}
+	}
+	
+	$lock = $remoteHost + "-" + $access_time + "-" + $path;
+	synchronized($lock){
+		BEGIN;
+		
+		SELECT * INTO wmc_robot_access FROM wmc_robot_access
+		WHERE
+			wmc_robot_access.remote_host = $remoteHost AND
+			wmc_robot_access.access_time = $access_time AND
+			wmc_robot_access.path = $path
+		FOR UPDATE;
+		
+		if(Array.size(@wmc_robot_access) == 0){
+			INSERT INTO wmc_robot_access(
+				remote_host,
+				access_time,
+				robot_type,
+				user_name,
+				path,
+				protocol,
+				method,
+				bytes,
+				referer,
+				response_status,
+				user_agent
+			)
+			VALUES(
+				$remoteHost,
+				$access_time,
+				$robot_type,
+				$user_name,
+				$path,
+				$protocol,
+				$method,
+				$bytes,
+				$referer,
+				$response_status,
+				$user_agent
+			);
+		}
+		else{
+			/*
+			UPDATE wmc_robot_access
+			SET
+				robot_type = $robot_type,
+				user_name = $user_name,
+				path = $path,
+				protocol = $protocol,
+				method = $method,
+				bytes = $bytes,
+				referer = $referer,
+				response_status = $response_status,
+				user_agent = $user_agent
+			WHERE
+				wmc_robot_access.remote_host = $remoteHost AND
+				wmc_robot_access.access_time = $access_time AND
+				wmc_robot_access.path = $path;
+			*/
+		}
+		
+		COMMIT;
+	}
+}
+
+function AccessLog.isRobot(@logArray, $config)
+{
+	// check useragent
+	if($config.userAgent >= 0){
+		$userAgent = $logArray[$config.userAgent];
+		
+		$robotType = AccessLog.getRobotType($userAgent);
+		if($robotType == null){
+			return false;
+		}
+	}
+	
+	// checkIP
+	$remoteHost = $logArray[$config.remoteHost];
+	$hostName = AccessLog.resolveIp($remoteHost);// crawl-66-249-74-226.googlebot.com rate-limited-proxy-209-85-238-226.google.com
+	
+	$crawl = String.match($hostName, "crawl\-.*.googlebot.com");
+	$rateLimited = String.match($hostName, "rate\-limited\-proxy\-.*.google.com");
+	
+	
+	if($crawl == false && $rateLimited == false){
+		$ipmatch = String.startsWith($hostName, "66.249.70.");
+		if(!$ipmatch){
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+function AccessLog.getRobotType($userAgent)
+{
+	// check useragent
+	// Feedfetcher-Google
+	// +http://www.google.com/feedfetcher.html
+	// "GET /img/page100/1.png HTTP/1.1" 304 - "-" "Googlebot-Image/1.0"
+	if(String.indexOf($userAgent, "Googlebot-Image", 0) >= 0){
+		return "Googlebot-Image";
+	}
+	
+	if(String.indexOf($userAgent, "Feedfetcher-Google", 0) >= 0){
+		return "Feedfetcher-Google";
+	}
+	if(String.indexOf($userAgent, "Googlebot", 0) > 0 && String.indexOf($userAgent, "http://www.google.com/bot.html", 0) > 0){
+		return "Googlebot";
+	}
+	
+	return null;
+}
+
+
+
+function AccessLog.resolveIp($remoteHost)
+{
+	$currentTime = Timestamp.now();
+	$expire = Timestamp.add($currentTime, -3, "DATE");
+	
+	SELECT * INTO wmc_robot_ip_domain
+	FROM
+		wmc_robot_ip_domain
+	WHERE
+		wmc_robot_ip_domain.ip_addr = $remoteHost AND
+		wmc_robot_ip_domain.resolved_time > $expire;
+	
+	if(Array.size(@wmc_robot_ip_domain) > 0){
+		return $wmc_robot_ip_domain[0].resolved_name;
+	}
+	
+	$resolved_name = DomainLookup.lookup($remoteHost);
+	
+	synchronized{
+		BEGIN;
+		
+		SELECT * INTO wmc_robot_ip_domain
+		FROM
+			wmc_robot_ip_domain
+		WHERE
+			wmc_robot_ip_domain.ip_addr = $remoteHost
+		FOR UPDATE;
+			
+		if(Array.size(@wmc_robot_ip_domain) > 0){
+			UPDATE wmc_robot_ip_domain
+			SET
+				resolved_name = $resolved_name,
+				resolved_time = now()
+			WHERE
+				wmc_robot_ip_domain.ip_addr = $remoteHost;
+		
+		}else{
+			INSERT INTO wmc_robot_ip_domain(
+				ip_addr,
+				resolved_name,
+				resolved_time
+			)
+			VALUES(
+				$remoteHost, //ip_addr,
+				$resolved_name,
+				now() // resolved_time
+			);
+		}
+		
+		COMMIT;
+	}
+	
+	return $resolved_name;
+}
+

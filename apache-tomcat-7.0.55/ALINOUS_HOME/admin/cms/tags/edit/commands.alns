@@ -1,0 +1,68 @@
+/*
+include("/admin/cms/tags/edit/commands.alns");
+*/
+
+include("/include/treemodel.alns");
+
+function Tags.exexuteCommand($IN, $SESSION)
+{
+	if($IN.cmd == "updateTag"){
+		updateTag($IN, $SESSION);
+		return "/admin/cms/tags/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "removePages"){
+		removePages($IN, $SESSION);
+	}
+	
+	return null;
+}
+
+function removePages($IN, $SESSION)
+{
+	if(Array.size(@IN.cms_page_ids) == 0){
+		return 0;
+	}
+	
+	BEGIN;
+	
+	DELETE FROM cms_tag_page
+	WHERE
+		cms_tag_page.cms_page_id IN(@IN.cms_page_ids);
+	
+	COMMIT;
+}
+
+
+function updateTag($IN, $SESSION)
+{
+	BEGIN;
+	
+	$tag_cms_page_id = 0;
+	if($IN.pagePath != null && $IN.pagePath != ""){
+		$node = TreeModel.getNodeByPath("cms", $IN.site + $IN.pagePath);
+		if($node.node_id != null){
+			SELECT * INTO cms_page
+			FROM
+				cms_page
+			WHERE
+				cms_page.node_id = $node.node_id;
+		}
+		
+		if($cms_page[0].cms_page_id != null){
+			$tag_cms_page_id = $cms_page[0].cms_page_id;
+		}
+	}
+	
+	UPDATE cms_tag
+	SET
+		tag_code = $IN.tag_code,
+		tag_name = $IN.tag_name,
+		tag_cms_page_id = $tag_cms_page_id
+	WHERE
+		cms_tag.node_id = $IN.selectedNodeId;
+	
+	
+	COMMIT;
+	
+	return 0;
+}

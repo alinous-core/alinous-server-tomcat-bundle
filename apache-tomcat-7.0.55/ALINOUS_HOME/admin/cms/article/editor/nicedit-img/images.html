@@ -1,0 +1,60 @@
+<html>
+<head>
+</head>
+<body>
+
+<div id="nicImages">
+
+<form name="nicUploadImgFrm" id="nicUploadImgFrm" action="images.html" method="POST" enctype="multipart/form-data">
+
+<b style="font-size: 18px;">Upload new image</b><br />
+<br />
+<table>
+	<tr>
+		<td>
+			<b style="font-size: 18px;">Image File:</b>
+		</td>
+		<td>
+			<input type="file" name="imgFile" />
+		</td>
+		<td>
+			<b style="font-size: 18px;">Title(alt):</b>
+		</td>
+		<td>
+			<input type="text" name="title" value="" style="width:200px;" />
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="cms_page_id" value="{$IN.cms_page_id}" />
+
+<input type="submit" name="sbmt" value="Upload" />
+<input type="hidden" name="cmd" value="upload" />
+</form>
+
+
+<form name="nicImgFrm" id="nicImgFrm" action="images.html" method="POST" 
+	enctype="multipart/form-data" onsubmit="return false;">
+<b style="font-size: 18px;">Uploaded images</b><br />
+<br />
+
+<div alns:iterate="@cms_resource" alns:variable="oneRecord" style="clear:none;display: inline-block; margin:3px 3px 0 0;">
+	<img src="{$oneRecord.url}"
+		niceImgId="{$oneRecord.cms_resource_id}"
+		title="{$oneRecord.resource_title}"
+		width="{$oneRecord.width}" height="{$oneRecord.height}" border="1" 
+		onclick="document.nicImgFrm.cms_resource_id.value='{$oneRecord.cms_resource_id}';"/><br />
+		<center><button type="button" class="delimgbtn" id="{$oneRecord.cms_resource_id}">Delete</button></center>
+	
+</div>
+
+<input type="hidden" name="cms_page_id" value="{$IN.cms_page_id}" />
+<input type="hidden" name="cms_resource_id" id="nice_image_id" value="" />
+<input type="hidden" name="cmd" value="" />
+</form>
+
+</div>
+
+
+</body>
+</html>

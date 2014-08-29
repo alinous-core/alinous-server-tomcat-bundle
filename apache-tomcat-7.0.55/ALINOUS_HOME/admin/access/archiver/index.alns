@@ -1,0 +1,87 @@
+include("/include/paging.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "delete"){
+	deleteArchive($IN ,$SESSION);
+}
+
+
+$maxPagingNumberScroll = 20;
+$limit = 25;
+$pageNumber = $IN.page;
+
+@archive_page = getRecords($IN, $SESSION, $limit);
+$totalRecords = getnumRecords($IN, $SESSION);
+
+$navi = Paging.getNavi($pageNumber, $limit, $totalRecords, 10);
+
+return 0;
+
+
+function getRecords($IN, $SESSION, $limit)
+{
+	SELECT archive_page_id, page_url, archived_time
+	INTO
+		archive_page
+	FROM
+		archive_page
+	ORDER BY archived_time
+	LIMIT $limit OFFSET $offset;
+	
+	$size = Array.size(@archive_page);
+	for($i = 0; $i < $size; $i++){
+		SELECT * INTO hm_master
+		FROM
+			hm_master
+		WHERE
+			hm_master.archive_page_id = $archive_page[$i].archive_page_id
+		LIMIT 1;
+		
+		if(Array.size(@hm_master) == 0){
+			$archive_page[$i].deleteble = 1;
+		}else{
+			$archive_page[$i].deleteble = 0;
+		}
+	}
+	
+	return @archive_page;
+}
+
+function getnumRecords($IN, $SESSION)
+{
+	SELECT count(*) AS cnt
+	INTO
+		archive_page
+	FROM
+		archive_page;
+	
+	if($archive_page[0].cnt == null){
+		return 0;
+	}
+
+	return Cast.toNumber($archive_page[0].cnt);
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+}
+
+
+function deleteArchive($IN ,$SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM archive_page
+	WHERE
+		archive_page.archive_page_id = $IN.archive_page_id;
+	
+	DELETE FROM archive_page_items
+	WHERE
+		archive_page_items.archive_page_id = $IN.archive_page_id;
+	
+	COMMIT;
+}

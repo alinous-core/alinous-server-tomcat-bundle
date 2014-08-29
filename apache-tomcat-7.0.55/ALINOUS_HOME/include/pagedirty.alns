@@ -1,0 +1,116 @@
+/*
+include("/include/pagedirty.alns");
+*/
+
+include("/include/template_primitive.alns");
+
+function PageDirty.detectTop($template_top_id, $is_paging)
+{
+	$force_folder = $is_paging;
+	
+	UPDATE cms_page
+	SET
+		dirty = now()
+	WHERE
+		cms_page.template_top_id = $template_top_id;
+	
+	UPDATE cms_page
+	SET
+		force_folder = $force_folder
+	WHERE
+		cms_page.template_top_id = $template_top_id AND
+		cms_page.force_folder = 0;
+	
+	
+	// for default templates
+	SELECT template_top_id INTO template_top 
+	FROM
+		template_top
+	ORDER BY template_top.position_order
+	LIMIT 1;
+	
+	if($template_top_id == $template_top[0].template_top_id ){
+		UPDATE cms_page
+		SET
+			dirty = now()
+		WHERE
+			cms_page.template_top_id = 0;
+		
+		UPDATE cms_page
+		SET
+			force_folder = $force_folder
+		WHERE
+			cms_page.template_top_id = 0 AND
+			cms_page.force_folder = 0;
+	}
+	
+}
+
+function PageDirty.detectContainer($template_container_id, $is_paging)
+{
+	SELECT * INTO template_container_children
+	FROM
+		template_container_children
+	WHERE
+		template_container_children.inner_template_container_id = $template_container_id;
+	
+	$size = Array.size(@template_container_children);
+	for($i = 0; $i < $size; $i++){
+		PageDirty.detectContainer($template_container_children[$i].template_container_id, $is_paging);
+	}
+	
+	SELECT * INTO template_top_children
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.inner_template_container_id = $template_container_id;
+	
+	$size = Array.size(@template_top_children);
+	for($i = 0; $i < $size; $i++){
+		PageDirty.detectTop($template_top_children[$i].template_top_id, $is_paging);
+	}
+}
+
+function PageDirty.detectPrimitive($template_primitive_id, $is_paging)
+{
+	$tmpl = PrimitiveTmpl.getTemplate($template_primitive_id);
+	
+	SELECT * INTO template_container_children
+	FROM
+		template_container_children
+	WHERE
+		template_container_children.inner_template_primitive_id = $template_primitive_id;
+	
+	$size = Array.size(@template_container_children);
+	for($i = 0; $i < $size; $i++){
+		PageDirty.detectContainer($template_container_children[$i].template_container_id, $is_paging);
+	}
+	
+	SELECT * INTO template_top_children
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.inner_template_primitive_id = $template_primitive_id;
+	
+	$size = Array.size(@template_top_children);
+	for($i = 0; $i < $size; $i++){
+		PageDirty.detectTop($template_top_children[$i].template_top_id, $is_paging);
+	}
+	
+	if($tmpl.is_embeded == 0){
+		return 0;
+	}
+	
+	$dir = "%" + PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id) + "%";
+	
+	UPDATE cms_page
+	SET
+		dirty = now()
+	WHERE
+		cms_page.page_body LIKE $dir;
+	
+}
+
+
+
+

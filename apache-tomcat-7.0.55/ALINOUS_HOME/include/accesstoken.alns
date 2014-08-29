@@ -1,0 +1,33 @@
+/*
+include("/includes/accesstoken.alns");
+*/
+
+
+function AccessToken.check($access_token, $SESSION)
+{
+	synchronized{
+		SELECT * INTO double_button_lock FROM double_button_lock
+		WHERE
+			session_id = $SESSION AND
+			access_token = $access_token
+		FOR UPDATE;
+		
+		if(Array.size(@DOUBLE_BUTTON_LOCK) == 0){
+			BEGIN;
+			INSERT INTO double_button_lock(
+				session_id,
+				access_token
+			)
+			VALUES(
+				$SESSION,
+				$access_token
+			);
+			COMMIT;
+			
+			return 0;
+		}
+	}
+	return 1;
+
+}
+

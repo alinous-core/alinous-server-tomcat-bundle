@@ -1,0 +1,67 @@
+<html>
+<body>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+function createFirstTag(form)
+{
+	var tag_code = form.tag_code.value;
+	var tag_name = form.tag_name.value;
+	
+	if(tag_code == ""){
+		alert("Input the Tag Code.");
+		return;
+	}
+	if(tag_code.match(/[^A-Za-z0-9_-]+/)){
+		alert("Please Tag Code in alphabets, numbers, '_' and '-'.");
+		return;
+	}
+	
+	if(tag_name == ""){
+		alert("Input the Tag Name.");
+		return;
+	}
+	
+	document.firstfrm.tag_name.value = tag_name;
+	document.firstfrm.tag_code.value = tag_code;
+	
+	document.firstfrm.cmd.value = 'createFirst';
+	document.firstfrm.submit();
+}
+-->
+</script>
+
+<h1>Create the First Tag</h1>
+
+<form name="dlgfrm" action="index.html">
+
+<table>
+	<tr>
+		<td width="160">
+			Tag Code:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="tag_code" value="" />
+		</td>
+	</tr>
+	<tr>
+		<td width="160">
+			Tag Name(Display):
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="tag_name" value="" />
+		</td>
+	</tr>
+</table>
+
+
+<br />
+
+<button type="button" onclick="createFirstTag(this.form)">Create Page</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+
+</form>
+
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+
+
+include("/admin/cms/publish/publish_top.alns");
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+
+SELECT * INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.node_id = $IN.selectedNodeId;
+
+$params.cms_page_id = $cms_page[0].cms_page_id;
+$params.node_id = $cms_page[0].node_id;
+
+if($cms_page[0].template_top_id == 0){
+	SELECT * INTO template_top
+	FROM
+		template_top
+	ORDER BY template_top.position_order DESC
+	LIMIT 1;
+	
+	$cms_page[0].template_top_id = $template_top[0].template_top_id;
+}
+
+$publishedFile = Publish.previewTop($SESSION, $cms_page[0].template_top_id, $params);
+
+return $publishedFile;

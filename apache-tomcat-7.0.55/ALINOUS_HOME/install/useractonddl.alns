@@ -1,0 +1,71 @@
+
+
+function WebActions.ddl()
+{
+	CREATE TABLE wic_usr(
+		user_id int,
+		total_count int not null default 0,
+		
+		PRIMARY KEY(user_id)	
+	);
+	
+	CREATE TABLE wic_user_page_access(
+		user_id int,
+		access_id int,
+		
+		session_id varchar(255) not null default '',
+		remote_host varchar(255) not null default '',
+		
+		lang varchar(255) not null default '',
+		platform varchar(255) not null default '',
+		useragent varchar(255) not null default '',
+		
+		url text not null default '',
+		referrer text,
+		window_width int not null default 0,
+		window_height int not null default 0,
+		documet_width int not null default 0,
+		documet_height int not null default 0,
+		
+		access_time timestamp not null default now(),
+		
+		analyzed int not null default 0,
+		
+		PRIMARY KEY(user_id, access_id)	
+	);
+	
+	CREATE TABLE wic_user_motion(
+		user_id int,
+		access_id int,
+		
+		/*
+			mousemoved
+			scrolled
+			clicked
+		*/
+		motion_type varchar(32) not null default '',
+		delta_mill int not null default 0,
+		
+		arg_x int not null default 0,
+		arg_y int not null default 0,
+				
+		PRIMARY KEY(user_id, access_id, motion_type, delta_mill)	
+	);
+	
+	CREATE TABLE wic_user_motion_archive(
+		user_id int,
+		access_id int,
+		
+		/*
+			mousemoved
+			scrolled
+			clicked
+		*/
+		motion_type varchar(32) not null default '',
+		round int not null default 0,
+				
+		records text not null default '',
+		
+		PRIMARY KEY(user_id, access_id, motion_type, round)	
+	);
+}

@@ -1,0 +1,27 @@
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "back"){
+	redirect "/admin/", 302;
+}
+
+
+return 0;
+
+function initParams($IN, $SESSION)
+{
+	if($IN.internal_link_file_name == null){
+		SELECT * INTO wmil_internal_link_file
+		FROM
+			wmil_internal_link_file
+		ORDER BY wmil_internal_link_file.internal_link_timestamp DESC
+		LIMIT 1;
+		
+		if(Array.size(@wmil_internal_link_file) > 0){
+			$IN.internal_link_file_name = $wmil_internal_link_file[0].internal_link_file_name;
+		}else{
+			$IN.internal_link_file_name = "";
+		}
+	}
+}
+

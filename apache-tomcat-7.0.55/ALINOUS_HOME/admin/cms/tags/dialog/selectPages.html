@@ -1,0 +1,212 @@
+<html>
+<body>
+<script>
+<!--//
+var PageDialog = new Object();
+
+PageDialog.selectAll = function(form)
+{
+	var img = document.getElementById("dlgchecker");
+	var srcText = new String(img.src);
+	if(srcText.lastIndexOf("/admin/cms/article/img/action_stop.gif") < 0){
+		var checked_bl = true;
+		img.src = "/admin/cms/article/img/action_stop.gif";
+	}else{
+		var checked_bl = false;
+		img.src = "/admin/cms/article/img/accept.png";
+	}
+
+	var checks = document.getElementsByName("dlg_cms_page_ids[]");
+	
+	for (var i = 0; i < checks.length; i++) {
+		checks[i].checked = checked_bl;
+	}
+	
+	return false;
+};
+PageDialog.onchecked = function(checkbox)
+{
+	if(checkbox.checked){
+		// alert("ON");
+	}
+	else{
+		elements = document.getElementsByClassName("dlg_check_cms_page_ids_" + checkbox.value);
+		for(var i = 0; i < elements.length; i++){
+			elements[i].parentNode.removeChild(elements[i]);
+		}
+	}
+}
+PageDialog.gotoPage = function(form, p)
+{
+		form.page.value = p;
+		form.cmd.value = "";
+		
+		
+		var url = "/admin/cms/tags/dialog/selectPages.html";
+		var fd = new FormData(form);
+		$.ajax({
+			type: 'POST',
+			url: url,
+			processData: false,
+			contentType: false,
+			data: fd,
+			dataType: 'html',
+			success: function (data){
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+}
+
+PageDialog.submitAdd = function(form)
+{
+		form.page.value = 0;
+		form.cmd.value = "addPages";
+		
+		
+		var url = "/admin/cms/tags/dialog/selectPages.html";
+		var fd = new FormData(form);
+		$.ajax({
+			type: 'POST',
+			url: url,
+			processData: false,
+			contentType: false,
+			data: fd,
+			dataType: 'html',
+			success: function (data){
+				document.frm.cmd.value = "";
+				document.frm.submit();
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+}
+
+PageDialog.previewPage = function (selectedNodeId)
+{
+	var getBrowserHeight = function () {
+		if(window.innerHeight){
+			return window.innerHeight;
+		}else if(document.documentElement && document.documentElement.clientHeight != 0 ){
+			return document.documentElement.clientHeight;
+		}else if (document.body){
+			return document.body.clientHeight;
+		}		
+		return 0;
+	};
+	
+	var getBrowserWidth = function () {
+		if(window.innerWidth ){
+			return window.innerWidth ;
+		}else if(document.documentElement && document.documentElement.clientWidth  != 0 ){
+			return document.documentElement.clientWidth ;
+		}else if (document.body){
+			return document.body.clientWidth ;
+		}		
+		return 0;
+	};
+	
+	var winWidth = getBrowserWidth();
+	var winHeight = getBrowserHeight();
+	
+	var w = ( screen.width - winWidth ) / 2;
+	var h = ( screen.height - winHeight ) / 2;
+	
+	var templatePath = "/admin/cms/article/preview/index.html";
+	var previewPath = templatePath + "?selectedNodeId=" + selectedNodeId;
+	
+	myWin = window.open(previewPath, "preview",
+	            "toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,width=" + winWidth + ",height=" + winHeight
+	           	+",left="+w+",top="+h);
+	
+	myWin.focus();
+}
+-->
+</script>
+
+<form name="dlgfrm" action="selectPages.html" method="POST">
+
+<table>
+	<tr>
+		<td>
+			<b>Keyword</b>
+		</td>
+		<td>
+			<input type="text" name="keyword" value="{$IN.keyword}" />
+		</td>
+		<td>
+			<button type="button" onclick="PageDialog.gotoPage(this.form, 0)">Search</button>
+		</td>
+	</tr>
+
+</table>
+
+<blockquote>
+
+<button type="button" onclick="PageDialog.submitAdd(this.form)">Add Checked Pages</button>
+</blockquote>
+
+<div class="jquery-ui-button">
+	<span alns:if="{BOOL($navi.prevPage != null)}">
+	<button type="button" onclick="PageDialog.gotoPage(this.form, {$navi.prevPage})" >Previous</button>
+	</span>
+	<span alns:if="{BOOL($navi.nextPage != null)}">
+	<button type="button" onclick="PageDialog.gotoPage(this.form, {$navi.nextPage})">Next</button>
+	</span>
+	
+	<span alns:iterate="@navi.pages" alns:variable="p">
+		<span alns:if="{BOOL($p != $IN.page)}">
+		<button type="button" onclick="PageDialog.gotoPage(this.form, {$p})">{$p.disp}</button>
+		</span>
+		<span alns:if="{BOOL($p == $IN.page)}" style="margin: 0 12px 0 12px;">
+		<u><b>{$p.disp}</b></u>
+		</span>
+	</span>
+</div>
+
+<table class="stdtable" width="100%">
+	<tr>
+		<th width="20" align="center">
+			<img src="/admin/cms/article/img/accept.png" border="0" id="dlgchecker"
+				onclick="javascript:PageDialog.selectAll(document.searchFrm);">
+		</th>
+		<th>
+			Title
+		</th>
+		<th>
+			Page
+		</th>
+		<th width="100">
+			Page Type
+		</th>
+	</tr>
+	<tr alns:iterate="@cms_page" alns:variable="oneRecord">
+		<td>
+			<input type="checkbox" name="dlg_cms_page_ids[]" value="{$oneRecord.cms_page_id}"
+				onclick="PageDialog.onchecked(this)" checked="{$oneRecord.checked}">
+		</td>
+		<td>
+			{$oneRecord.page_title}
+		</td>
+		<td>
+			<a href="javascript:PageDialog.previewPage('{$oneRecord.node_id}')">{$oneRecord.page_path}</a>
+		</td>
+		<td>
+			{$oneRecord.page_type}<br />
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="dlg_cms_page_ids[]" class="dlg_check_cms_page_ids_{$ids}" alns:iterate="@IN.dlg_cms_page_ids" alns:variable="ids" value="{$ids}" />
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="page" value="{$IN.page}" />
+<input type="hidden" name="cms_tag_id" value="{$IN.cms_tag_id}" />
+
+</form>
+
+</body>
+</html>

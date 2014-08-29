@@ -1,0 +1,12 @@
+
+SELECT * INTO london FROM london;
+
+testFunction();
+
+return 0;
+
+function testFunction()
+{
+	SELECT * INTO london FROM london;
+	return 0;
+}

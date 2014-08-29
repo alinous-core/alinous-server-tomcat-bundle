@@ -1,0 +1,104 @@
+
+include("/admin/access/archiver/api/webarchive.alns");
+
+
+SELECT * INTO wic_user_page_access
+FROM
+	wic_user_page_access
+WHERE
+	wic_user_page_access.user_id = $IN.user_id AND
+	wic_user_page_access.access_id = $IN.access_id;
+
+$archive_page_id = WebArchive.getArchivedId($wic_user_page_access[0].url
+		, $wic_user_page_access[0].access_time);
+
+$wic_user_page_access[0].archive_page_id = $archive_page_id;
+
+$json = Record.dom2json(@wic_user_page_access);
+
+processEvents($IN, $SESSION);
+
+return $json;
+
+function processEvents($IN, $SESSION)
+{
+	BEGIN;
+		DELETE FROM wic_user_motion
+		WHERE
+			wic_user_motion.user_id = $IN.user_id AND
+			wic_user_motion.access_id = $IN.access_id;
+	COMMIT;
+	
+	// wait for deletion completes
+	SELECT * INTO wic_user_motion
+	FROM
+		wic_user_motion
+	WHERE
+		wic_user_motion.user_id = $IN.user_id AND
+		wic_user_motion.access_id = $IN.access_id;
+	while(Array.size(@wic_user_motion) > 0){
+		Thread.sleep(300);
+		
+		SELECT * INTO wic_user_motion
+		FROM
+			wic_user_motion
+		WHERE
+			wic_user_motion.user_id = $IN.user_id AND
+			wic_user_motion.access_id = $IN.access_id;
+	}
+
+	SELECT * INTO wic_user_motion_archive
+	FROM
+		wic_user_motion_archive
+	WHERE
+		wic_user_motion_archive.user_id = $IN.user_id AND
+		wic_user_motion_archive.access_id = $IN.access_id
+	ORDER BY wic_user_motion_archive.round;
+	
+	$size = Array.size(@wic_user_motion_archive);
+	for($i = 0; $i < $size; $i++){
+		extractArchive($IN.user_id, $IN.access_id, $wic_user_motion_archive[$i]);
+	}	
+}
+
+function extractArchive($user_id, $access_id, $wic_user_motion_archive)
+{
+	@events = String.split($wic_user_motion_archive.records, " ");
+	
+	BEGIN;
+	
+	$size = Array.size(@events);
+	for($i = 0; $i < $size; $i++){
+		@vals = String.split($events[$i], ",");
+		if(Array.size(@vals) != 3){
+			continue;
+		}
+		
+		DELETE FROM wic_user_motion
+		WHERE
+			wic_user_motion.user_id = $user_id AND
+			wic_user_motion.access_id = $access_id AND
+			wic_user_motion.motion_type = $wic_user_motion_archive.motion_type AND
+			wic_user_motion.delta_mill = $vals[2];
+		
+		INSERT INTO wic_user_motion(
+			user_id,
+			access_id,
+			motion_type,
+			delta_mill,
+			arg_x,
+			arg_y
+		)
+		VALUES(
+			$user_id,
+			$access_id,
+			$wic_user_motion_archive.motion_type,
+			$vals[2], // delta_mill,
+			$vals[0], // arg_x,
+			$vals[1] // arg_y
+		);
+	}
+	
+	COMMIT;
+}
+

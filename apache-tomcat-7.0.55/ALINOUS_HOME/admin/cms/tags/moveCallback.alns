@@ -1,0 +1,45 @@
+
+
+if($IN.cmd == "delete"){
+	deleteNodes($IN, $SESSION);	
+}
+
+return 0;
+
+function deleteNodes($IN, $SESSION)
+{
+	BEGIN;
+	
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag
+	WHERE
+		cms_tag.node_id = $IN.nodeId;
+	
+	$size = Array.size(@cms_tag);
+	for($i = 0; $i < $size; $i++){
+		SELECT * INTO cms_tag_page
+		FROM
+			cms_tag_page
+		WHERE
+			cms_tag_page.cms_tag_id = $cms_tag[$i].cms_tag_id;
+		
+		for($p = 0; $p < Array.size(@cms_tag_page); $p++){
+			UPDATE cms_page
+			SET
+				dirty = now()
+			WHERE
+				cms_page.cms_page_id = $cms_tag_page[$p].cms_page_id;
+		}
+		
+		DELETE FROM cms_tag_page
+		WHERE
+			cms_tag_page.cms_tag_id = $cms_tag[$i].cms_tag_id;
+	}
+	
+	DELETE FROM cms_tag
+	WHERE
+		cms_tag.node_id = $IN.nodeId;
+	
+	COMMIT;
+}

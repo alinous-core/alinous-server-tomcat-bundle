@@ -1,0 +1,236 @@
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/admin/cms/publish/publish.alns");
+include("/include/sitesetting.alns");
+include("/include/serialutils.alns");
+
+@sites = SiteSetting.getSiteFromPages();
+initParams($IN, $SESSION, @sites);
+
+if($IN.cmd == "updateRobotsTxt"){
+	updateRobotsTxt($IN, $SESSION);
+}
+else if($IN.cmd == "deleteRss"){
+	deleteRss($IN, $SESSION);
+}
+else if($IN.cmd == "deleteFile"){
+	deleteFile($IN, $SESSION);
+}
+else if($IN.cmd == "updateSitemapPageType"){
+	updateSitemapPageType($IN, $SESSION);
+	SiteSetting.generateSitemap($IN.site);
+}
+
+$robot = getRobotTxt($IN.site);
+
+@rss_setting = getRss($IN, $SESSION);
+
+@site_resource = getFiles();
+
+SELECT * INTO sitemap_page_type
+FROM
+	sitemap_page_type
+ORDER BY sitemap_page_type.page_type;
+$size_page_type = Array.size(@sitemap_page_type);
+
+for($i = 0; $i < 6; $i++){
+	if($sitemap_page_type[$i].page_type == null){
+		$sitemap_types[$i] = "";
+	}else{
+		$sitemap_types[$i] = $sitemap_page_type[$i].page_type;
+	}
+}
+
+
+return 0;
+
+function updateSitemapPageType($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM sitemap_page_type
+	WHERE
+		sitemap_page_type.site_path = $IN.site;
+	
+	$size = Array.size(@IN.sitemap_types);
+	for($i = 0; $i < $size; $i++){
+		if($IN.sitemap_types[$i] == null || $IN.sitemap_types[$i] == ""){
+			continue;
+		}
+		
+		SELECT * INTO sitemap_page_type
+		FROM
+			sitemap_page_type
+		WHERE
+			sitemap_page_type.page_type = $IN.sitemap_types[$i] AND
+			sitemap_page_type.site_path = $IN.site;
+		
+		if(Array.size(@sitemap_page_type) > 0){
+			continue;
+		}
+		
+		INSERT INTO sitemap_page_type(
+			site_path,
+			page_type
+		)
+		VALUES(
+			$IN.site,
+			$IN.sitemap_types[$i]
+		);		
+	}
+	
+	// sitemap domain
+	SELECT * INTO sitemap_setting
+	FROM
+		sitemap_setting
+	WHERE
+		sitemap_setting.site_path = $IN.site;
+	
+	if(Array.size(@sitemap_setting) == 0){
+		INSERT INTO sitemap_setting(
+			site_path,
+			site_domain 
+		)
+		VALUES(
+			$IN.site, // site_path,
+			$IN.site_domain
+		);
+	}else{
+		UPDATE sitemap_setting
+		SET
+			site_domain = $IN.site_domain
+		WHERE
+			sitemap_setting.site_path = $IN.site;
+	}
+	
+	COMMIT;	
+}
+
+function deleteFile($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM site_resource
+	WHERE
+		site_resource.site_resource_id = $IN.site_resource_id;
+	
+	COMMIT;
+}
+
+function getFiles()
+{
+	SELECT * INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.file_name <> 'robots.txt'
+	ORDER BY site_resource.file_name;
+	
+	return @site_resource;
+}
+
+function deleteRss($IN, $SESSION)
+{
+	BEGIN;
+
+	DELETE FROM rss_setting
+	WHERE
+		rss_setting.rss_setting_id = $IN.rss_setting_id;
+	
+	DELETE FROM rss_setting_tags
+	WHERE
+		rss_setting_tags.rss_setting_id = $IN.rss_setting_id;
+	
+	COMMIT;
+}
+
+function getRss($IN, $SESSION)
+{
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	ORDER BY rss_setting.feed_name;
+	
+	return @rss_setting;
+}
+
+function updateRobotsTxt($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE site_resource
+	SET
+		file_text = $IN.robot_file_text,
+		update_time = now()
+	WHERE
+		site_resource.site_path = $IN.site AND
+		site_resource.file_name = 'robots.txt';
+	
+	COMMIT;
+}
+
+function getRobotTxt($site_path)
+{
+	SELECT * INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.site_path = $site_path AND
+		site_resource.file_name = 'robots.txt';
+	
+	if(Array.size(@site_resource) > 0){
+		return $site_resource[0];
+	}
+	
+	BEGIN;
+	
+	$defaultRobots = "User-agent: *\nDisallow: /admin/\nAllow: /";
+	
+	$site_resource_id = Common.newSerial("site_resource");
+	
+	INSERT INTO site_resource(
+		site_resource_id,
+		site_path,
+		file_name,
+		file_text
+	)
+	VALUES(
+		$site_resource_id,
+		$site_path,
+		'robots.txt', // file_name,
+		$defaultRobots // file_text
+	);
+	
+	COMMIT;
+	
+	SELECT * INTO site_resource
+	FROM
+		site_resource
+	WHERE
+		site_resource.site_path = $site_path AND
+		site_resource.file_name = 'robots.txt';
+	
+	return $site_resource[0];
+}
+
+function initParams($IN, $SESSION, @sites)
+{
+	if($IN.site == null){
+		$IN.site = $sites[0];
+	}
+	
+	if($IN.site_domain == null){
+		SELECT * INTO sitemap_setting
+		FROM
+			sitemap_setting
+		WHERE
+			sitemap_setting.site_path = $IN.site;
+		if(Array.size(@sitemap_setting) > 0){
+			$IN.site_domain = $sitemap_setting[0].site_domain;
+		}
+		else{
+			$IN.site_domain = "";
+		}
+	}
+}

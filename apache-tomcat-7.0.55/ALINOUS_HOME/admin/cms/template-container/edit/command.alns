@@ -1,0 +1,151 @@
+
+/*
+include("/admin/cms/template-container/edit/command.alns");
+*/
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+
+include("/include/pagedirty.alns");
+
+function executeCommand($IN, $SESSION)
+{
+	if($IN.cmd == "edit.save"){
+		editSave($IN, $SESSION);
+		return "edit save";
+	}
+	else if($IN.cmd == "apply"){
+		apply($IN, $SESSION);
+	}
+	
+	return 0;
+}
+
+function apply($IN, $SESSION)
+{
+	SELECT template_container_id INTO container
+	FROM
+		template_container
+	WHERE
+		template_container.node_id = $IN.selectedNodeId;
+	
+	ContainerTmpl.sync($container[0].template_container_id, "");
+	
+	BEGIN;
+	PageDirty.detectContainer($container[0].template_container_id, 0);
+	COMMIT;
+	
+	return 0;
+}
+
+function editSave($IN, $SESSION)
+{
+	BEGIN;
+	
+	
+	SELECT * INTO container
+	FROM
+		template_container
+	WHERE
+		template_container.node_id = $IN.selectedNodeId
+	FOR UPDATE;
+	
+	
+	// reset children
+	DELETE FROM template_container_children
+	WHERE
+		template_container_children.template_container_id = $container[0].template_container_id;
+	
+	// left
+	$size = Array.size(@IN.left_tmpls);
+	for($i = 0; $i < $size; $i++){
+		@vals = String.split($IN.left_tmpls[$i], ",");
+		if($vals[1] == "primitive"){
+			INSERT INTO template_container_children(
+				template_container_id,
+				position,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$container[0].template_container_id,
+				'left', // position,
+				$i, // position_order,
+				0, // inner_template_container_id,
+				$vals[0] // inner_template_primitive_id
+			);
+		}
+		else if($vals[1] == "container"){
+			INSERT INTO template_container_children(
+				template_container_id,
+				position,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$container[0].template_container_id,
+				'left', // position,
+				$i, // position_order,
+				$vals[0], // inner_template_container_id,
+				0 // inner_template_primitive_id
+			);
+		}
+	}
+	
+	// right
+	$size = Array.size(@IN.right_tmpls);
+	for($i = 0; $i < $size; $i++){
+		@vals = String.split($IN.right_tmpls[$i], ",");
+		if($vals[1] == "primitive"){
+			INSERT INTO template_container_children(
+				template_container_id,
+				position,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$container[0].template_container_id,
+				'right', // position,
+				$i, // position_order,
+				0, // inner_template_container_id,
+				$vals[0] // inner_template_primitive_id
+			);
+		}
+		else if($vals[1] == "container"){
+			INSERT INTO template_container_children(
+				template_container_id,
+				position,
+				position_order,
+				inner_template_container_id,
+				inner_template_primitive_id
+			)
+			VALUES(
+				$container[0].template_container_id,
+				'right', // position,
+				$i, // position_order,
+				$vals[0], // inner_template_container_id,
+				0 // inner_template_primitive_id
+			);
+		}
+	}
+	
+	UPDATE template_container
+	SET
+		div_id = $IN.div_id,
+		div_left_id = $IN.div_left_id,
+		div_right_id = $IN.div_right_id,
+		code_css = $IN.code_css,
+		code_js = $IN.code_js,
+		code_alinous = $IN.code_alinous
+	WHERE
+		template_container.node_id = $IN.selectedNodeId;
+	
+	COMMIT;
+	
+	ContainerTmpl.sync($container[0].template_container_id, "preview");
+	
+	return 0;
+}

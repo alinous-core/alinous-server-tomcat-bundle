@@ -1,0 +1,162 @@
+
+include("/include/paging.alns");
+include("/include/serialutils.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "addPages"){
+	addPages($IN, $SESSION);
+}
+
+$limit = 10;
+$offset = $IN.page * $limit;
+
+$params = searchParams($IN, $SESSION);
+@cms_page = getArticles($offset, $limit, $params);
+
+$size = Array.size(@cms_page);
+for($i = 0; $i < $size; $i++){
+	if(isChecked(@IN.dlg_cms_page_ids, $cms_page[$i].cms_page_id)){
+		$cms_page[$i].checked = "checked";
+	}else{
+		$cms_page[$i].checked = "false";
+	}
+}
+
+$maxNumber = getNumArticles($params);
+
+$navi = Paging.getNavi($IN.page, $limit, $maxNumber, 10);
+
+return 0;
+
+function addPages($IN, $SESSION)
+{
+	BEGIN;
+	
+	$size = Array.size(@IN.dlg_cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		SELECT cms_tag_page.cms_page_id INTO cms_tag_page
+		FROM
+			cms_tag_page
+		WHERE
+			cms_tag_page.cms_page_id = $IN.dlg_cms_page_ids[$i] AND
+			cms_tag_page.cms_tag_id = $IN.cms_tag_id;
+		
+		if(Array.size(@cms_tag_page) == 0){
+			$page_order = Common.newSerial("cms_tag_page");
+			
+			INSERT INTO cms_tag_page(
+				cms_tag_id,
+				cms_page_id,
+				page_order
+			)
+			VALUES(
+				$IN.cms_tag_id,
+				$IN.dlg_cms_page_ids[$i], // cms_page_id,
+				$page_order
+			);
+		}		
+	}
+	
+	COMMIT;
+}
+
+function isChecked(@cms_page_ids, $cms_page_id)
+{
+	$size = Array.size(@cms_page_ids);
+	for($i = 0; $i < $size; $i++){
+		if($cms_page_id == $cms_page_ids[$i]){
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+function getNumArticles($params)
+{
+	SELECT count(*) as cnt INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.page_status = $params.page_status AND
+		cms_page.template_top_id = $params.template_top_id AND
+		cms_page.page_type = $params.page_type AND
+		(
+			lower(cms_page.page_title) LIKE $params.keyword OR
+			lower(cms_page.search_text) LIKE $params.keyword
+		)
+	ADJUST_WHERE = true;
+	
+	if($cms_page[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($cms_page[0].cnt);
+}
+
+function getArticles($offset, $limit, $params)
+{
+	SELECT cms_page.cms_page_id, cms_page.page_title, cms_page.page_status, cms_page.template_top_id,
+		cms_page.second_template_top_id, cms_page.page_type,
+		tree_model.page_path, tree_model.node_id
+	INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.page_status = $params.page_status AND
+		cms_page.template_top_id = $params.template_top_id AND
+		cms_page.page_type = $params.page_type AND
+		(
+			lower(cms_page.page_title) LIKE $params.keyword OR
+			lower(cms_page.search_text) LIKE $params.keyword
+		)
+	ORDER BY tree_model.page_path
+	LIMIT $limit OFFSET $offset
+	ADJUST_WHERE = true;
+	
+	return @cms_page;
+}
+
+function searchParams($IN, $SESSION)
+{
+	if($IN.keyword != ""){
+		$params.keyword = "%" + String.toLowerCase($IN.keyword) + "%";
+	}
+	
+	if($IN.page_status != ""){
+		$params.page_status = $IN.page_status;
+	}
+	if($IN.template_top_id != ""){
+		$params.template_top_id = $IN.template_top_id;
+	}
+	if($IN.page_type != ""){
+		if($IN.page_type == "''"){
+			$params.page_type = "";
+		}else{
+			$params.page_type = $IN.page_type;
+		}
+	}
+	
+	return $params;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+	if($IN.page_path == null){
+		$IN.page_path = "";
+	}
+	if($IN.keyword == null){
+		$IN.keyword = "";
+	}
+
+}

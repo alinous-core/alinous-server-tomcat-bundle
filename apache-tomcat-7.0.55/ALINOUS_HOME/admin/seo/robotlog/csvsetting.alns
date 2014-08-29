@@ -1,0 +1,111 @@
+
+if($IN.cmd == "common"){
+	resetCommon();
+}
+else if($IN.cmd == "combined"){
+	resetCombined();
+}
+
+@itemsUsed = getListItems(1);
+@itemsUnused = getListItems(0);
+
+return 0;
+
+function resetCommon()
+{
+	// LogFormat "%h %l %u %t \"%r\" %>s %b" common
+	BEGIN;
+	
+	DELETE FROM wmc_robot_accesslog_setting;
+	
+	$idx = 0;
+	WmcContentKeywords.insertItems("remote-host", "%h", 1, $idx++, 1);
+	WmcContentKeywords.insertItems("local-client-id", "%l", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("user-name", "%u", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("time", "%t", 1, $idx++, 1);
+	WmcContentKeywords.insertItems("request-first-line", "%r", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("status", "%s", 1, $idx++, 0);
+	WmcContentKeywords.insertItems("bytes", "%b", 1, $idx++, 0);
+	
+	$idx = 0;
+	WmcContentKeywords.insertItems("referer", "%{Referer}i", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("user-agent", "%{User-Agent}i", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("apache-Ip", "%A", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("bytes-with-header", "%B", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("requested-file", "%f", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("request_protocol", "%H", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("method", "%m", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("query-string", "%q", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("status-last", "%>S", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("time-spent", "%T", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("url-path", "%u", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("virtual-host", "%v", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("virtual-host-canonical", "%V", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("connection-statsus", "%X", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-1", "ignore1", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-2", "ignore2", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-3", "ignore3", 0, $idx++, 0);
+	WmcContentKeywords.insertItems("ignore-4", "ignore4", 0, $idx++, 0);
+	
+	COMMIT;
+}
+
+function resetCombined()
+{
+	// LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+	
+	BEGIN;
+	
+	DELETE FROM wmc_robot_accesslog_setting;
+	
+	$idx = 0;
+	WmcContentKeywords.insertItems("remote-host", "%h", 1, $idx++, 1);	
+	WmcContentKeywords.insertItems("local-client-id", "%l", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("user-name", "%u", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("time", "%t", 1, $idx++, 1);	
+	WmcContentKeywords.insertItems("request-first-line", "%r", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("status", "%s", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("bytes", "%b", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("referer", "%{Referer}i", 1, $idx++, 0);	
+	WmcContentKeywords.insertItems("user-agent", "%{User-Agent}i", 1, $idx++, 0);	
+	
+	$idx = 0;
+	WmcContentKeywords.insertItems("apache-Ip", "%A", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("bytes-with-header", "%B", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("requested-file", "%f", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("request_protocol", "%H", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("method", "%m", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("query-string", "%q", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("status-last", "%>S", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("time-spent", "%T", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("url-path", "%u", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("virtual-host", "%v", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("virtual-host-canonical", "%V", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("connection-statsus", "%X", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("ignore-1", "ignore1", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("ignore-2", "ignore2", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("ignore-3", "ignore3", 0, $idx++, 0);	
+	WmcContentKeywords.insertItems("ignore-4", "ignore4", 0, $idx++, 0);	
+	
+	COMMIT;	
+}
+
+function WmcContentKeywords.insertItems($item_type, $item_type_desc, $item_used, $item_order, $item_essential)
+{
+	INSERT INTO wmc_robot_accesslog_setting(item_type, item_type_desc, item_used, item_order, item_essential)
+	VALUES($item_type, $item_type_desc, $item_used, $item_order, $item_essential);
+}
+
+
+function getListItems($item_used)
+{
+	SELECT * INTO wmc_robot_accesslog_setting
+	FROM
+		wmc_robot_accesslog_setting
+	WHERE
+		wmc_robot_accesslog_setting.item_used = $item_used
+	ORDER BY wmc_robot_accesslog_setting.item_order;
+	
+	return @wmc_robot_accesslog_setting;
+}
+

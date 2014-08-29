@@ -1,0 +1,25 @@
+
+$line = Debugger.getCurrentLine($IN.threadId);
+
+$retdom[0].state = "suspended";
+if($line == null){
+	$retdom[0].state = "terminated";
+}
+
+
+$modulePath = $line.modulePath;
+if($retdom[0].state == "terminated"){
+	Debugger.clearAllBreakpoints($IN.modulePath);
+}
+
+Variable.release($line.modulePath);
+
+$retdom[0].line = $line;
+$retdom[0].modulePath = $modulePath;
+
+$repo = Debugger.getVariables($IN.threadId);
+$retdom[0].repo = $repo;
+
+$json = Record.dom2json(@retdom);
+
+return $json;

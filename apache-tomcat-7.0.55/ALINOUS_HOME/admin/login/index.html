@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Manage login users</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button, input:submit").button();
+});
+
+function editUser(form, users)
+{
+	form.users.value = users;
+	form.cmd.value = "editUser";
+	form.submit();
+}
+
+function deleteUser(form, users)
+{
+	var bl = confirm("Are you sure to delete?");
+	if(!bl){
+		return;
+	}
+	
+	form.users.value = users;
+	form.cmd.value = "deleteUser";
+	form.submit();
+}
+
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Manage users</h1>
+
+<blockquote>
+
+
+<h2>New user</h2>
+
+<form name="newfrm" action="index.html" method="POST">
+<table>
+	<tr>
+		<td>
+			User Id :
+		</td>
+		<td>
+			<input type="text" name="users" value="" size="32"
+				alns:validate="custom"
+				maxlength="255" style="width:250px;"/>
+			<span alns:msg="users" alns:form="newfrm" alns:validate="notnull">
+				<font color="#FF0000">Input the User Id.</font>
+			</span>
+			<span alns:msg="users" alns:form="newfrm" alns:validate="exists">
+				<font color="#FF0000">This User Id is already used.</font>
+			</span>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Password :
+		</td>
+		<td>
+			<input type="password" name="passwords" value="" size="32"
+				alns:validate="notnull"
+				maxlength="255" style="width:250px;" />
+			<span alns:msg="passwords" alns:form="newfrm" alns:validate="notnull">
+				<font color="#FF0000">Input the password.</font>
+			</span>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			
+		</td>
+		<td>
+			<input type="submit" name="sbmt" value="Create a New User" />
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="cmd" value="addUser" />
+</form>
+
+<h2>Manage users</h2>
+
+<form name="frm" action="index.html" method="POST">
+
+<table bgcolor="#64abfb">
+	<tr>
+		<th width="200">
+			User Id
+		</th>
+		<th width="200">
+			Role
+		</th>
+		<th width="200">
+			Edit User
+		</th>
+		<th width="200">
+			Delete User
+		</th>
+	</tr>
+	<tr alns:iterate="@auth_table" alns:variable="oneRecord">
+		<td bgcolor="#ffffff">
+			{$oneRecord.users}
+		</td>
+		<td bgcolor="#ffffff">
+			{$oneRecord.roles}
+		</td>
+		<td align="center" bgcolor="#ffffff">
+			<button type="button" onclick="editUser(this.form, '{$oneRecord.users}')">Edit User</button>
+		</td>
+		<td align="center" bgcolor="#ffffff">
+			<button type="button" onclick="deleteUser(this.form, '{$oneRecord.users}')"
+				alns:if="{BOOL($sizeUsers > 1)}">Delete User</button>
+		</td>
+	</tr>
+</table>
+
+<input type="hidden" name="users" value="" />
+<input type="hidden" name="cmd" value="" />
+</form>
+
+</blockquote>
+
+</div>
+
+</body>
+</html>

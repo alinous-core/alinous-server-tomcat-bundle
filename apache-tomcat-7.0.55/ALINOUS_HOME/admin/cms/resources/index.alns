@@ -1,0 +1,99 @@
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+@cms_resource = getResources($IN, $SESSION);
+
+
+return 0;
+
+function tags($IN, $SESSION)
+{
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = $IN.resource_owner_type AND
+		cms_resource_group.resource_owner_id = $IN.resource_owner_id;
+	
+	return @cms_resource_group;
+}
+
+function getResources($IN, $SESSION)
+{
+	SELECT cms_resource_id, resource_owner_type, resource_owner_id, resource_name, resource_type
+		, resource_title, resource_description, resource_binary
+	INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = $IN.resource_owner_type AND
+		cms_resource.resource_owner_id = $IN.resource_owner_id
+	ORDER BY cms_resource.position DESC;
+	
+	@tags = tags($IN, $SESSION);
+	
+	$size = Array.size(@cms_resource);
+	for($i = 0; $i < $size; $i++){
+		if($cms_resource[$i].resource_type == "image"){
+			$cms_resource[$i].src = CmsPath.getImageUrlPath("", $cms_resource[$i].cms_resource_id);
+						
+			ImgResource.sync($cms_resource[$i].cms_resource_id);
+			
+			$filePath = CmsPath.getimagePath("/html_resource", $cms_resource[$i].cms_resource_id);
+			
+			try{
+				$imgSize = Img.getSize($filePath);
+			}catch($e){
+				$cms_resource[$i].width = $max;
+				continue;
+			}
+			
+			$max = 150;
+			if($imgSize.width > $imgSize.height){
+				$cms_resource[$i].height = $imgSize.height * $max / $imgSize.width;
+				$cms_resource[$i].width = $max;
+			}
+			else{
+				$cms_resource[$i].width = $imgSize.width * $max / $imgSize.height;
+				$cms_resource[$i].height = $max;
+			}			
+		}
+		else if($cms_resource[$i].resource_type == "text"){
+			$cms_resource[$i].src = $cms_resource[$i].resource_name;
+		}
+		else if($cms_resource[$i].resource_type == "url"){
+			$cms_resource[$i].src = $cms_resource[$i].resource_binary;
+		}
+		
+		@cms_resource[$i].tagStatus = tagStatus($cms_resource[$i], @tags);
+	}
+	
+	return @cms_resource;
+}
+
+function tagStatus($cms_resource, @tags)
+{
+	$size = Array.size(@tags);
+	for($i = 0; $i < $size; $i++){
+		SELECT * INTO cms_resource_to_group
+		FROM
+			cms_resource_to_group
+		WHERE
+			cms_resource_to_group.cms_resource_group_id = $tags[$i].cms_resource_group_id AND
+			cms_resource_to_group.cms_resource_id = $cms_resource.cms_resource_id;
+		
+		if(Array.size(@cms_resource_to_group) == 0){
+			$tagStatus[$i].checked = false;
+		}else{
+			$tagStatus[$i].checked = "checked";
+		}
+		$tagStatus[$i].cms_resource_group_id = $tags[$i].cms_resource_group_id;
+		$tagStatus[$i].group_code = $tags[$i].group_code;
+		
+	}
+	
+	
+	return @tagStatus;
+}
+

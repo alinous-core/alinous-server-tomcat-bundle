@@ -1,0 +1,63 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$("button").button();
+});
+-->
+</script>
+
+<form name="dlgfrm" action="" method="POST">
+<h3>New Marker Tag</h3>
+
+<table>
+	<tr>
+		<td>
+			Marker Tag Name:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="group_code" value="" />
+		</td>
+	</tr>
+</table>
+
+<center>
+	<button type="button" onclick="ResourceTag.submitForm(this.form, 'newTag')">Create Marker Tag</button>
+	<button type="button" onclick='ResourceTag.closeDialog()'>Close</button>
+</center>
+
+<h3>Marking Tags</h3>
+
+<table class="stdtable">
+	<tr>
+		<th>
+			Marking Tag Code
+		</th>
+		<th>
+			Delete
+		</th>
+	</tr>
+	<tr alns:iterate="@cms_resource_group" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.group_code}
+		</td>
+		<td align="center">
+			<button type="button"
+				onclick="ResourceTag.deleteTag(this.form, {$oneRecord.cms_resource_group_id})">Delete</button>
+		</td>
+	</tr>
+</table>
+
+
+
+<input type="hidden" name="cmd" value="" />
+
+<input type="hidden" name="resource_owner_type" value="{$IN.resource_owner_type}" />
+<input type="hidden" name="resource_owner_id" value="{$IN.resource_owner_id}" />
+
+<input type="hidden" name="cms_resource_group_id" value="" />
+</form>
+
+</body>
+</html>

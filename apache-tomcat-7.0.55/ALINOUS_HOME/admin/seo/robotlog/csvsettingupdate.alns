@@ -1,0 +1,31 @@
+
+if($IN.cmd == "update"){
+	updateItems($IN, $SESSION);
+}
+
+return 0;
+
+function updateItems($IN, $SESSION)
+{
+	BEGIN;
+	
+	@datas = String.split($IN.data, ",");
+	if($IN.sortId == "usedItems"){
+		$item_used = 1;
+	}else{
+		$item_used = 0;
+	}
+	
+	$size = Array.size(@datas);
+	for($i = 0; $i < $size; $i++){
+		$item_order = $i + 1;
+		UPDATE wmc_robot_accesslog_setting
+		SET
+			item_used = $item_used,
+			item_order = $item_order
+		WHERE
+			wmc_robot_accesslog_setting.item_type = $datas[$i];
+	}
+	
+	COMMIT;
+}

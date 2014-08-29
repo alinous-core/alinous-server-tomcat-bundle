@@ -1,0 +1,108 @@
+
+/*
+include("/include/progress.alns");
+*/
+
+function ProgressJob.startJob($jobId, $jobMax, $jobFunction, $params)
+{
+	synchronized{
+		BEGIN;
+		
+		INSERT INTO job_progress(
+			job_id,
+			job_done,
+			job_max
+		)
+		VALUES(
+			$jobId,
+			0, // job_done,
+			$jobMax
+		);
+		
+		COMMIT;		
+	}
+	
+	$params.jobMax = $jobMax;
+	Thread.execute($jobFunction, $params);
+}
+
+function ProgressJob.jobStarted($jobId)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = $jobId;
+	
+	if(Array.size(@job_progress) == 0){
+		return false;
+	}
+	
+	return true;
+}
+
+function ProgressJob.jobFinished($jobId)
+{
+	// finished th job
+	BEGIN;
+	
+	DELETE FROM job_progress
+	WHERE
+		job_progress.job_id = $jobId;
+	
+	COMMIT;
+}
+
+function ProgressJob.progress($delta, $jobId)
+{
+	BEGIN;
+	
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = $jobId
+	FOR UPDATE;
+	
+	$job_done = $job_progress[0].job_done + $delta;
+	
+	UPDATE job_progress
+	SET
+		job_done = $job_done
+	WHERE
+		job_progress.job_id = $jobId;
+	
+	COMMIT;
+}
+
+function ProgressJob.getParsentage($jobId)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = $jobId;
+	
+	if(Array.size(@job_progress) == 0){
+		return 100;
+	}
+	
+	return 100 * $job_progress[0].job_done / $job_progress[0].job_max;
+}
+
+
+function ProgressJob.jobWorking($jobId)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = $jobId;
+	if(Array.size(@job_progress) == 0){
+		return false;
+	}
+	
+	return true;
+}
+
+

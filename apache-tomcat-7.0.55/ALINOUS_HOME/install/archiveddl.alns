@@ -1,0 +1,35 @@
+
+
+
+function WebArchive.ddl()
+{
+	CREATE TABLE archive_page(
+		archive_page_id int,
+		
+		page_url text not null default '',
+		page_html text not null default '',
+		archived_time timestamp not null default now(),
+		
+		PRIMARY KEY(archive_page_id)
+	);
+	
+	CREATE TABLE archive_page_items(
+		archive_page_id int,
+		archive_serial int not null default 0,
+		
+		/*
+			javascript
+			css
+			image
+		*/
+		archive_type varchar(255) not null,
+		content text not null default '',
+		
+		PRIMARY KEY(archive_page_id, archive_serial)
+	);
+	/*
+	drop table archive_page;
+	drop table archive_page_items;
+	*/
+	
+}

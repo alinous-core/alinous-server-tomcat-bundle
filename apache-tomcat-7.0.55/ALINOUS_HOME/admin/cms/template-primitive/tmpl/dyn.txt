@@ -1,0 +1,21 @@
+
+
+$baseUrl = "#BASE_URL#";
+
+$outHtml = "";
+if($IN.publish == "preview-meta"){
+	$outHtml = $baseUrl  + "dynpreview.alns?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}#PARAMS#";
+}
+if($IN.publish == "publish-meta"){
+	$outHtml =  $baseUrl  + "dyn.alns?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}#PARAMS#";
+}
+else if($IN.publish == "preview"){
+	$outHtml = $baseUrl  + "indexpreview.html?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}#PARAMS#";
+}
+else if($IN.publish == "preview" || $IN.publish == "publish"){
+	$outHtml = $baseUrl  + "index.html?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}#PARAMS#";
+}
+
+$outHtml = '<div alns:inner="' + $outHtml + '" alns:tagid="module"></div>';
+
+return 0;

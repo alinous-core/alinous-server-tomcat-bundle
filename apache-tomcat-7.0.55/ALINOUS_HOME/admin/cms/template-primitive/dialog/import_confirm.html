@@ -1,0 +1,56 @@
+<html>
+<body>
+<script>
+<!-- 
+function submitImportConfirm(form)
+{
+	var template_code = form.template_code.value;
+	if(template_code == ""){
+		alert("Input the Template Zip file.");
+		return;
+	}
+	
+	var fd = new FormData(form);
+	var url = "/admin/cms/template-primitive/dialog/import_confirm.html"
+
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function(data) {			
+			document.partsFrm.submit();
+			
+			$( "#dialog" ).dialog( "close" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+-->
+</script>
+
+<h1>Import Primitive Template</h1>
+<p>
+Input the templates code. Confirm the code and push "Import" button.<br />
+If a template with same code exists, then over write it.
+</p>
+
+<form name="dlgfrm" action="export.html" method="POST">
+
+<input type="text" name="template_code" value="{$IN.template_code}" />
+
+<button type="button" onclick="submitImportConfirm(this.form)">Import</button>
+<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+<input type="hidden" name="cmd" value="import" />
+<input type="hidden" name="extractDir" value="{$IN.extractDir}" />
+<input type="hidden" name="template_primitive_category_id" value="{$IN.template_primitive_category_id}" />
+</form>
+
+
+</body>
+</html>

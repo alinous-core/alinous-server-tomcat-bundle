@@ -1,0 +1,32 @@
+
+if($IN.tmpltype == "primitive"){
+	$tmpl = getPrimitive($IN, $SESSION);
+}else if($IN.tmpltype == "container"){
+	$tmpl = getContainer($IN, $SESSION);
+}
+
+
+return 0;
+
+function getContainer($IN, $SESSION)
+{
+	SELECT * INTO template_container
+	FROM
+		template_container
+	WHERE
+		template_container.template_container_id =  $IN.tmplid;
+	
+	return @template_container;
+}
+
+function getPrimitive($IN, $SESSION)
+{
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.template_primitive_id = $IN.tmplid;
+	
+	return $template_primitive[0];
+}
+

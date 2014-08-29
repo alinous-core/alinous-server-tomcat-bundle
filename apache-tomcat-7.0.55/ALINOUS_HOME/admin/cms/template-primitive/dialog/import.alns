@@ -1,0 +1,74 @@
+
+include("/include/treemodel.alns");
+
+if($IN.cmd == "upload"){
+	$ret = checkFile($IN, $SESSION);
+	
+	return $ret;
+}
+
+$template_primitive_category_id = getCategoryCode($IN, $SESSION);
+
+return 0;
+
+function getCategoryCode($IN, $SESSION)
+{
+	SELECT * INTO template_primitive_category
+	FROM
+		template_primitive_category
+	WHERE
+		template_primitive_category.node_id = $IN.nodeId;
+	
+	if(Array.size(@template_primitive_category) > 0){
+		return $template_primitive_category[0].template_primitive_category_id;
+	}
+	
+	$node = TreeModel.getParentNode("primitive", $IN.nodeId);
+	SELECT * INTO template_primitive_category
+	FROM
+		template_primitive_category
+	WHERE
+		template_primitive_category.node_id = $node.node_id;
+	
+	if(Array.size(@template_primitive_category) > 0){
+		return $template_primitive_category[0].template_primitive_category_id;
+	}
+	
+	return null;
+}
+
+function checkFile($IN, $SESSION)
+{
+	$errorSite = "/admin/cms/template-primitive/dialog/importError.html";
+	$encode = "utf-8";
+	
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.template_zip;
+	
+	if(!String.endsWith($tmpFile, ".zip")){
+		return $errorSite;
+	}
+	
+	$extractDir = "/tmp/" + $SESSION + "/import/";
+	
+	File.remove($extractDir);
+	Zip.extract($tmpFile, $extractDir);
+	File.remove($tmpFile);
+	
+	$codeName = $extractDir + "primitive_code.txt";
+	if(!File.exists($codeName)){
+		return $errorSite;
+	}
+	
+	$template_code = File.readAllText($codeName, $encode);
+
+	
+	$template_primitive =  $extractDir + "template_primitive.csv";
+	if(!File.exists($template_primitive)){
+		return $errorSite;
+	}
+	
+	return "/admin/cms/template-primitive/dialog/import_confirm.html?template_code=" + $template_code
+				+ "&extractDir=" + $extractDir
+				+ "&template_primitive_category_id=" + $IN.template_primitive_category_id;
+}
+

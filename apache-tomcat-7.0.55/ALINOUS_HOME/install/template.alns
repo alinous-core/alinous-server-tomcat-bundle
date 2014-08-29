@@ -1,0 +1,152 @@
+
+/*
+drop table template_top;
+drop table template_top_children
+drop table template_container
+drop table template_container_children
+drop table template_primitive
+
+
+*/
+
+function PageTemplates.ddl()
+{
+	BEGIN;
+	
+	CREATE TABLE template_top(
+		template_top_id int,
+		
+		/*
+			least number is the default
+		*/
+		position_order int not null default 0,
+		
+		template_top_code varchar(255) not null default '',
+		template_top_name varchar(255) not null default '',
+		
+		div_id varchar(255) not null default 'wrap',
+		
+		code_css text not null default '',
+		code_html text not null default '',
+		code_alinous text not null default '',
+		code_js text not null default '',
+		
+		has_paging int not null default 0,
+		paging_template_primitive_id int not null default 0,
+		
+		PRIMARY KEY (template_top_id)
+	);
+	
+	CREATE TABLE template_top_children(
+		template_top_id int,
+		position_order int not null default 0,
+		
+		inner_template_container_id int,
+		inner_template_primitive_id int,
+		
+		PRIMARY KEY (template_top_id, position_order)
+	);
+	
+	CREATE TABLE template_container(
+		template_container_id int,
+		
+		node_id int not null,
+		template_container_name varchar(255) not null default '',
+		
+		div_id varchar(255) not null default '',
+		div_left_id varchar(255) not null default '',
+		div_right_id varchar(255) not null default '',
+		
+		code_css text not null default '',
+		code_js text not null default '',
+		code_alinous text not null default '',
+		
+		num_lines int not null default 2,
+		has_paging int not null default 0,
+		
+		estimated_height int not null default 600,
+		
+		PRIMARY KEY (template_container_id)
+	);
+	
+	CREATE INDEX idx_template_container_node_id
+	ON
+		template_container(node_id);
+	
+	
+	CREATE TABLE template_container_category(
+		template_container_category_id int,
+		
+		node_id int not null,
+		
+		category_name varchar(255) not null default '',
+		
+		PRIMARY KEY (template_container_category_id)
+	);
+	
+	CREATE TABLE template_container_children(
+		template_container_id int,
+		
+		/*
+			left
+			right
+		*/
+		position varchar(32) not null default 'left',
+		position_order int not null default 0,
+		
+		inner_template_container_id int,
+		inner_template_primitive_id int,
+		
+		PRIMARY KEY (template_container_id, position, position_order)
+	);
+	
+	CREATE TABLE template_primitive(
+		template_primitive_id int,
+		
+		node_id int not null,
+		
+		template_primitive_name varchar(255) not null default '',
+		
+		is_dynamic int not null default 0,
+		is_paging int not null default 0,
+		is_embeded int not null default 0,
+				
+		code_css text not null default '',
+		code_js text not null default '',
+		code_alinous text not null default '',
+		code_html text not null default '',
+		code_html_header text not null default '',
+		
+		code_max_page text not null default '',
+		
+		estimated_height int not null default 400,
+		
+		PRIMARY KEY (template_primitive_id)
+	);
+	
+	CREATE INDEX idx_template_primitive_node_id
+	ON
+		template_primitive(node_id);
+	
+	CREATE TABLE template_primitive_parameter(
+		parameter_id int,
+		template_primitive_id int,
+		
+		parameter_name varchar(255) not null default '',
+		
+		PRIMARY KEY (parameter_id)
+	);
+	
+	CREATE TABLE template_primitive_category(
+		template_primitive_category_id int,
+		
+		node_id int not null,
+		
+		category_name varchar(255) not null default '',
+		
+		PRIMARY KEY (template_primitive_category_id)
+	);
+	
+	
+	COMMIT;
+}

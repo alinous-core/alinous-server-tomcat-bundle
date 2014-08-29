@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Import Sitemap and Analyze</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.droppable.js"></script>
+
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+
+<style type="text/css" title="currentStyle">
+	@import "/jquery/datatables/media/css/demo_page.css";
+	@import "/jquery/datatables/media/css/demo_table.css";
+</style>
+<script type="text/javascript" language="javascript" src="/jquery/datatables/media/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf-8">
+<!--
+$(document).ready(function() {
+	var oTable = $('#sitemaptbl').dataTable({
+		"iDisplayLength": 25,
+		"aaSorting": [[0,'asc']],
+		"bProcessing": false,
+		"bServerSide": true,
+		"sAjaxSource": "/admin/seo/sitemap/serverData.alns",
+	});
+});
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+<h2>Import Sitemap and Analyze</h2>
+
+<form name="frm" action="index.html" method="POST" enctype="multipart/form-data">
+<input type="hidden" name="cmd" value="" />
+
+<table>
+	<tr>
+		<td>
+			Sitemap :
+		</td>
+		<td>
+			<input type="text" name="sitemapUrl" size="50" maxlength="255" value="" alns:validate="custom" />
+			<span alns:msg="csvfile" alns:form="frm" alns:validate="notnull">
+				<font color="#FF0000">Select csv file to input</font>
+			</span>
+		</td>
+		<td>
+			<button type="button" onclick="ImportSitemap.uploadLog(this.form)">Import and analyze</button>
+		</td>
+		<td>
+			<button type="button" onclick="ImportSitemap.back2Top(this.form)">Back</button>
+		</td>
+	</tr>
+</table>
+
+<div id="sitemapdiv" style="width:100%;">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="sitemaptbl" width="100%">
+	<thead>
+		<tr>
+			<th width="500">Path</th>
+			<th>Last crawled</th>
+			<th width="80">Keywords detected</th>
+			<th width="80">Linked Count</th>
+		</tr>
+	</thead>
+	<tbody>
+		
+	</tbody>
+	<tfoot>
+		<tr>
+			<th>Path</th>
+			<th>Last crawled</th>
+			<th>Keywords detected</th>
+			<th>Linked Count</th>
+		</tr>
+	</tfoot>
+</table>
+</div>
+
+</form>
+
+</div>
+
+
+
+<script type="text/javascript">
+<!--
+var ImportSitemap = new Object();
+
+ImportSitemap.uploadLog = function (form)
+{
+	form.cmd.value = "uploadSitemap";
+	form.submit();
+}
+
+ImportSitemap.back2Top = function (form)
+{
+	form.cmd.value = "back";
+	form.submit();
+}
+
+-->
+</script>
+</body>
+</html>

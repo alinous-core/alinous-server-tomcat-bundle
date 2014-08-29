@@ -1,0 +1,176 @@
+/*
+include("/include/pathutils.alns");
+*/
+
+function CmsPath.removeSiteSection($path)
+{
+	$idx = String.indexOf($path, "/", 1);
+	
+	if($idx < 0){
+		return "";
+	}
+	
+	$len = String.length($path);
+	return String.subString($path, $idx, $len);
+}
+
+function CmsPath.getImageUrlPath($fdir, $cms_resource_id)
+{
+	SELECT cms_resource_id, resource_owner_type, resource_owner_id, resource_name
+	INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.cms_resource_id = $cms_resource_id;
+	
+	if(Array.size(@cms_resource) == 0){
+		return null;
+	}
+	
+	if($cms_resource[0].resource_owner_type == "cms_page"){
+		SELECT tree_model.page_path INTO cms_page
+		FROM
+			cms_page LEFT JOIN tree_model
+			ON
+				cms_page.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'cms' AND
+			cms_page.cms_page_id = $cms_resource[0].resource_owner_id;
+		
+		$urlPath = CmsPath.removeSiteSection($cms_page[0].page_path);
+		
+		$dir = $fdir + $urlPath + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_top"){
+		SELECT template_top.template_top_code INTO template_top
+		FROM
+			template_top
+		WHERE
+			template_top.template_top_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplt/" + $template_top[0].template_top_code + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_container"){
+		SELECT tree_model.page_path INTO template_container
+		FROM
+			template_container LEFT JOIN tree_model
+			ON
+				template_container.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'container' AND
+			template_container.template_container_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplc" + $template_container[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_primitive"){
+		SELECT tree_model.page_path INTO template_primitive
+		FROM
+			template_primitive LEFT JOIN tree_model
+			ON
+				template_primitive.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'primitive' AND
+			template_primitive.template_primitive_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplp" + $template_primitive[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($resource_owner_type == "cms_tag"){
+		SELECT tree_model.page_path INTO cms_tag
+		FROM
+			cms_tag LEFT JOIN tree_model
+			ON
+				cms_tag.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'tag' AND
+			cms_tag.template_primitive_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplp" + $cms_tag[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	
+	return null;
+}
+
+
+function CmsPath.getimagePath($fdir, $cms_resource_id)
+{
+	SELECT cms_resource_id, resource_owner_type, resource_owner_id, resource_name
+	INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.cms_resource_id = $cms_resource_id;
+	
+	if(Array.size(@cms_resource) == 0){
+		return null;
+	}
+	
+	if($cms_resource[0].resource_owner_type == "cms_page"){
+		SELECT tree_model.page_path INTO cms_page
+		FROM
+			cms_page LEFT JOIN tree_model
+			ON
+				cms_page.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'cms' AND
+			cms_page.cms_page_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/page" + $cms_page[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_top"){
+		SELECT template_top.template_top_code INTO template_top
+		FROM
+			template_top
+		WHERE
+			template_top.template_top_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplt/" + $template_top[0].template_top_code + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_container"){
+		SELECT tree_model.page_path INTO template_container
+		FROM
+			template_container LEFT JOIN tree_model
+			ON
+				template_container.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'container' AND
+			template_container.template_container_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplc" + $template_container[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($cms_resource[0].resource_owner_type == "template_primitive"){
+		SELECT tree_model.page_path INTO template_primitive
+		FROM
+			template_primitive LEFT JOIN tree_model
+			ON
+				template_primitive.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'primitive' AND
+			template_primitive.template_primitive_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplp" + $template_primitive[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	else if($resource_owner_type == "cms_tag"){
+		SELECT tree_model.page_path INTO cms_tag
+		FROM
+			cms_tag LEFT JOIN tree_model
+			ON
+				cms_tag.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'tag' AND
+			cms_tag.template_primitive_id = $cms_resource[0].resource_owner_id;
+				
+		$dir = $fdir + "/tmplp" + $cms_tag[0].page_path + "/" + $cms_resource[0].resource_name;
+		return $dir;
+	}
+	
+	return null;
+}

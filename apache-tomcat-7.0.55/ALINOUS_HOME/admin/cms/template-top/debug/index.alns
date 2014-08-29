@@ -1,0 +1,45 @@
+
+include("/include/debugger.alns");
+
+$threadId = startDebug($IN, $SESSION, $COOKIE);
+redirect "/admin/cms/debugger/debugger.html?threadId=" + $threadId + "&modulePath=" + $IN.modulePath;
+
+
+return 0;
+
+
+function startDebug($IN, $SESSION, $COOKIE)
+{
+	$cookieName = "COOKIE.param_top_" + $IN.currentTemplateId;
+	$cookieValue = Variable.get($cookieName);
+	$cookieValue = UrlEncode.decode($cookieValue, "utf-8");
+	
+	@paramlist = String.split($cookieValue, "&");
+	$size = Array.size(@paramlist);
+	for($i = 0; $i < $size; $i++){
+		@v = String.split($paramlist[$i], "=");
+		
+		$script = "$params.IN." + $v[0] + " = '" + $v[1] + "';";
+		Script.evaluate($script);
+	}
+	
+	
+	// $params.IN.cmd = "test";
+	
+	Debugger.clearAllBreakpoints($IN.modulePath);
+	
+	@debug_break_points = WebDebugger.getBreakpoints($IN.modulePath);
+	for($i = 0; $i < Array.size(@debug_break_points); $i++){
+		Debugger.setBreakpoint($IN.modulePath, $debug_break_points[$i].line);
+	}
+	
+	$script = File.readAllText($IN.modulePath, "utf-8");
+	$callBackScriptFile = "/admin/cms/debugger/eventCallback.alns";
+	
+	
+	$threadId = Script.debugEvaluate($script, $IN.modulePath, $params, $callBackScriptFile, @bp);
+	
+	return $threadId;
+}
+
+

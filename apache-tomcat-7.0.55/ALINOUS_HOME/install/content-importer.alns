@@ -1,0 +1,18 @@
+
+
+function ContentImporter.ddl()
+{
+	BEGIN;
+	
+	CREATE TABLE content_importer(
+		content_importer_id int,
+		
+		content_importer_name varchar(255) not null default '',
+		
+		content_importer_code text not null default '',
+		
+		PRIMARY KEY(content_importer_id)
+	);
+	
+	COMMIT;
+}

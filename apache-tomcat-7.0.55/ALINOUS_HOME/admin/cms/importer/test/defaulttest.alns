@@ -1,0 +1,126 @@
+
+include("/include/imageresource.alns");
+include("/include/serialutils.alns");
+include("/include/pathutils.alns");
+include("/include/page.alns");
+
+$dom = $args[0];
+$params = $args[1];
+
+if($dom.name == "TextElement"){
+	return $dom;
+}
+
+if(String.toLowerCase($dom.name) == "img"){
+	return handleimg($dom, $params);
+}
+
+return attributesCheck($dom, $params);
+
+
+function attributesCheck($dom, $params)
+{
+	$size = Array.size(@dom.attributes);
+	for($i = 0; $i < $size; $i++){
+		if($dom.attributes[$i].name == "class"){
+			$dom.attributes[$i].value = "";
+		}else if($dom.attributes[$i].name == "style"){
+			$css = styleCheck($dom.attributes[$i].value);
+			$dom.attributes[$i].value = $css;
+		}
+	}
+	return $dom;
+}
+
+function styleCheck($classStr)
+{
+	$values = "";
+	
+	$idx = 0;
+	@classDefs = String.split($classStr, ";");
+	$size = Array.size(@classDefs);
+	for($i = 0; $i < $size; $i++){
+		@cssPair = String.split($classDefs[$i], ":");
+		if(Array.size(@cssPair) < 2){
+			continue;
+		}
+		
+		$name = String.trim($cssPair[0]);
+		if($name == "width" || $name == "height"){
+			$values = $name + ":" + $cssPair[1] + ";";
+		}
+	}
+	
+	return $values;
+}
+
+
+function handleimg($dom, $params)
+{
+	$idxSrc = getAttributeIndex("src", $dom);
+	$idxTitle = getAttributeIndex("title", $dom);
+	$idxAlt = getAttributeIndex("alt", $dom);
+	
+	if($idxSrc < 0){
+		return 0;	
+	}
+	$src = 	$dom.attributes[$idxSrc].value;
+	
+	$resource_title = "";
+	if($idxTitle >= 0){
+		$resource_title = $dom.attributes[$idxTitle].value;
+	}
+	if($idxAlt >= 0){
+		$resource_title = $dom.attributes[$idxAlt].value;
+	}
+	
+	$parsedSrc = CmsPage.parseUrl($src);
+	if($parsedSrc.scheme != ""){
+		$params.scheme = $parsedSrc.scheme;
+	}
+	if($parsedSrc.host != ""){
+		$params.importHost = $parsedSrc.host;
+	}
+	
+	$src = File.getRelationalPath($params.path, $parsedSrc.path);
+	$resource_name = ImgResource.getLastPathSegment($src);
+	
+	
+	$imgUrl = $params.scheme + "://" + $params.importHost + $src;
+	
+	$resource_name = ImgResource.getLastPathSegment($src);
+	
+	BEGIN;
+	
+	try{
+		$cms_resource_id = ImgResource.fetchResource($imgUrl, $resource_name, $resource_title, "cms_page", $params.cms_page_id);
+		ImgResource.sync($cms_resource_id);
+	}
+	catch($e){
+		return $dom;
+		ROLLBACK;
+	}
+	
+	COMMIT;
+	
+	$src = CmsPath.getImageUrlPath("", $cms_resource_id);
+	
+	$dom.attributes[$idxSrc].value = $src;
+	
+	return $dom;
+}
+
+function getAttributeIndex($name, $dom)
+{
+	$size = Array.size(@dom.attributes);
+	for($i = 0; $i < $size; $i++){
+		$attr = $dom.attributes[$i];
+		$attrname = String.toLowerCase($attr.name);
+		if($name == $attrname){
+			return $i;
+		}
+	}
+	
+	return -1;	
+}
+

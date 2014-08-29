@@ -1,0 +1,13 @@
+/*
+include("/include/html.alns");
+*/
+
+function Html.escapeTag($str)
+{
+
+	$str = String.replace($str, "&", "&amp;");
+	$str = String.replace($str, "<", "&lt;");
+	$str = String.replace($str, ">", "&gt;");
+	
+	return $str;
+}

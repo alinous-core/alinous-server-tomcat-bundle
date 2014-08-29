@@ -1,0 +1,116 @@
+
+
+/*
+drop table hm_user_motion;
+drop table hm_master;
+drop table hm_raster;
+drop table hm_raster_line;
+drop table hm_scroll_hm;
+drop table hm_scroll_hm_line;
+drop table hm_scroll_reach;
+
+*/
+
+function Heatmap.ddl()
+{
+	CREATE TABLE hm_user_motion(
+		session_id varchar(255),
+		user_id int,
+		access_id int,
+		serial int,
+		/*
+			mousemoved
+			scrolled
+			clicked
+		*/
+		motion_type varchar(32) not null default '',
+		delta_mill int not null default 0,
+		
+		arg_x int not null default 0,
+		arg_y int not null default 0,
+				
+		PRIMARY KEY(session_id, user_id, access_id, serial)	
+	);
+
+	CREATE TABLE hm_master(
+		hm_master_id int,
+		
+		hm_master_name varchar(255) not null default '',
+		hm_raster_id int not null,
+		archive_page_id int not null,
+		
+		hm_start timestamp not null default now(),
+		hm_end timestamp not null default now(),
+		
+		PRIMARY KEY(hm_master_id)
+	);
+	
+	CREATE TABLE hm_master_result_image(
+		hm_master_id int,
+		
+		image_base64 text not null default '',
+		
+		PRIMARY KEY(hm_master_id)
+	);
+		
+	CREATE TABLE hm_raster(
+		hm_raster_id int,
+		hm_width int not null default 0,
+		hm_height int not null default 0,
+		
+		PRIMARY KEY(hm_raster_id)
+	);
+	
+	CREATE TABLE hm_raster_line(
+		hm_raster_id int,
+		line_idx int not null default 0,
+		line_length int not null default 1,
+		
+		line_max_value int not null default 0,
+		
+		line_data text not null default '',
+		
+		PRIMARY KEY(hm_raster_id, line_idx)
+	);
+	
+	CREATE TABLE hm_scroll_hm(
+		hm_scroll_hm_id int,
+		
+		hm_scroll_name varchar(255) not null default '',
+		hm_height int not null default 0,
+		
+		archive_page_id int not null,
+		hm_start timestamp not null default now(),
+		hm_end timestamp not null default now(),
+		
+		PRIMARY KEY(hm_scroll_hm_id)
+	);
+	
+	CREATE TABLE hm_scroll_hm_line(
+		hm_scroll_hm_id int,
+		
+		hm_width int not null default 0,
+		line_idx int not null default 0,
+		
+		line_value real not null default 0,
+		
+		PRIMARY KEY(hm_scroll_hm_id, line_idx)
+	);
+	
+	CREATE TABLE hm_scroll_reach(
+		hm_scroll_hm_id int,
+		line_idx int not null default 0,
+		reached int not null default 0,
+		
+		
+		PRIMARY KEY(hm_scroll_hm_id, line_idx)
+	);
+	
+	CREATE TABLE hm_scroll_result_image(
+		hm_scroll_hm_id int,
+		image_base64 text not null default '',
+		
+		PRIMARY KEY(hm_scroll_hm_id)
+	);
+}
+

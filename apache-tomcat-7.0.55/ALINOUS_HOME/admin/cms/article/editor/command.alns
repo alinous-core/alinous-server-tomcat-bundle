@@ -1,0 +1,426 @@
+/*
+include("/admin/cms/article/editor/command.alns");
+*/
+include("/include/treemodel.alns");
+
+include("/admin/cms/publish/publish.alns");
+include("/include/template_container.alns");
+include("/include/template_primitive.alns");
+
+include("/include/template_top.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+
+include("/include/sitesetting.alns");
+
+include("/include/textsearch.alns");
+
+include("/include/rss.alns");
+
+function Editor.exexuteCommand($IN, $SESSION)
+{
+	if($IN.cmd == "update"){
+		Editor.update($IN, $SESSION);		
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "publish"){
+		Editor.update($IN, $SESSION);
+		Editor.publish($IN.selectedNodeId, true, $IN.update_tm);
+		
+		$sync = parallel(1){
+			$site = SiteSetting.getSiteFromNodeId($IN.selectedNodeId);
+			
+			if($IN.update_tm == 1){
+				SiteSetting.generateSitemap($site);
+				Rss.updateTime($site);
+				//Rss.publishAll();
+				Rss.pubhubPushAll();
+				
+			}
+			
+			Editor.makeDirty($IN.selectedNodeId, $IN.effect_range);
+		};
+		
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "remove-publish"){
+		Editor.removePublish($IN, $SESSION);
+		
+		$sync = parallel(1){
+			$site = SiteSetting.getSiteFromNodeId($IN.selectedNodeId);
+			SiteSetting.generateSitemap($site);
+			Rss.publishAll();
+		};
+		
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "discard-draft"){
+		Editor.discardDraft($IN, $SESSION);
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "site.newDomain"){
+		newDomain($IN, $SESSION);
+		SiteSetting.sync();
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "site.removeDomain"){
+		removeDomain($IN, $SESSION);
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "removeTag"){
+		removeTag($IN, $SESSION);
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	
+	return null;
+}
+
+function removeTag($IN, $SESSION)
+{
+	BEGIN;
+	
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	DELETE FROM cms_tag_page
+	WHERE
+		cms_tag_page.cms_tag_id = $IN.cms_tag_id AND
+		cms_tag_page.cms_page_id = $cms_page[0].cms_page_id;
+	
+	UPDATE cms_page
+	SET
+		dirty = now()
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	COMMIT;
+}
+
+function removeDomain($IN, $SESSION)
+{
+	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
+	
+	BEGIN;
+	
+	DELETE FROM site_setting
+	WHERE
+		site_setting.site_path = $node.page_path AND
+		site_setting.site_domain = $IN.site_domain;
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function newDomain($IN, $SESSION)
+{
+	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
+	
+	BEGIN;
+	
+	if($IN.use_context == null){
+		$IN.use_context = 0;
+	}
+	
+	INSERT INTO site_setting(
+		site_path,
+		site_domain,
+		template_use,
+		use_context,
+		force_https
+	)
+	VALUES(
+		$node.page_path, // site_path,
+		$IN.site_domain,
+		$IN.template_use,
+		$IN.use_context,
+		$IN.force_https
+	);	
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function Editor.makeDirty($nodeId, $effect_range)
+{
+	if($effect_range == "this_only"){
+		return 0;
+	}
+	else if($effect_range == "parents_and_sibling"){
+		
+		// parent
+		$parent = TreeModel.getParentNode("cms", $nodeId);
+		if($parent.node_id == null){
+			return 0;
+		}
+		
+		$page_path = $parent.page_path + "%";
+		
+		BEGIN;
+		
+		UPDATE cms_page
+		SET
+			dirty = now()
+		WHERE
+			cms_page.node_id IN(
+			SELECT node_id FROM tree_model
+			WHERE
+				tree_model.tree_id = 'cms' AND
+				tree_model.page_path LIKE $page_path
+			);
+		
+		
+		COMMIT;
+		
+		return 0;
+	}
+	
+	BEGIN;
+	
+	$site = SiteSetting.getSiteFromNodeId($nodeId);
+	$likeStr = $site + "/%";
+	
+	UPDATE cms_page
+	SET
+		dirty = now()
+	WHERE
+		cms_page.node_id IN(
+			SELECT node_id FROM tree_model
+			WHERE
+				tree_model.tree_id = 'cms' AND
+				tree_model.page_path LIKE $likeStr
+		);
+	
+	COMMIT;
+}
+
+
+function Editor.update($IN, $SESSION)
+{
+	// handle &amp in the attribute
+	SELECT page_status, cms_page_id INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	$callback = "/admin/cms/article/editor/amp.alns";
+	$params.cms_page_id = $cms_page[0].cms_page_id;
+	$IN.page_body = DomXpath.rewrite($IN.page_body, $params, $callback);
+	
+	// UPDATE DRAFT
+	BEGIN;
+	
+	if($cms_page[0].page_status == "published-with-draft"){
+		$page_status = "published-with-draft";
+	}else if($cms_page[0].page_status == "published"){
+		$page_status = "published-with-draft";
+	}else if($cms_page[0].page_status == "draft"){
+		$page_status = "draft";
+	}
+	
+	$created_time = Editor.convertTimestamp($IN.created_time_date, $IN.created_time_time);
+	$updated_time = Editor.convertTimestamp($IN.updated_time_date, $IN.updated_time_time);
+	
+	
+	$search_text = CmsPage.buildText($IN.page_body);
+		
+	UPDATE cms_page
+	SET
+		page_status = $page_status,
+		
+		template_top_id = $IN.template_top_id,
+		second_template_top_id = $IN.second_template_top_id,
+		second_template_context = $IN.second_template_context,
+		force_folder = $IN.force_folder,
+		force_extract = $IN.force_extract,
+		
+		draft_page_title = $IN.page_title,
+		draft_page_short_title = $IN.page_short_title,
+		draft_page_sub_title = $IN.page_sub_title,
+		draft_page_description = $IN.page_description,
+		draft_page_body_headline = $IN.page_body_headline,
+		draft_page_body = $IN.page_body,
+		draft_page_addtional_code = $IN.page_addtional_code,
+		
+		created_time = $created_time,
+		updated_time = $updated_time,
+		
+		search_text = $search_text,
+		last_edit_time = now()
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
+	$idx = String.indexOf($node.page_path, "/", 1);
+	if($idx < 1){
+		$base_path = $node.page_path + "/%";
+	}else{
+		$base_path = String.subString($node.page_path, 0, $idx) + "/%";
+	}
+	
+	UPDATE cms_page
+	SET
+		second_template_context = $IN.second_template_context
+	WHERE
+		cms_page.node_id IN(
+			SELECT tree_model.node_id
+			FROM
+				tree_model
+			WHERE
+				page_path LIKE $base_path AND
+				tree_id = 'cms'
+		);
+		
+	COMMIT;
+	
+	return 0;
+}
+
+function Editor.convertTimestamp($date, $time)
+{
+	@dates = String.split($date, "/");
+	
+	return $dates[2] + "-" + $dates[0] + "-" + $dates[1] + " " + $time + ":00";
+}
+
+function Editor.publish($nodeId, $force, $update_tm)
+{
+	// copy draft -> not draft
+	BEGIN;
+	
+	SELECT cms_page_id, page_status INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $nodeId;
+	
+	if($cms_page[0].page_status == "published-with-draft"){
+		$page_status = "published";
+	}else if($cms_page[0].page_status == "published"){
+		$page_status = "published";
+	}else if($cms_page[0].page_status == "draft"){
+		$page_status = "published";
+	}
+	
+	if($update_tm == 1){
+		UPDATE cms_page
+		SET
+			page_status = $page_status,
+			
+			page_title = draft_page_title,
+			page_short_title = draft_page_short_title,
+			page_sub_title = draft_page_sub_title,
+			page_description = draft_page_description,
+			page_body_headline = draft_page_body_headline,
+			page_body = draft_page_body,
+			page_addtional_code = draft_page_addtional_code,
+			last_edit_time = now(),
+			updated_time = now(),
+			published_time = now()
+		WHERE
+			cms_page.node_id = $nodeId;
+	}
+	else{
+		UPDATE cms_page
+		SET
+			page_status = $page_status,
+			
+			page_title = draft_page_title,
+			page_short_title = draft_page_short_title,
+			page_sub_title = draft_page_sub_title,
+			page_description = draft_page_description,
+			page_body_headline = draft_page_body_headline,
+			page_body = draft_page_body,
+			page_addtional_code = draft_page_addtional_code,
+			last_edit_time = now(),
+			dirty = now(),
+			published_time = now()
+		WHERE
+			cms_page.node_id = $nodeId;
+	}
+	
+	COMMIT;
+	
+	if($force){
+		$sync = parallel(1){
+			Publish.publishPage($cms_page[0].cms_page_id);
+		};
+	}
+			
+	return 0;
+}
+
+function Editor.discardDraft($IN, $SESSION)
+{
+	// not draft -> draft
+	BEGIN;
+	
+	SELECT page_status INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	if($cms_page[0].page_status == "published-with-draft"){
+		$page_status = "published";
+	}else if($cms_page[0].page_status == "published"){
+		$page_status = "published";
+	}else if($cms_page[0].page_status == "draft"){
+		$page_status = "published";
+	}
+	
+	UPDATE cms_page
+	SET
+		page_status = $page_status,
+		
+		draft_page_title = page_title,
+		draft_page_short_title = page_short_title,
+		draft_page_sub_title = page_sub_title,
+		draft_page_description = page_description,
+		draft_page_body_headline = page_body_headline,
+		draft_page_body = page_body,
+		draft_page_addtional_code = page_addtional_code,
+		last_edit_time = now()
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	COMMIT;
+	
+}
+
+function Editor.removePublish($IN, $SESSION)
+{
+	BEGIN;
+	
+	SELECT page_status INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	if($cms_page[0].page_status == "published-with-draft"){
+		$page_status = "draft";
+	}else if($cms_page[0].page_status == "published"){
+		$page_status = "draft";
+	}else if($cms_page[0].page_status == "draft"){
+		$page_status = "draft";
+	}
+	
+	UPDATE cms_page
+	SET
+		page_status = $page_status,
+		last_edit_time = now(),
+		published_time = null
+	WHERE
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	COMMIT;
+	
+	
+	return 0;
+}

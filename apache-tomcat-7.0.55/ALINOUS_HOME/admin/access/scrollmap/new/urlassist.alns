@@ -1,0 +1,17 @@
+
+
+SELECT DISTINCT archive_page.page_url INTO archive_page
+FROM
+	archive_page
+ORDER BY archive_page.page_url;
+
+$size = Array.size(@archive_page);
+for($i = 0; $i < $size; $i++){
+	$ar[$i] = $archive_page[$i].page_url;
+}
+
+
+$str = Record.dom2json(@ar);
+
+return $str;
+

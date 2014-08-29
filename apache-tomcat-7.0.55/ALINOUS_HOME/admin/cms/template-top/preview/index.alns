@@ -1,0 +1,96 @@
+
+include("/include/template_top.alns");
+include("/include/template_container.alns");
+include("/include/template_primitive.alns");
+
+SELECT tree_model.page_path, cms_page.cms_page_id, cms_page.node_id  INTO cms_page
+FROM
+	cms_page LEFT JOIN tree_model
+	ON
+		cms_page.node_id = tree_model.node_id
+WHERE
+	tree_model.tree_id = 'cms'
+ORDER BY tree_model.page_path;
+
+@params = null;
+TopTmpl.getChildParameters($IN.currentTemplateId, @params);
+
+initParams($IN, $SESSION, $COOKIE, @params);
+
+return 0;
+
+function initParams($IN, $SESSION, $COOKIE, @params)
+{
+	// window
+	$cookieString = Variable.get("COOKIE.param_top_preview_" + $IN.currentTemplateId);
+	if($cookieString == null){
+		$IN.preview_width = "1200";
+		$IN.preview_height = "1000";
+		
+	}else{
+		$cookieString = UrlEncode.decode($cookieString, "utf-8");
+		@cookies_str = String.split($cookieString, ",");
+		$IN.preview_width = $cookies_str[0];
+		$IN.preview_height = $cookies_str[1];
+	}
+	
+	// page
+	$cookieString = Variable.get("COOKIE.param_top_" + $IN.currentTemplateId);
+	if($cookieString == null){
+		$IN.pageInput = "";
+		
+		$size = Array.size(@params);
+		for($i = 0; $i < $size; $i++){
+			$params[$i].value = "";
+		}
+		
+		return 0;
+	}
+	
+	$cookieString = UrlEncode.decode($cookieString, "utf-8");
+	
+	@cookies_str = String.split($cookieString, "&");
+	$size = Array.size(@cookies_str);
+	for($i = 0; $i < $size; $i++){
+		@keyvalue = String.split($cookies_str[$i], "=");
+		
+		$values[$i].key = $keyvalue[0];
+		$values[$i].value = $keyvalue[1];
+	}
+	
+	$size = Array.size(@params);
+	for($i = 0; $i < $size; $i++){
+		$val = getCookieValue(@values, $params[$i].parameter_name);
+		
+		if($val == null){
+			$params[$i].value = "";
+		}else{
+			$params[$i].value = $val;
+		}
+	}
+	
+	$IN.pageInput = getValue(@values,"node_id") + "," + getValue(@values,"cms_page_id");
+}
+
+function getCookieValue(@values, $key)
+{
+	$size = Array.size(@values);
+	for($i = 0; $i < $size; $i++){
+		if($values[$i].key == $key){
+			return $values[$i].value;
+		}
+	}
+	return null;
+}
+
+function getValue(@values, $name)
+{
+	$size = Array.size(@values);
+	for($i = 0; $i < $size; $i++){
+		if($values[$i].key == $name){
+			return $values[$i].value;
+		}
+	}
+	
+	return "";
+}

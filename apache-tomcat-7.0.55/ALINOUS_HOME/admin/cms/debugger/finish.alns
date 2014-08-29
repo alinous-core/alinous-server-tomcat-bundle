@@ -1,0 +1,7 @@
+
+
+Debugger.clearAllBreakpoints($IN.modulePath);
+Debugger.terminateThread($IN.threadId);
+
+
+return 0;

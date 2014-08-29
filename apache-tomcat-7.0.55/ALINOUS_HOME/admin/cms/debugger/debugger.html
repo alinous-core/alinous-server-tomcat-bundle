@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Alinous-Code Editor</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/codemirror/lib/codemirror.js"></script>
+<script src="/jquery/codemirror/mode/alinous/alinous.js"></script>
+<link rel="stylesheet" href="/jquery/codemirror/lib/codemirror.css">
+
+<script src="/admin/cms/debugger/treetablewrap.js"></script>
+
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.css">
+<link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.theme.default.css">
+<script src="/jquery/tree-table/jquery.treetable.js"></script>
+
+<script src="/admin/cms/debugger/state.js"></script>
+<script src="/admin/cms/debugger/debugger.js"></script>
+
+
+<script>
+<!--
+
+$(function()
+{
+	var getBrowserHeight = function () {
+		if(window.innerHeight){
+			return window.innerHeight;
+		}else if(document.documentElement && document.documentElement.clientHeight != 0 ){
+			return document.documentElement.clientHeight;
+		}else if (document.body){
+			return document.body.clientHeight;
+		}		
+		return 0;
+	};
+	
+	var bodyHeight = getBrowserHeight();
+	// alert(bodyHeight);
+	
+	$("#wrap-code").css("height", bodyHeight+"px");
+	$(".CodeMirror-scroll").css("height", bodyHeight+"px");
+	
+	var modulePath = $("#modulePath").val();
+	var threadId = $("#threadId").val();
+	
+	var editor = CodeMirror.fromTextArea(document.getElementById("code"),
+	{
+		mode: "text/alinous",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints", "pgptr"]
+	});
+
+	editor.on("gutterClick", function(cm, n) {
+		var info = cm.lineInfo(n);
+				
+		cm.setGutterMarker(n, "breakpoints", info.gutterMarkers['breakpoints'] ? removeMarker(n, modulePath) : makeMarker(n, modulePath));
+	});
+	
+	initBreakpoints(editor, modulePath);
+	
+	DebugState.state(modulePath, threadId, editor);
+	
+	// window.onblur = finishDebug(threadId, modulePath);
+	document.body.onunload = finishDebug(threadId, modulePath);
+	
+	return;
+});
+
+-->
+</script>
+
+<style>
+  .CodeMirror { width: 100%; height: 100%; border: 1px solid #ddd;}
+  .CodeMirror-scroll { max-height: 600px; }
+  .CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+  .breakpoints {width: .8em;}
+  .pgptr {width: 2em;}
+  
+  #wrap-variables { width: 50%; height: 100%; float: left; clear: none; overflow: scroll;}
+  #wrap-code { width: 50%; height: 100%; float: left; clear: none;}
+</style>
+</head>
+<body>
+
+<form name="frm" action="debugger.html" method="POST">
+
+<div id="onsuspend">
+<button type="button" onclick="DebugState.command({$IN.threadId}, 'resume')"><img src="img/resume_co.gif" />Resume</button>
+<button type="button" onclick="DebugState.command({$IN.threadId}, 'stepover')"><img src="img/stepover_co.gif" />StepOver</button>
+<button type="button" onclick="DebugState.command({$IN.threadId}, 'stepin')"><img src="img/stepinto_co.gif" />StepIn</button>
+<button type="button" onclick="DebugState.command({$IN.threadId}, 'stepreturn')"><img src="img/stepreturn_co.gif" />StepReturn</button>
+</div>
+
+<div id="wrap-debug">
+	<div id="wrap-code">
+		<textarea id="code" name="code">{$testString}</textarea>
+	</div>
+	<div id="wrap-variables">
+		<table id="variables">
+			<tr>
+				<th width="300">path</th>
+				<th>value</th>
+			</tr>
+		</table>
+	</div>
+</div>
+
+
+<input type="hidden" name="threadId" id="threadId" value="{$IN.threadId}" />
+<input type="hidden" name="modulePath" id="modulePath" value="{$IN.modulePath}" />
+
+<input type="hidden" name="cmd" value="" />
+</form>
+
+
+</body>
+</html>

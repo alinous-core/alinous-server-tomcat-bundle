@@ -1,0 +1,212 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$("#updateTag").click(function () {
+		this.form.cmd.value = "updateTag";
+		this.form.submit();
+	});
+	
+	$("#addTaggedPage").click(function () {
+		var url = "/admin/cms/tags/dialog/selectPages.html";
+		var site = $("#site").val();
+		var cms_tag_id = document.frm.cms_tag_id.value;	
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {site: site, cms_tag_id: cms_tag_id},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	$("#removePages").click(function () {
+		this.form.cmd.value = "removePages";
+		this.form.submit();
+	});
+	
+	var cms_tag_id = document.frm.cms_tag_id.value;
+	$("#sortableTags").sortable({
+		scroll: false,
+		update: function(event, ui) {
+			var result = $("#sortableTags").sortable("toArray");
+						
+			$.ajax({
+				url: "/admin/cms/tags/edit/sort.alns",
+				data : {
+					result: result,
+					cms_tag_id: cms_tag_id,
+					cmd: 'sort'
+				},
+				dataType: "html",
+				success: function( data ) {
+					
+				}
+			});
+		}
+	});
+	
+	var site = $("#site").val();
+	
+	$("#pagePath").autocomplete({
+		source: function( request, response )  {
+			
+			$.ajax({
+				url: "/admin/cms/article/autocomplete/pagepath.alns",
+				data: {
+					term: request.term,
+					site: site
+				},
+				dataType: "json",
+				success: function( data ) {
+					response( data );
+				}
+			});
+		},
+		minLength: 0	
+	});
+	
+});
+
+var previewPage = function (selectedNodeId)
+{
+	var getBrowserHeight = function () {
+		if(window.innerHeight){
+			return window.innerHeight;
+		}else if(document.documentElement && document.documentElement.clientHeight != 0 ){
+			return document.documentElement.clientHeight;
+		}else if (document.body){
+			return document.body.clientHeight;
+		}		
+		return 0;
+	};
+	
+	var getBrowserWidth = function () {
+		if(window.innerWidth ){
+			return window.innerWidth ;
+		}else if(document.documentElement && document.documentElement.clientWidth  != 0 ){
+			return document.documentElement.clientWidth ;
+		}else if (document.body){
+			return document.body.clientWidth ;
+		}		
+		return 0;
+	};
+	
+	var winWidth = getBrowserWidth();
+	var winHeight = getBrowserHeight();
+	
+	var w = ( screen.width - winWidth ) / 2;
+	var h = ( screen.height - winHeight ) / 2;
+	
+	var templatePath = "/admin/cms/article/preview/index.html";
+	var previewPath = templatePath + "?selectedNodeId=" + selectedNodeId;
+	
+	myWin = window.open(previewPath, "preview",
+	            "toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,width=" + winWidth + ",height=" + winHeight
+	           	+",left="+w+",top="+h);
+	
+	myWin.focus();
+}
+
+
+-->
+</script>
+<h2>Edit Tag Information</h2>
+
+<form name="frm" action="index.html" method="POST" alns:alinousform="false">
+
+
+<table>
+	<tr>
+		<td width="140">
+			<b>Tag Code</b>
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="tag_code" value="{$cms_tag.tag_code}"
+				style="width:200px;" readonly="readonly" />
+		</td>
+		<td width="140">
+			<b>Tag Name</b>
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="tag_name" value="{$cms_tag.tag_name}" style="width:200px;"/>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Tag Page</b>
+		</td>
+		<td colspan="3">
+			<input type="text" maxlength="255" name="pagePath" id="pagePath" value="{$cms_tag.pagePath}" style="width:600px;"/>
+		</td>
+	</tr>
+</table>
+
+<blockquote>
+	<button type="button" id="updateTag">Update</button>
+</blockquote>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="selectedNodeId" value="{$IN.selectedNodeId}" />
+<input type="hidden" name="cms_tag_id" value="{$cms_tag.cms_tag_id}" />
+
+
+<h2>Tagged Pages</h2>
+<blockquote>
+	<button type="button" id="addTaggedPage">Add Pages</button>
+	<button type="button" id="removePages">Remove Checked Pages</button>
+</blockquote>
+
+<p>
+	Change order by drag and drop
+</p>
+
+<table class="stdtable" width="100%">
+	<thead>
+		<tr>
+			<th width="20" align="center">
+				<img src="/admin/cms/article/img/accept.png" border="0" id="checker"
+					onclick="javascript:selectAll(document.frm);">
+			</th>
+			<th>
+				Title
+			</th>
+			<th>
+				Page
+			</th>
+			<th width="100">
+				Page Type
+			</th>
+		</tr>
+	</thead>
+	<tbody id="sortableTags">
+		<tr alns:iterate="@cms_tag_page" alns:variable="oneRecord" id="{$oneRecord.cms_page_id}">
+			<td>
+				<input type="checkbox" name="cms_page_ids[]" value="{$oneRecord.cms_page_id}">
+			</td>
+			<td>
+				{$oneRecord.page_title}
+			</td>
+			<td>
+				<a href="javascript:previewPage('{$oneRecord.node_id}')">{$oneRecord.page_path}</a>
+			</td>
+			<td>
+				{$oneRecord.page_type}<br />
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+</form>
+
+
+</body>
+</html>

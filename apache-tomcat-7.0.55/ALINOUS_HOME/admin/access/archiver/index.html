@@ -1,0 +1,135 @@
+<html>
+<head>
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/admin/access/player/play.js"></script>
+<script type="text/javascript"> 
+<!--//
+function gotoPage(form, page)
+{
+	form.page.value = page;
+	form.submit();
+}
+
+$(function() {
+	$(".pageNavi a, button").button();
+
+});
+
+function preview(archive_page_id)
+{
+	// alert(archive_page_id);
+	var popUrl = "/admin/access/archiver/api/dl.alns?ar=" + archive_page_id;
+	var options = "toolbar=no,location=no," + //left=150,top=100,
+		    		"status=no,menubar=no,scrollbars=yes," +
+		    		"width=" + 1000 +",height=" + 600;
+	
+	playerWin = window.open(popUrl, "player", options);
+}
+
+function deleteArchive(form, archive_page_id)
+{
+	form.cmd.value = "delete";
+	form.archive_page_id.value = archive_page_id;
+	form.submit();
+}
+
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Access Recorder</h1>
+
+<h2>Manage Archived Webpage</h2>
+
+<form name="frm" action="index.html" method="POST">
+<input type="hidden" name="page" value="{$IN.page}" />
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="archive_page_id" value="" />
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+<table class="stdtable">
+	<tr>
+		<th>Archived URL</th>
+		<th width="240">Archived Time</th>
+		<th width="130" align="center">Preview</th>
+		<th width="130" align="center">Delete</th>
+	</tr>
+	<tr alns:iterate="@archive_page" alns:variable="oneRecord">
+		<td>{$oneRecord.page_url}</td>
+		<td>{$oneRecord.archived_time}</td>
+		<td align="center">
+			<button type="button" onclick="preview('{$oneRecord.archive_page_id}');">Preview</button>
+		</td>
+		<td align="center">
+			<button type="button"
+				alns:if="{BOOL($oneRecord.deleteble == 1)}"
+				onclick="deleteArchive(this.form, '{$oneRecord.archive_page_id}');">Delete</button>
+			<span alns:if="{BOOL($oneRecord.deleteble == 0)}">
+				N/A
+			</span>
+		</td>
+	</tr>
+</table>
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+
+</form>
+
+</div>
+
+</body>
+</html>

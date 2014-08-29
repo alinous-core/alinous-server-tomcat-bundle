@@ -1,0 +1,57 @@
+<html>
+<head>
+<title>Login</title>
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	var btn = $("#btnlogout");
+	$("input:submit").button();
+});
+-->
+</script>
+</head>
+<body>
+
+
+
+<form name="" action="/admin/confirm.html">
+
+<center>
+<h1>Login form</h1>
+<table>
+	<tr>
+		<td>
+			User ID :
+		</td>
+		<td>
+			<input type="text" name="user_id" value="" size="40" maxlength="255" 
+				alns:validate="custom" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Password :
+		</td>
+		<td>
+			<input type="password" name="password" value="" size="40" maxlength="255" />
+		</td>
+	</tr>
+</table>
+
+<input type="submit" name="sbmt" value="Login" />
+</center>
+
+</form>
+
+</body>
+</html>

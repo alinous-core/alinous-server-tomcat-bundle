@@ -1,0 +1,38 @@
+
+include("/include/sitefiles.alns");
+
+if($IN.cmd == "update"){
+	updateFile($IN, $SESSION);
+}
+
+$file = getFile($IN, $SESSION);
+
+return 0;
+
+function getFile($IN, $SESSION)
+{
+	SELECT * INTO site_resource
+	FROM 
+		site_resource
+	WHERE
+		site_resource.site_resource_id = $IN.site_resource_id;
+	
+	return $site_resource[0];
+}
+
+function updateFile($IN, $SESSION)
+{
+	BEGIN;
+	
+	UPDATE site_resource
+	SET
+		file_name = $IN.file_name,
+		file_text = $IN.file_text,
+		update_time = now()
+	WHERE
+		site_resource.site_resource_id = $IN.site_resource_id;
+	
+	COMMIT;
+	
+	Sitefiles.sync($IN.site_resource_id);
+}

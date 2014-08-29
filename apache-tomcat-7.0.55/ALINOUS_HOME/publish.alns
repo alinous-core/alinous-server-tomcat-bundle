@@ -1,0 +1,153 @@
+
+include("/admin/cms/publish/publish.alns");
+include("/include/template_top.alns");
+include("/include/template_container.alns");
+include("/admin/cms/publish/publish_inline.alns");
+include("/include/template_primitive.alns");
+
+include("/include/rss.alns");
+
+$path = $args[0];
+
+if(String.endsWith($path, ".rss")){
+	@pathel = String.split($path, "/");
+	
+	$idx = Array.size(@pathel);
+	$rss = $pathel[$idx - 1];
+	
+	@pathel2 = String.split($rss, "\.");
+	$site_path = "/" + $pathel[1];
+	
+	SELECT * INTO rss_setting
+	FROM
+		rss_setting
+	WHERE
+		rss_setting.site_path = $site_path AND
+		rss_setting.feed_name = $pathel2[0];
+	
+	if(Array.size(@rss_setting) == 0){
+		return 0;
+	}
+	
+	$rssFile = "/html" + $path;
+	
+	if(!File.exists($rssFile)){
+		Rss.publish($rss_setting[0].rss_setting_id);
+		return 0;
+	}
+	
+	$lastModified = File.getTimestamp($rssFile);
+	if(Timestamp.after($rss_setting[0].update_time, $lastModified)){
+		Rss.publish($rss_setting[0].rss_setting_id);
+		return 0;
+	}
+	
+	return 0;
+}
+
+
+if(String.endsWith($path, ".html")){
+	$endIndex = String.length($path) - 5;
+	$path = String.subString($path, 0, $endIndex);
+	
+}
+
+// detect page
+$page = 0;
+$lastIdx = String.lastIndexOf($path, "/");
+
+if($lastIdx > 0){
+	$endIndex = String.length($path);
+	$lastSection = String.subString($path, $lastIdx + 1, $endIndex);
+	if(String.isNumber($lastSection)){
+		$page = Cast.toNumber($lastSection);
+		
+		$path = String.subString($path, 0, $lastIdx);
+	}
+}
+
+SELECT node_id, page_children INTO tree_model
+FROM
+	tree_model
+WHERE
+	tree_model.tree_id = 'cms' AND
+	tree_model.page_path = $path;
+
+if(Array.size(@tree_model) == 0){
+	return 0;
+}
+
+SELECT cms_page_id, page_status, published_time, force_folder, dirty INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.node_id = $tree_model[0].node_id;
+
+// normal case
+if($page == 0 && ($tree_model[0].page_children > 0 || $cms_page[0].force_folder > 0)){
+	$fileName = "/html" + $path + "/index.html";
+}else if($page == 0){
+	$fileName = "/html" + $path + ".html";
+}
+else {
+	$fileName = "/html" + $path + "/" + $page + "/index.html";
+}
+
+
+
+// FIXME
+System.println("Check published : " + $cms_page[0].page_status);
+
+if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_status == "published"){
+	
+	if(!File.exists($fileName)){
+		// FIXME publish
+		System.println("Publish because no file : " + $cms_page[0].cms_page_id);
+		
+		lazyPublish($cms_page[0], $path, $page);
+		return 0;
+	}
+	// check timestamp
+	$lastModified = File.getTimestamp($fileName);
+
+	if(Timestamp.after($cms_page[0].dirty, $lastModified)){
+		// FIXME publish
+		System.println("Publish because dirty");
+		
+		lazyPublish($cms_page[0], $path, $page);
+		return 0;
+	}
+	
+	if(Timestamp.after($cms_page[0].published_time, $lastModified)){
+		// FIXME publish
+		System.println("Publish because dirty");
+		
+		lazyPublish($cms_page[0], $path, $page);
+		
+		return 0;
+	}
+	
+}else{
+	// delete file
+	if(File.exists($fileName)){
+		File.remove($fileName);
+		
+		System.println("Deleted because no file");
+	}
+}
+
+// cached file
+System.println("Use Cached file");
+
+return 0;
+
+function lazyPublish($cms_page, $path, $page)
+{
+	$fileExt = "";
+	$contextRoot = "";
+	
+	$template_top_id = Publish.getTopTemplateId($cms_page.cms_page_id);
+	TopTmpl.sync($template_top_id, "");
+	
+	Publish.doPublish($template_top_id, $cms_page.cms_page_id, $fileExt, $contextRoot, $page);
+}

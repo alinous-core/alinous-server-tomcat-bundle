@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Manage login users</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button, input:submit").button();
+});
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Backup System Data</h1>
+
+<blockquote>
+
+<h2>Backup all</h2>
+
+	<form name="backupFrm" action="index.html">
+	<input type="submit" name="sbmt" value="Backup">
+	<input type="hidden" name="cmd" value="backup">
+	</form>
+	
+	<h2>Recover all</h2>
+	
+	<form name="recoverFrm" action="index.html" method="POST" enctype="multipart/form-data">
+	
+	<table border="0">
+		<tr>
+			<td valign="top">
+				Backup file(*.zip):
+			</td>
+			<td>
+				<input type="file" name="file" size="18" alns:validate="custom">
+			</td>
+		</tr>
+	</table>
+		
+	<input type="submit" name="sbmt" value="Recover">
+	<input type="hidden" name="cmd" value="recover">
+	</form>
+
+</blockquote>
+</div>
+
+</body>
+</html>

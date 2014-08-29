@@ -1,0 +1,271 @@
+
+
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
+include("/include/template_top.alns");
+include("/include/template_container.alns");
+include("/include/template_primitive.alns");
+
+include("/include/rss.alns");
+include("/include/sitefiles.alns");
+include("/include/sitesetting.alns");
+
+include("/include/httpheader.alns");
+
+if($IN.cmd == "backup"){
+	$zipFile = backup($IN, $SESSION);
+	
+	$CUR = Timestamp.now();
+	$FILE_DATE = Timestamp.format($CUR, "yyyyMMdd");
+	download $zipFile, "backup" + $FILE_DATE + ".zip";
+}
+else if($IN.cmd == "recover"){
+	$tmpFile = "/tmp/" + $SESSION + "_" + $IN.file;
+	$outDir = "/tmp/" + $SESSION + "_recover/";
+	
+	recover($tmpFile, $outDir);
+	
+	File.remove($tmpFile);
+	File.remove($outDir);
+}
+
+return 0;
+
+function backup($IN, $SESSION)
+{
+	$backupDir = "/tmp/" + $SESSION + "/";
+	File.makeDir($backupDir);
+	
+	// install.alns
+	backupContents($IN, $SESSION, $backupDir, "serial");
+	backupContents($IN, $SESSION, $backupDir, "job_progress");
+	
+	// httpheader.alns
+	backupContents($IN, $SESSION, $backupDir, "http_path_match");
+	
+	// page.alns
+	backupContents($IN, $SESSION, $backupDir, "tree_model");
+	backupContents($IN, $SESSION, $backupDir, "tree_model_serial");
+	backupContents($IN, $SESSION, $backupDir, "cms_page");
+	
+	// resources.alns
+	backupContents($IN, $SESSION, $backupDir, "cms_resource");
+	
+	// tags.alns
+	backupContents($IN, $SESSION, $backupDir, "cms_tag");
+	backupContents($IN, $SESSION, $backupDir, "cms_tag_page");
+	
+	// template.alns
+	backupContents($IN, $SESSION, $backupDir, "template_top");
+	backupContents($IN, $SESSION, $backupDir, "template_top_children");
+	backupContents($IN, $SESSION, $backupDir, "template_container_category");
+	backupContents($IN, $SESSION, $backupDir, "template_container");
+	backupContents($IN, $SESSION, $backupDir, "template_container_children");
+	backupContents($IN, $SESSION, $backupDir, "template_primitive");
+	backupContents($IN, $SESSION, $backupDir, "template_primitive_parameter");
+	backupContents($IN, $SESSION, $backupDir, "template_primitive_category");
+	
+	// content-importer.alns
+	backupContents($IN, $SESSION, $backupDir, "content_importer");
+	
+	
+	// site.alns
+	backupContents($IN, $SESSION, $backupDir, "site_setting");
+	backupContents($IN, $SESSION, $backupDir, "sitemap_setting");
+	backupContents($IN, $SESSION, $backupDir, "sitemap_page_type");
+	backupContents($IN, $SESSION, $backupDir, "rss_setting");
+	backupContents($IN, $SESSION, $backupDir, "rss_setting_tags");
+	backupContents($IN, $SESSION, $backupDir, "site_resource");
+	
+	// webmasterchecker.alns
+	backupContents($IN, $SESSION, $backupDir, "wmc_sitemap");
+	backupContents($IN, $SESSION, $backupDir, "wmc_content_keywords");
+	backupContents($IN, $SESSION, $backupDir, "wmc_content_keywords_url");
+	backupContents($IN, $SESSION, $backupDir, "wmc_robot_access");
+	backupContents($IN, $SESSION, $backupDir, "wmc_robot_accesslog_setting");
+	backupContents($IN, $SESSION, $backupDir, "wmc_robot_ip_domain");
+	backupContents($IN, $SESSION, $backupDir, "wmil_internal_link_file");
+	backupContents($IN, $SESSION, $backupDir, "wmil_internal_link");
+	backupContents($IN, $SESSION, $backupDir, "wmc_user_access");
+	
+	
+	// archiveddl.alns
+	backupContents($IN, $SESSION, $backupDir, "archive_page");
+	backupContents($IN, $SESSION, $backupDir, "archive_page_items");
+	
+	// heatmapddl.alns
+	backupContents($IN, $SESSION, $backupDir, "hm_user_motion");
+	backupContents($IN, $SESSION, $backupDir, "hm_master");
+	backupContents($IN, $SESSION, $backupDir, "hm_master_result_image");
+	backupContents($IN, $SESSION, $backupDir, "hm_raster");
+	backupContents($IN, $SESSION, $backupDir, "hm_raster_line");
+	backupContents($IN, $SESSION, $backupDir, "hm_scroll_hm");
+	backupContents($IN, $SESSION, $backupDir, "hm_scroll_hm_line");
+	backupContents($IN, $SESSION, $backupDir, "hm_scroll_reach");
+	backupContents($IN, $SESSION, $backupDir, "hm_scroll_result_image");
+	
+	// interestddl.alns
+	
+	// useractonddl.alns
+	backupContents($IN, $SESSION, $backupDir, "wic_user_page_access");
+	backupContents($IN, $SESSION, $backupDir, "wic_user_page_access");
+	backupContents($IN, $SESSION, $backupDir, "wic_user_motion");
+	backupContents($IN, $SESSION, $backupDir, "wic_user_motion_archive");
+	
+	
+	
+	// zip
+	$zipFile = "/tmp/" + $SESSION + ".zip";
+	Zip.compress($backupDir, $zipFile);
+	
+	File.remove($backupDir);
+	
+	return $zipFile;
+}
+
+function backupContents($IN, $SESSION, $backupDir, $tableName)
+{
+	$backupFile = $backupDir + $tableName + ".csv";
+	SQL.backup("pgapps", $tableName, $backupFile);	
+}
+
+function recover($tmpFile, $outDir)
+{
+	Zip.extract($tmpFile, $outDir);
+	
+	// install.alns
+	recoverTable($outDir, "serial");
+	recoverTable($outDir, "job_progress");
+	
+	// httpheader.alns
+	recoverTable($outDir, "http_path_match");
+	
+	// page.alns
+	recoverTable($outDir, "tree_model");
+	recoverTable($outDir, "tree_model_serial");
+	recoverTable($outDir, "cms_page");
+	
+	// resources.alns
+	recoverTable($outDir, "cms_resource");
+	
+	// tags.alns
+	recoverTable($outDir, "cms_tag");
+	recoverTable($outDir, "cms_tag_page");
+	
+	// template.alns
+	recoverTable($outDir, "template_top");
+	recoverTable($outDir, "template_top_children");
+	recoverTable($outDir, "template_container_category");
+	recoverTable($outDir, "template_container");
+	recoverTable($outDir, "template_container_children");
+	recoverTable($outDir, "template_primitive");
+	recoverTable($outDir, "template_primitive_parameter");
+	recoverTable($outDir, "template_primitive_category");
+	
+	// content-importer.alns
+	recoverTable($outDir, "content_importer");
+	
+	
+	// site.alns
+	recoverTable($outDir, "site_setting");
+	recoverTable($outDir, "sitemap_setting");
+	recoverTable($outDir, "sitemap_page_type");
+	recoverTable($outDir, "rss_setting");
+	recoverTable($outDir, "rss_setting_tags");
+	recoverTable($outDir, "site_resource");
+	
+	// webmasterchecker.alns
+	recoverTable($outDir, "wmc_sitemap");
+	recoverTable($outDir, "wmc_content_keywords");
+	recoverTable($outDir, "wmc_content_keywords_url");
+	recoverTable($outDir, "wmc_robot_access");
+	recoverTable($outDir, "wmc_robot_accesslog_setting");
+	recoverTable($outDir, "wmc_robot_ip_domain");
+	recoverTable($outDir, "wmil_internal_link_file");
+	recoverTable($outDir, "wmil_internal_link");
+	recoverTable($outDir, "wmc_user_access");
+	
+	// archiveddl.alns
+	recoverTable($outDir, "archive_page");
+	recoverTable($outDir, "archive_page_items");
+	
+	// heatmapddl.alns
+	recoverTable($outDir, "hm_user_motion");
+	recoverTable($outDir, "hm_master");
+	recoverTable($outDir, "hm_master_result_image");
+	recoverTable($outDir, "hm_raster");
+	recoverTable($outDir, "hm_raster_line");
+	recoverTable($outDir, "hm_scroll_hm");
+	recoverTable($outDir, "hm_scroll_hm_line");
+	recoverTable($outDir, "hm_scroll_reach");
+	recoverTable($outDir, "hm_scroll_result_image");
+	
+	// interestddl.alns
+	
+	// useractonddl.alns
+	recoverTable($outDir, "wic_user_page_access");
+	recoverTable($outDir, "wic_user_page_access");
+	recoverTable($outDir, "wic_user_motion");
+	recoverTable($outDir, "wic_user_motion_archive");
+	
+	resetDir("/log/sites");
+	resetDir("html");
+	resetDir("html_preview");
+	resetDir("html_resource");
+	resetDir("html_tmpl");
+	
+	// sync Images
+	ImgResource.syncAll();
+	
+	// forward and redirect
+	SiteSetting.sync();
+	Redirects.sync(null);
+	
+	// sitemap, rss and robots txt
+	Sitefiles.syncAll();
+	Rss.publishAll();
+	
+	PrimitiveTmpl.syncAll();
+	ContainerTmpl.syncAll();
+	TopTmpl.syncAll();
+	
+	return 0;
+}
+
+function resetDir($dir)
+{
+	File.remove($dir);
+	File.makeDir($dir);
+}
+
+function recoverTable($outDir, $TABLE_NAME)
+{
+	$csvFile = $outDir + $TABLE_NAME + ".csv";
+	if(!File.exists($csvFile)){
+		return 0;
+	}
+	
+	BEGIN;
+	DELETE FROM $TABLE_NAME;
+	COMMIT;
+	
+	SQL.loadcsv("pgapps", $TABLE_NAME, $csvFile);
+	
+	return 0;
+}
+
+
+function validate($formName, $inputName, $value, $IN, $SESSION)
+{
+	if($value == ""){
+		return "NO_NAME";
+	}
+	
+	$value = String.toLowerCase($value);
+	if(String.endsWith($value, ".zip")){
+		return 0;
+	}
+	
+	return "WRONG_FILE";
+}

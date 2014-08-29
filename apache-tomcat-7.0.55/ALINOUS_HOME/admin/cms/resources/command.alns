@@ -1,0 +1,49 @@
+
+
+if($IN.cmd == "delete"){
+	deleteResource($IN, $SESSION);
+}
+else if($IN.cmd == "sort"){
+	sort($IN, $SESSION);
+}
+
+return 0;
+
+function sort($IN, $SESSION)
+{
+	for($i = 0; $i < Array.size(@IN.result); $i++){
+		$length = String.length($IN.result[$i]);
+		$cms_resource_ids[$i] = String.subString($IN.result[$i], 4, $length);
+	}
+	
+	BEGIN;
+	
+	SELECT * INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.cms_resource_id IN (@cms_resource_ids)
+	ORDER BY cms_resource.position DESC;
+	
+	$size = Array.size(@cms_resource);
+	for($i = 0; $i < $size; $i++){
+		UPDATE cms_resource
+		SET
+			position = $cms_resource[$i].position
+		WHERE
+			cms_resource.cms_resource_id = $cms_resource_ids[$i];		
+	}
+	
+	COMMIT;	
+}
+
+function deleteResource($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM cms_resource
+	WHERE
+		cms_resource.cms_resource_id = $IN.cms_resource_id;
+	
+	COMMIT;
+}

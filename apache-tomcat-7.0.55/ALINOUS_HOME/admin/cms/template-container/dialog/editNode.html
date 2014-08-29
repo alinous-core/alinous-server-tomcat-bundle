@@ -1,0 +1,169 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$('#newContainer').click(function() {
+		var template_container_code = document.editNodeFrm.template_container_code.value;
+		var template_container_name = document.editNodeFrm.template_container_name.value;
+		
+		if(template_container_code == ""){
+			alert("Input the Container Template Code.");
+			return;
+		}
+		if(template_container_code.match(/[^A-Za-z0-9_-]+/)){
+			alert("Please input Container Templat Code in alphabets, numbers, '_' and '-'.");
+			return;
+		}
+		
+		if(template_container_name == ""){
+			alert("Input the Container Template's Name.");
+			return;
+		}
+		
+		var categoryNodeId = document.editNodeFrm.categoryNodeId.value;
+		var position = document.editNodeFrm.position.value;
+		var editNodeId = document.editNodeFrm.editNodeId.value;
+		
+		document.partsFrm.template_container_code.value = template_container_code;
+		document.partsFrm.template_container_name.value = template_container_name;
+		
+		document.partsFrm.categoryNodeId.value = categoryNodeId;
+		document.partsFrm.position.value = position;
+		document.partsFrm.nodeId.value = editNodeId;
+		
+		document.partsFrm.cmd.value = "addContainer";
+		document.partsFrm.submit();		
+	});
+	
+	$('#newCategory').click(function() {
+		var category_code = document.editNodeFrm.category_code.value;
+		var category_name = document.editNodeFrm.category_name.value;
+		
+		if(category_code == ""){
+			alert("Input the Tag Code.");
+			return;
+		}
+		if(category_code.match(/[^A-Za-z0-9_-]+/)){
+			alert("Please Tag Code in alphabets, numbers, '_' and '-'.");
+			return;
+		}
+		
+		if(category_name == ""){
+			alert("Input the Tag Name.");
+			return;
+		}
+
+		var editNodeId = $("#editNodeId").val();
+		var categoryNodeId = document.editNodeFrm.categoryNodeId.value;
+		
+		
+		document.partsFrm.category_code.value = category_code;
+		document.partsFrm.category_name.value = category_name;
+		
+		document.partsFrm.position.value = 'after';
+		document.partsFrm.nodeId.value = editNodeId;
+		document.partsFrm.categoryNodeId.value = categoryNodeId;
+		
+		document.partsFrm.cmd.value = "addCategory";
+		document.partsFrm.submit();
+	});
+	
+	$('#deletenode').click(function() {
+		var editNodeId = $("#editNodeId").val();
+		document.partsFrm.nodeId.value = editNodeId;
+		
+		document.partsFrm.cmd.value = "deleteNode";
+		document.partsFrm.submit();
+	});
+	
+	$("button").button();
+});
+-->
+</script>
+
+
+<form name="editNodeFrm" action="index.html" method="POST">
+
+
+<div alns:if="{BOOL($IN.key == 'edit_tree')}">
+	<h3>Create a new Container Part</h3>
+		
+	<table>
+		<tr>
+			<td width="160">
+				Container Code:
+			</td>
+			<td>
+				<input type="text" size="80" style="width:400px;" name="template_container_code" value="" />
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Container Name(Display):
+			</td>
+			<td>
+				<input type="text" size="80" style="width:400px;" name="template_container_name" value="" />
+			</td>
+		</tr>
+	</table>
+	
+	<center>
+		<button type="button" id="newContainer">Create a Container Part</button>
+		<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+	</center>
+
+	<div alns:if="{BOOL($isCategory)}">
+		<h3>Create a new Category</h3>
+		
+		<table>
+			<tr>
+				<td width="160">
+					Container Code:
+				</td>
+				<td>
+					<input type="text" size="80" style="width:400px;" name="category_code" value="" />
+				</td>
+			</tr>
+			<tr>
+				<td width="160">
+					Container Name(Display):
+				</td>
+				<td>
+					<input type="text" size="80" style="width:400px;" name="category_name" value="" />
+				</td>
+			</tr>
+		</table>
+		
+		<center>
+			<button type="button" id="newCategory">Create Node</button>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</center>
+	</div>
+</div>
+
+<div alns:if="{BOOL($IN.key == 'delete_tree')}">
+	<div alns:if="{BOOL($deletable == true)}">
+		<h3>Delete this node</h3>
+		<center>
+			<button type="button" id="deletenode">Delete this Node</button>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</center>
+	</div>
+	<div alns:if="{BOOL($deletable == false)}">
+		<h3>Delete this node</h3>
+		<b>You can not delete this node</b>
+		<center>
+			<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+		</center>
+	</div>
+</div>
+
+<input type="hidden" id="editNodeId" name="editNodeId" value="{$IN.nodeId}" />
+<input type="hidden" name="categoryNodeId" value="{$categoryNodeId}" />
+<input type="hidden" name="position" value="{$IN.position}" />
+</form>
+
+
+</body>
+</html>

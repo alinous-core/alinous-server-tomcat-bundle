@@ -1,0 +1,104 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$('#newnode').click(function() {
+		var tag_code = editNodeFrm.tag_code.value;
+		var tag_name = editNodeFrm.tag_name.value;
+		
+		if(tag_code == ""){
+			alert("Input the Tag Code.");
+			return;
+		}
+		if(tag_code.match(/[^A-Za-z0-9_-]+/)){
+			alert("Please Tag Code in alphabets, numbers, '_' and '-'.");
+			return;
+		}
+		
+		if(tag_name == ""){
+			alert("Input the Tag Name.");
+			return;
+		}
+		
+		var position = $("input:radio[name='newPosition']:checked").val();
+		var editNodeId = $("#editNodeId").val();
+		
+		
+		document.tagFrm.tag_code.value = tag_code;
+		document.tagFrm.tag_name.value = tag_name;
+		
+		document.tagFrm.position.value = position;
+		document.tagFrm.nodeId.value = editNodeId;
+		
+		document.tagFrm.cmd.value = "addNode";
+		document.tagFrm.submit();
+	});
+	
+	$("#deletenode").click(function() {
+		var editNodeId = $("#editNodeId").val();
+		document.tagFrm.nodeId.value = editNodeId;
+		document.tagFrm.cmd.value = "deleteNode";
+		document.tagFrm.submit();
+	});
+});
+-->
+</script>
+
+<form name="editNodeFrm" action="index.html" method="POST">
+
+<h1>Edit Tag Node</h1>
+
+<h2>Add a new node</h2>
+
+<table>
+	<tr>
+		<td width="160">
+			Tag Code:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="tag_code" value="" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Position :
+		</td>
+		<td>
+			<input type="radio" id="newPosition" name="newPosition" value="after" checked>After this node
+			<input type="radio" id="newPosition" name="newPosition" value="inside">Inside this node
+		</td>
+	</tr>
+	<tr>
+		<td width="160">
+			Tag Name(Display):
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="tag_name" value="" />
+		</td>
+	</tr>
+</table>
+
+<br />
+
+<center>
+	<button type="button" id="newnode">Create Node</button>
+	<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<br />
+
+<h2>Delete this tag node</h2>
+
+
+<center>
+	<button type="button" id="deletenode">Delete this Node</button>
+	<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+<input type="hidden" id="editNodeId" name="editNodeId" value="{$IN.nodeId}" />
+</form>
+
+
+</body>
+</html>

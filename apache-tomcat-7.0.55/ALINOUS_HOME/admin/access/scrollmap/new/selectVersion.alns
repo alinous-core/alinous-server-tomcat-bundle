@@ -1,0 +1,31 @@
+
+
+@versions = candidateVersions($IN, $SESSION);
+
+return 0;
+
+function candidateVersions($IN, $SESSION)
+{
+	$start = toTimestamp($IN.start_date, $IN.start_time);
+	$end = toTimestamp($IN.end_date, $IN.end_time);
+	
+	SELECT archive_page.archive_page_id, archive_page.archived_time INTO archive_page
+	FROM
+		archive_page
+	WHERE
+		archive_page.page_url = $IN.hm_master_url AND
+		archive_page.archived_time <= $end
+	ORDER BY archive_page.archived_time DESC
+	LIMIT 10;
+	
+	return @archive_page;
+}
+
+function toTimestamp($date, $time)
+{
+	@dateValues = String.split($date, "/");
+	
+	return $dateValues[2] + "-" + $dateValues[0] + "-" + $dateValues[1]
+		+ " " + $time + ":00";
+}
+

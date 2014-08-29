@@ -1,0 +1,595 @@
+<html>
+<body>
+<script>
+<!--
+var editorCss;
+var editorHtml;
+var editorAlinous;
+var editorJavascript;
+var editorAlinousPaging;
+
+
+$(function() {
+	var winHeight = document.body.clientHeight - 230;
+	
+	$( "#tabs" ).tabs({
+		activate: function( event, ui ) {
+			var index = ui.newPanel.attr("order");
+			$.cookie("primitive-edit-tab", index , {expires: 7});
+			
+			if(index == 0){
+				editorHtml.refresh();
+			}
+			else if(index == 1){
+				editorAlinous.refresh();
+			}
+			else if(index == 2){
+				editorCss.refresh();
+			}
+			else if(index == 4){
+				editorJavascript.refresh();
+			}
+			else if(index == 6){
+				editorAlinousPaging.refresh();
+			}
+		}
+	});
+	
+	editorHtml = CodeMirror.fromTextArea(document.getElementById("code_html"),
+	{
+		mode: "htmlmixed",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorHtml.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	editorHtml.setSize("100%", winHeight);
+	restoreScrollEditor("editorHtml");
+	
+	editorCss = CodeMirror.fromTextArea(document.getElementById("code_css"),
+	{
+		mode: "css",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorCss.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	editorCss.setSize("100%", winHeight);
+	restoreScrollEditor("editorCss");
+	
+	
+	editorAlinous = CodeMirror.fromTextArea(document.getElementById("code_alinous"),
+	{
+		mode: {name: "alinous", globalVars: true},
+		lineNumbers: true,
+		extraKeys: {"Ctrl-Space": "autocomplete"},
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorAlinous.on("gutterClick", function(cm, n) {
+	  var info = cm.lineInfo(n);
+	  cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ?
+	  		removeMarker(n, document.frm.modulePath.value) : makeMarker(n, document.frm.modulePath.value));
+	});
+	editorAlinous.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	initBreakpoints(editorAlinous, document.frm.modulePath.value);
+	editorAlinous.setSize("100%", winHeight);
+	restoreScrollEditor("editorAlinous");
+	
+	
+	
+	editorJavascript = CodeMirror.fromTextArea(document.getElementById("code_js"),
+	{
+		mode: "javascript",
+		lineNumbers: true,
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorJavascript.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	editorJavascript.setSize("100%", winHeight);
+	restoreScrollEditor("editorJavascript");
+	
+	
+	editorAlinousPaging = CodeMirror.fromTextArea(document.getElementById("code_max_page"),
+	{
+		mode: "alinous",
+		lineNumbers: true,
+		extraKeys: {"Ctrl-Space": "autocomplete"},
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	editorAlinousPaging.on("gutterClick", function(cm, n) {
+	  var info = cm.lineInfo(n);
+	  cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ?
+	  		removeMarker(n, document.frm.moduleMaxPagePath.value) : makeMarker(n, document.frm.moduleMaxPagePath.value));
+	});
+	editorAlinousPaging.on("change", function (instance, changeObj){
+		document.frm.dirty.value = 1;
+		$(".savebtn").css("color", "red");
+	});
+	initBreakpoints(editorAlinousPaging, document.frm.moduleMaxPagePath.value);
+	editorAlinousPaging.setSize("100%", winHeight);
+	restoreScrollEditor("editorAlinousPaging");
+	
+	
+	
+	var activeEditTabIdx = $.cookie("primitive-edit-tab");
+	if(!activeEditTabIdx){
+		activeEditTabIdx = 0;
+	}
+	if(activeEditTabIdx){
+		$("#tabs").tabs('option', 'active', parseInt(activeEditTabIdx));
+		if(activeEditTabIdx == 0){
+			editorHtml.refresh();
+		}
+		else if(activeEditTabIdx == 1){
+			editorAlinous.refresh();
+		}
+		else if(activeEditTabIdx == 2){
+			editorCss.refresh();
+		}
+		else if(activeEditTabIdx == 4){
+			editorJavascript.refresh();
+		}
+		else if(activeEditTabIdx == 5){
+			
+		}
+		else if(activeEditTabIdx == 6){
+			editorAlinousPaging.refresh();
+		}
+	}
+	
+	$("#h2_detail").click(function () {
+		$("#div_detail").slideToggle();
+		
+		var h2_detail_disp =  $.cookie("h2_detail_disp");
+		if(h2_detail_disp == "on"){
+			$.cookie("h2_detail_disp", "off" , {expires: 7});
+		}else{
+			$.cookie("h2_detail_disp", "on" , {expires: 7});
+		}
+		
+	});
+	var h2_detail_disp =  $.cookie("h2_detail_disp");
+	if(h2_detail_disp == 'off'){
+		$("#div_detail").slideToggle("fast");
+	}else{
+		$.cookie("h2_detail_disp", "on" , {expires: 7});
+	}
+	
+	
+	$(".savebtn").click(function (){
+		saveScrollEditor(editorCss, 'editorCss');
+		saveScrollEditor(editorHtml, 'editorHtml');
+		saveScrollEditor(editorAlinous, 'editorAlinous');
+		saveScrollEditor(editorJavascript, 'editorJavascript');
+		saveScrollEditor(editorAlinousPaging, 'editorAlinousPaging');
+		
+		// editorAlinous
+		var bp = getAllMarkers(editorAlinous);
+		
+		document.frm.breakpoints.value = bp.join(',');
+		
+		this.form.cmd.value = "save";
+		this.form.submit();
+	});
+	
+	$(".apply").click(function (){
+		var bl = confirm("Are you sure to use latest one of this template on publish ?");
+		if(!bl){
+			return;
+		}
+		
+		saveScrollEditor(editorCss, 'editorCss');
+		saveScrollEditor(editorHtml, 'editorHtml');
+		saveScrollEditor(editorAlinous, 'editorAlinous');
+		saveScrollEditor(editorJavascript, 'editorJavascript');
+		saveScrollEditor(editorAlinousPaging, 'editorAlinousPaging');
+		
+		// editorAlinous
+		var bp = getAllMarkers(editorAlinous);
+		
+		document.frm.breakpoints.value = bp.join(',');
+		
+		this.form.cmd.value = "apply";
+		this.form.submit();
+	});
+	
+	$(".paramsettingbtn").click(function (){
+		var url = "/admin/cms/template-primitive/preview/index.html";
+		
+		var selectedNodeId = $("#selectedNodeId").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				selectedNodeId: selectedNodeId
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	$(".previewbtn").click(function (){
+		if(document.frm.dirty.value == 1){
+			alert("Save before preview by the button below.");
+			return;
+		}
+		
+		var cookieName = "param_primitive_" + document.frm.selectedNodeId.value;
+		
+		var paramSetting = $.cookie(cookieName);
+		
+		if(paramSetting == null){
+			alert("Setup parameters to review before do it.");
+			return;
+		}
+		
+		var templatePath = "/admin/cms/template-primitive/preview/preview.html";
+		var previewPath = templatePath + "?selectedNodeId=" + document.frm.selectedNodeId.value;
+		//alert(previewPath);
+		
+		cookieName = "param_primitive_preview_" + document.frm.selectedNodeId.value;
+		var sizevalue = $.cookie(cookieName);
+		var sizes = sizevalue.split(",");
+		var winWidth = parseInt(sizes[0]);
+		var winHeight = parseInt(sizes[1]);
+		
+		// alert(winWidth + "," + winHeight);
+		
+		var w = ( screen.width-winWidth ) / 2;
+		var h = ( screen.height-winHeight ) / 2;
+		
+		myWin = window.open(previewPath, "preview",
+		            "toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,width=" + winWidth + ",height=" + winHeight
+		           	+",left="+w+",top="+h);
+		
+		myWin.focus();
+	});
+	
+	$(".exportbtn").click(function (){
+		var url = "/admin/cms/template-primitive/dialog/export.html";
+		
+		var selectedNodeId = $("#selectedNodeId").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				selectedNodeId: selectedNodeId
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	
+	});
+	
+	$(".rundebug").click(function (){
+		if(document.frm.dirty.value == 1){
+			alert("Save before debugging by the button below.");
+			return;
+		}
+	
+		var cookieName = "param_primitive_" + document.frm.selectedNodeId.value;
+		
+		var paramSetting = $.cookie(cookieName);
+		
+		if(paramSetting == null){
+			alert("Setup parameters to debug before do it.");
+			return;
+		}
+		
+		var templatePath = "/admin/cms/template-primitive/debug/index.html";
+		var previewPath = templatePath + "?" + paramSetting + "&modulePath=" + document.frm.modulePath.value
+				+ "&selectedNodeId=" + document.frm.selectedNodeId.value;
+		//alert(previewPath);
+		
+		var winHeight = document.body.clientHeight;
+		var winWidth = document.body.clientWidth;
+		
+		
+		var w = ( screen.width-winWidth ) / 2;
+		var h = ( screen.height-winHeight ) / 2;
+		
+		myWin = window.open(previewPath, "preview",
+		            "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,width=" + winWidth + ",height=" + winHeight +
+		           	+",left="+w+",top="+h);
+		
+		myWin.focus();
+	});
+	
+	$(".runmaxdebug").click(function (){
+		if(document.frm.dirty.value == 1){
+			alert("Save before debugging by the button below.");
+			return;
+		}
+	
+		var cookieName = "param_primitive_" + document.frm.selectedNodeId.value;
+		
+		var paramSetting = $.cookie(cookieName);
+		
+		if(paramSetting == null){
+			alert("Setup parameters to debug before do it.");
+			return;
+		}
+		
+		var templatePath = "/admin/cms/template-primitive/debug/index.html";
+		var previewPath = templatePath + "?" + paramSetting + "&modulePath=" + document.frm.moduleMaxPagePath.value
+				+ "&selectedNodeId=" + document.frm.selectedNodeId.value;
+		//alert(previewPath);
+		
+		var winHeight = document.body.clientHeight;
+		var winWidth = document.body.clientWidth;
+		
+		
+		var w = ( screen.width-winWidth ) / 2;
+		var h = ( screen.height-winHeight ) / 2;
+		
+		myWin = window.open(previewPath, "preview",
+		            "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,width=" + winWidth + ",height=" + winHeight +
+		           	+",left="+w+",top="+h);
+		
+		myWin.focus();
+	});
+	
+	
+});
+
+function newParameter(form)
+{
+	if(form.new_parameter_name.value == ''){
+		alert("Input new Parameter's name");
+		return;
+	}
+	form.cmd.value = "newParameter";
+	form.submit();
+}
+
+function deleteParameter(form, parameter_id)
+{
+	
+	form.parameter_id.value = parameter_id;
+	form.cmd.value = "deleteParameter";
+	form.submit();
+}
+-->
+</script>
+
+<form name="frm" action="index.html" method="POST" alns:alinousform="false">
+
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1"><img src="/admin/cms/article/img/page_white_code.png" style="margin: 0 4px 0 0;" />Html</a></li>
+		<li><a href="#tabs-2"><img src="/admin/cms/article/img/page_white_edit.png" style="margin: 0 4px 0 0;" />Server Code</a></li>
+		<li><a href="#tabs-3"><img src="/admin/cms/template-primitive/img/css.png" style="margin: 0 4px 0 0;" />Css</a></li>
+		<li><a href="#tabs-4"><img src="/admin/cms/article/img/image.png" style="margin: 0 4px 0 0;" />Resources</a></li>
+		<li><a href="#tabs-5"><img src="/admin/cms/template-primitive/img/script_edit.png" style="margin: 0 4px 0 0;" />JavaScript</a></li>
+		<li><a href="#tabs-6"><img src="/admin/cms/template-primitive/img/page_copy.png" style="margin: 0 4px 0 0;" />Parameters</a></li>
+		<li><a href="#tabs-7"><img src="/admin/cms/template-primitive/img/page_copy.png" style="margin: 0 4px 0 0;" />Paging</a></li>
+	</ul>
+	
+	<div id="tabs-1" order="0">
+		<div>
+			<div id="div_detail">
+				<table width="100%">
+					<tr>
+						<td width="120"><b>Embeded:</b></td>
+						<td>
+							<input type="checkbox" name="is_embeded" value="1" checked="{$primitive.is_embeded_chk}" />Embeded Module
+						</td>
+					</tr>
+					<tr>
+						<td width="120"><b>Estimated Height:</b></td>
+						<td>
+							<input type="text" name="estimated_height" value="{$primitive.estimated_height}"
+								 maxlength="5" style="width:60px;" />px
+						</td>
+					</tr>
+					<tr>
+						<td width="120"><b>Dynamic:</b></td>
+						<td>
+							<input type="checkbox" name="is_dynamic" value="1" checked="{$primitive.is_dynamic_chk}" />Dynamic
+						</td>
+					</tr>
+					<tr>
+						<td width="120"><b>Template:</b></td>
+						<td>
+							<input type="text" readonly="readonly" name="mod" value="{$htmlPath}"
+								style="width: 100%;" onfocus="this.select();" />
+						</td>
+					</tr>
+				</table>
+				
+
+				<textarea name="code_html_header" rows="6" style="width:100%;">{$primitive.code_html_header}</textarea>
+			</div>
+			<b>{$primitive.template_primitive_name}</b>
+			<button type="button" id="h2_detail">Show Header</button>
+
+			
+			<button type="button" class="savebtn">Save</button>
+			<button type="button" class="apply" style="color: red;"
+				alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Parameter Setting</button>
+			<button type="button" class="exportbtn">Export</button>
+		</div>
+		<textarea id="code_html" name="code_html">{$primitive.code_html}</textarea>
+	</div>
+	<div id="tabs-2" order="1">
+		<div>
+			<button type="button" class="savebtn">Save</button>
+			<button type="button" class="apply" style="color: red;"
+				alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="rundebug">Debug</button>
+			<button type="button" class="paramsettingbtn">Parameter Setting</button>
+		</div>
+		<textarea id="code_alinous" name="code_alinous">{$primitive.code_alinous}</textarea>
+	</div>
+	<div id="tabs-3" order="2">
+		<div>
+			<button type="button" class="savebtn">Save</button>
+			<button type="button" class="apply" style="color: red;"
+				alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Parameter Setting</button>
+		</div>
+		<textarea id="code_css" name="code_css">{$primitive.code_css}</textarea>
+	</div>
+	<div id="tabs-4" order="3">
+		<div id="reource-area" alns:tagid="reource-area"
+			alns:inner="/admin/cms/resources/index.html?resource_owner_id={$primitive.template_primitive_id}&resource_owner_type=template_primitive"></div>
+	</div>
+	<div id="tabs-5" order="4">
+		<div>
+			<button type="button" class="savebtn">Save</button>
+			<button type="button" class="apply" style="color: red;"
+				alns:if="{BOOL($dirty == true)}">Apply</button>
+			<button type="button" class="previewbtn">Preview</button>
+			<button type="button" class="paramsettingbtn">Parameter Setting</button>
+		</div>
+		<textarea id="code_js" name="code_js">{$primitive.code_js}</textarea>
+	</div>
+	<div id="tabs-6" order="5">
+		<table class="stdtable" width="100%">
+			<tr>
+				<th width="60%">
+					Parameter Name
+				</th>
+				<th>
+					Type
+				</th>
+				<th>
+					Command
+				</th>
+			</tr>
+			<tr>
+				<td>
+					cms_page_id
+				</td>
+				<td>
+					Default
+				</td>
+				<td>
+					<br />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					node_id
+				</td>
+				<td>
+					Default
+				</td>
+				<td>
+					<br />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					page
+				</td>
+				<td>
+					Default
+				</td>
+				<td>
+					<br />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					publish
+				</td>
+				<td>
+					Default
+				</td>
+				<td>
+					<br />
+				</td>
+			</tr>
+			<tr alns:iterate="@template_primitive_parameter" alns:variable="p">
+				<td>
+					{$p.parameter_name}
+				</td>
+				<td>
+					Custom Parameter
+				</td>
+				<td align="center">
+					<button type="button" onclick="deleteParameter(this.form, {$p.parameter_id})">Delete</button>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="text" name="new_parameter_name" maxlength="255" style="width:300px;" />
+				</td>
+				<td>
+					New Custom Parameter
+				</td>
+				<td align="center">
+					<button type="button" onclick="newParameter(this.form)">Add Parameter</button>
+				</td>
+			</tr>
+		</table>
+		
+		
+	</div>
+	<div id="tabs-7" order="6">
+		<div>
+			<input type="checkbox" name="is_paging" value="1" checked="{$primitive.is_paging_chk}" />is_paging
+			<button type="button" class="savebtn">Save</button>
+			<button type="button" class="runmaxdebug">Debug</button>
+		</div>
+		<textarea id="code_max_page" name="code_max_page">{$primitive.code_max_page}</textarea>
+	</div>
+	
+</div>
+
+<input type="hidden" name="parameter_id" value="{$IN.selectedNodeId}" />
+<input type="hidden" name="selectedNodeId" value="{$IN.selectedNodeId}" />
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="cmdType" value="primitive" />
+
+<input type="hidden" name="modulePath" value="{$modulePath}" />
+<input type="hidden" name="moduleMaxPagePath" value="{$moduleMaxPagePath}" />
+
+<input type="hidden" name="templatePath" value="{$templatePath}" />
+<input type="hidden" name="breakpoints" value="0" />
+<input type="hidden" name="dirty" value="0" />
+
+<input type="hidden" name="sc_html" value="{$IN.sc_html}" />
+<input type="hidden" name="sc_alinous" value="{$IN.sc_alinous}" />
+<input type="hidden" name="sc_css" value="{$IN.sc_css}" />
+<input type="hidden" name="sc_javascript" value="{$IN.sc_javascript}" />
+<input type="hidden" name="sc_paging" value="{$IN.sc_paging}" />
+
+<input type="hidden" name="template_code" value="" />
+</form>
+
+
+</body>
+</html>

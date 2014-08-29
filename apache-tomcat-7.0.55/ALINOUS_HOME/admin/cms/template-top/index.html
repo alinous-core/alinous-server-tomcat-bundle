@@ -1,0 +1,238 @@
+<html>
+<head>
+<title>Top Template - Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/admin/cms/template-top/edit/edittemplate.js"></script>
+
+<script src="/jquery/codemirror/lib/codemirror.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+<script src="/jquery/codemirror/mode/alinous/alinous.js"></script>
+<script src="/jquery/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="/jquery/codemirror/mode/css/css.js"></script>
+<script src="/jquery/codemirror/mode/xml/xml.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+
+<script src="/jquery/codemirror/addon/hint/show-hint.js"></script>
+
+<script src="/admin/cms/codemirror/alinoushint.js"></script>
+<link rel="stylesheet" href="/admin/cms/codemirror/alinoushint.css">
+<link rel="stylesheet" href="/jquery/codemirror/addon/hint/show-hint.css">
+
+<script src="/admin/cms/debugger/debugger.js"></script>
+
+<link rel="stylesheet" href="/jquery/codemirror/lib/codemirror.css">
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	var winHeight = document.body.clientHeight - 140;
+	$("#scroll-container").css("height", winHeight + "px");
+	
+	$('#left-menu-handle-tab').click( function() {
+    	 $("#left-menu-contents").animate({
+    	 	 width: 'toggle'
+    	 }, 400, function() {
+    	 	var marginWidth = this.clientWidth + 35;
+			    	 	
+    	 	$("#right-body").css("margin-left", marginWidth + "px");
+    	 	$("#lq_content_wrap").css("margin-left", marginWidth + "px");
+    	 });
+	});
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+	$(".top_tmpls").sortable({
+		update: function(event, ui) {
+			var result = $(".top_tmpls").sortable("toArray");
+			
+			var url = "/admin/cms/template-top/sort.alns";
+			$.ajax({
+				type: 'POST',
+				url: url,
+				data: {
+					result: result
+				},
+				dataType: 'html',
+				success: function(data) {
+					
+				},
+				error:function() {
+					alert('Error occur');
+				}
+			});
+		}
+	});
+});
+
+function newTemplate()
+{
+	var url = "/admin/cms/template-top/dialog/newTemplate.html";
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	
+	$( "#dialog" ).dialog( "open" );
+}
+
+
+function showTemplate(currentTemplateId)
+{
+	document.partsFrm.currentTemplateId.value = currentTemplateId;
+	document.partsFrm.submit();
+}
+
+function deleteTemplate(currentTemplateId)
+{
+	var bl = confirm("About to delete this template. Are you sure ?");
+	if(!bl){
+		return;
+	}
+	
+	document.partsFrm.targetTemplateId.value = currentTemplateId;
+	document.partsFrm.cmd.value = "delete";
+	document.partsFrm.submit();
+}
+-->
+</script>
+<style>
+<!--
+.top_tmpls {
+	list-style-type: none;
+	list-style-image: url(/admin/cms/template-top/img/interface_browser.gif);
+}
+#scroll-container {
+    height: 800px;
+    overflow-y: scroll;
+    overflow-x: none;
+    position: relative;
+}
+.current {
+	background-color: rgb(183, 196, 224);
+}
+
+  .CodeMirror { height: 680px; border: 1px solid #ddd; }
+  .CodeMirror-scroll { max-height: 680px; }
+  .CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+  .breakpoints {width: .8em;}
+-->
+</style>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Manage Articles</h1>
+
+<div id="left-menu">
+	<div id="left-menu-contents">
+		<form name="partsFrm" action="index.html" method="POST">
+		<h2>Select Templates</h2>
+
+		<div id="scroll-container">		
+			<p>
+				The first template is default template.
+			</p>
+		
+
+			<ul class="top_tmpls">
+				<li alns:iterate="@template_top" alns:variable="oneRecord" id="tmpl_{$oneRecord.template_top_id}"
+					class="{$oneRecord.class}">
+					<a href="javascript:showTemplate('{$oneRecord.template_top_id}')">{$oneRecord.template_top_name}</a>
+					[<a href="javascript:deleteTemplate('{$oneRecord.template_top_id}')">delete</a>]
+				</li>		
+			</ul>
+			
+			<p alns:if="{BOOL($sizeTemplates == 0)}">
+				Please create the first page from the button below.<br />
+			</p>
+			<p>
+				<center><button type="button" onclick="newTemplate()">Create a New Template</button></center>
+			</p>
+		</div>
+		
+		<input type="hidden" name="cmd" value="" />
+		
+		<input type="hidden" name="template_top_code" value="" />
+		<input type="hidden" name="template_top_name" value="" />
+		
+		<input type="hidden" name="currentTemplateId" value="{$IN.currentTemplateId}" />
+		<input type="hidden" name="targetTemplateId" value="" />
+		</form>		
+	</div>
+	<div id="left-menu-handle">
+		<div id="left-menu-handle-tab">
+			<img src="/admin/cms/img/leftmenu.png" width="20" /><br />
+			<div id="left-menu-handle-tab-string">
+			M<br />
+			E<br />
+			N<br />
+			U<br />
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<div id="lq_content_wrap">
+	<div id="right-body">
+		<div id="editor-area" alns:tagid="editor-area"
+			alns:inner="/admin/cms/template-top/default.html?currentTemplateId={$IN.currentTemplateId}"></div>
+		
+	</div>
+</div>
+
+</div>
+
+</body>
+</html>

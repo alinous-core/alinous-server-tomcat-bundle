@@ -1,0 +1,106 @@
+<html>
+<head>
+<title>Alinous-CMS</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script src="/admin/cms/importer/importer.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+});
+-->
+</script>
+</head>
+<body>
+
+<div id="wrap">
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Import contents from external websites</h1>
+
+<blockquote>
+	<form name="frm" action="index.html" method="POST">
+	<h2>Importers</h2>
+	
+	<h2>Create a new Importer</h2>
+	
+	<button type="button" onclick="ImporterJs.newImporter();">New Importer</button>
+	
+	
+	<h2>importers</h2>
+	
+	<table class="stdtable">
+		<tr>
+			<th>
+				Importer Name
+			</th>
+			<th width="200">
+				Edit Code
+			</th>
+			<th width="200">
+				Delete
+			</th>
+		</tr>
+		<tr alns:iterate="@content_importer" alns:variable="oneRecord">
+			<td>
+				{$oneRecord.content_importer_name}
+			</td>
+			<td align="center">
+				<button type="button" onclick="ImporterJs.editImporter({$oneRecord.content_importer_id})">Edit Code</button>
+			</td>
+			<td align="center">
+				<button type="button" onclick="ImporterJs.delete(this.form, {$oneRecord.content_importer_id})">Delete</button>
+			</td>
+		</tr>
+	</table>
+	
+	
+	<input type="hidden" name="cmd" value="" />
+	<input type="hidden" name="content_importer_name" value="" />
+	<input type="hidden" name="content_importer_id" value="" />
+	</form>
+</blockquote>
+
+</div>
+
+</body>
+</html>

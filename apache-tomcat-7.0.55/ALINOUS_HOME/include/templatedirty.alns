@@ -1,0 +1,72 @@
+
+/*
+include("/include/templatedirty.alns");
+*/
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/include/template_top.alns");
+
+function TemplateDirty.containerUser($template_container_id)
+{
+	SELECT * INTO template_container_children
+	FROM
+		template_container_children
+	WHERE
+		template_container_children.inner_template_container_id = $template_container_id;
+	
+	$size = Array.size(@template_container_children);
+	for($i = 0; $i < $size; $i++){
+		// Sync container
+		ContainerTmpl.sync($template_container_children[$i].template_container_id, "");
+		
+		// Container User
+		TemplateDirty.containerUser($template_container_children[$i].template_container_id);
+	}
+	
+	SELECT * INTO template_top_children
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.inner_template_container_id = $template_container_id;
+	
+	$size = Array.size(@template_top_children);
+	for($i = 0; $i < $size; $i++){
+		// PageDirty.detectTop($template_top_children[$i].template_top_id);
+		// sync top
+		TopTmpl.sync($template_top_children[$i].template_top_id, "");
+	}
+}
+
+function TemplateDirty.primitiveUser($template_primitive_id)
+{
+	$tmpl = PrimitiveTmpl.getTemplate($template_primitive_id);
+	
+	SELECT * INTO template_container_children
+	FROM
+		template_container_children
+	WHERE
+		template_container_children.inner_template_primitive_id = $template_primitive_id;
+	
+	$size = Array.size(@template_container_children);
+	for($i = 0; $i < $size; $i++){
+		// Sync container
+		ContainerTmpl.sync($template_container_children[$i].template_container_id, "");
+		
+		// Container User
+		TemplateDirty.containerUser($template_container_children[$i].template_container_id);
+	}
+	
+	SELECT * INTO template_top_children
+	FROM
+		template_top_children
+	WHERE
+		template_top_children.inner_template_primitive_id = $template_primitive_id;
+	
+	$size = Array.size(@template_top_children);
+	for($i = 0; $i < $size; $i++){
+		// sync top
+		TopTmpl.sync($template_top_children[$i].template_top_id, "");
+	}
+}
+

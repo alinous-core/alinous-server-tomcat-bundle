@@ -1,0 +1,288 @@
+
+/*
+include("/include/template_container.alns");
+*/
+include("/include/template_primitive.alns");
+
+function ContainerTmpl.syncAll()
+{
+	SELECT template_container.template_container_id INTO template_container
+	FROM
+		template_container;
+	
+	$size = Array.size(@template_container);
+	for($i = 0; $i < $size; $i++){
+		ContainerTmpl.sync($template_container[$i].template_container_id, "preview");
+		ContainerTmpl.sync($template_container[$i].template_container_id, "");
+	}
+	
+}
+
+function ContainerTmpl.sync($template_container_id, $gencode)
+{
+	$tmpl = ContainerTmpl.getTemplate($template_container_id);
+	
+	$savePath = ContainerTmpl.getContainerDirPath($template_container_id);
+	File.makeDir($savePath);
+	
+	ContainerTmpl.makeHtml($savePath, $tmpl, $gencode);
+	
+	
+	// Alinous Code
+	$alnsPath = $savePath + "index" + $gencode + ".alns";
+	$encode = "utf-8";
+	File.putText($alnsPath, $tmpl.code_alinous, $encode);
+}
+
+function ContainerTmpl.makeHtml($savePath, $tmpl, $gencode)
+{
+	$htmlPath = $savePath + "index" + $gencode + ".html";
+	
+	$headerDef = ContainerTmpl.childCssScript($tmpl.template_container_id, $values);
+	
+	$innerCss = "";
+	$size = Array.size(@headerDef.css);
+	for($i = 0; $i < $size; $i++){
+		if(String.trim($headerDef.css[$i]) != ""){
+			$innerCss = $innerCss + $headerDef.css[$i] + "\n";
+		}
+	}
+	
+	$innerJs = "";
+	$size = Array.size(@headerDef.js);
+	for($i = 0; $i < $size; $i++){
+		if(String.trim($headerDef.js[$i]) != ""){
+			$innerJs = $innerJs + $headerDef.js[$i] + "\n";
+		}
+	}
+	
+	$style = $innerCss + $tmpl.code_css;
+	if($style != ""){
+		$style = '<style>\n<!--\n' +
+					$innerCss +
+					$tmpl.code_css +
+					'\n-->\n</style>\n';
+	}
+	
+	$script = $innerJs + $tmpl.code_js;
+	if($script != ""){
+		$script = '<script>\n<!--\n' +
+			$innerJs +
+			$tmpl.code_js +
+		'\n-->\n</script>\n';
+	}
+	
+	$html =  '<html>\n' + 
+		'<head>\n' + 
+		$style + 
+		$script +
+		'</head>\n' + 
+		'<body>\n';
+	$html = $html + '<div id="' +  $tmpl.div_id + '">\n';
+	
+	// inner parts
+		$html = $html + '<div id="' +  $tmpl.div_left_id + '">\n';
+		$html = $html + ContainerTmpl.renderInnerParts($tmpl.template_container_id, "left", $gencode);
+		$html = $html + '</div>\n';
+		
+		$html = $html + '<div id="' +  $tmpl.div_right_id + '">\n';
+		$html = $html + ContainerTmpl.renderInnerParts($tmpl.template_container_id, "right", $gencode);
+		$html = $html + '</div>\n';
+		
+		// clear fix
+		$html = $html + '<br style="clear: both;" />\n';
+	
+	$html = $html + '</div>';
+	$html = $html + "\n</body>\n</html>\n";
+	
+	$encode = "utf-8";
+	File.putText($htmlPath, $html, $encode);
+	
+	return 0;
+}
+
+function ContainerTmpl.getPaging($template_container_id, @scripts, $genCode)
+{
+	SELECT * INTO ch
+	FROM
+		(template_container_children LEFT JOIN template_primitive
+		ON
+			template_container_children.inner_template_primitive_id = template_primitive.template_primitive_id)
+		LEFT JOIN template_container
+		ON
+			template_container_children.inner_template_container_id = template_container.template_container_id
+	WHERE
+		template_container_children.template_container_id = $template_container_id
+	ORDER BY template_container_children.position, template_container_children.position_order;
+	
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			PrimitiveTmpl.getPaging($ch[$i].inner_template_primitive_id, @scripts, $genCode);
+		}
+		else if($ch[$i].inner_template_container_id != 0){
+			ContainerTmpl.getPaging($ch[$i].inner_template_container_id, @scripts, $genCode);
+		}
+	}
+}
+
+function ContainerTmpl.getChildParameters($template_container_id, @params)
+{
+	SELECT * INTO ch
+	FROM
+		(template_container_children LEFT JOIN template_primitive
+		ON
+			template_container_children.inner_template_primitive_id = template_primitive.template_primitive_id)
+		LEFT JOIN template_container
+		ON
+			template_container_children.inner_template_container_id = template_container.template_container_id
+	WHERE
+		template_container_children.template_container_id = $template_container_id
+	ORDER BY template_container_children.position, template_container_children.position_order;
+	
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			PrimitiveTmpl.getParameters($ch[$i].inner_template_primitive_id, @params);
+		}
+		else if($ch[$i].inner_template_container_id != 0){
+			ContainerTmpl.getChildParameters($ch[$i].inner_template_container_id, @params);
+		}
+	}
+}
+
+function ContainerTmpl.childCssScript($template_container_id, $values)
+{
+	SELECT * INTO ch
+	FROM
+		(template_container_children LEFT JOIN template_primitive
+		ON
+			template_container_children.inner_template_primitive_id = template_primitive.template_primitive_id)
+		LEFT JOIN template_container
+		ON
+			template_container_children.inner_template_container_id = template_container.template_container_id
+	WHERE
+		template_container_children.template_container_id = $template_container_id
+	ORDER BY template_container_children.position, template_container_children.position_order;
+	
+	
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			$pr = PrimitiveTmpl.getTemplate($ch[$i].inner_template_primitive_id);
+			
+			$idx = Array.size(@values.css);
+			$values.css[$idx] = $pr.code_css;
+			
+			$idx = Array.size(@values.js);
+			$values.js[$idx] = $pr.code_js;
+			
+			$idx = Array.size(@values.header);
+			$values.header[$idx] = $pr.code_html_header;
+			
+		}else if($ch[$i].inner_template_container_id != 0){
+			$cn = ContainerTmpl.getTemplate($ch[$i].inner_template_container_id);
+			
+			$idx = Array.size(@values.css);
+			$values.css[$idx] = $cn.code_css;
+			
+			$idx = Array.size(@values.js);
+			$values.js[$idx] = $cn.code_js;
+			
+			ContainerTmpl.childCssScript($ch[$i].inner_template_container_id, $values);
+		}		
+	}
+	
+	return $values;
+}
+
+
+function ContainerTmpl.renderInnerParts($template_container_id, $position, $gencode)
+{
+	SELECT * INTO ch
+	FROM
+		(template_container_children LEFT JOIN template_primitive
+		ON
+			template_container_children.inner_template_primitive_id = template_primitive.template_primitive_id)
+		LEFT JOIN template_container
+		ON
+			template_container_children.inner_template_container_id = template_container.template_container_id
+	WHERE
+		template_container_children.template_container_id = $template_container_id AND
+		template_container_children.position = $position
+	ORDER BY template_container_children.position_order;
+	
+	$html = "";
+	
+	$size = Array.size(@ch);
+	for($i = 0; $i < $size; $i++){
+		if($ch[$i].inner_template_primitive_id != 0){
+			$path = PrimitiveTmpl.getPrimitiveDirPath($ch[$i].inner_template_primitive_id) + "index" + $gencode + ".html";
+			$dynamic = $ch[$i].is_dynamic;
+			
+			// make template
+			PrimitiveTmpl.sync($ch[$i].inner_template_primitive_id, $gencode);
+		}else if($ch[$i].inner_template_container_id != 0){
+			$path = ContainerTmpl.getContainerDirPath($ch[$i].inner_template_container_id) + "index" + $gencode + ".html";
+			$dynamic = 0;
+			
+			// make template
+			ContainerTmpl.sync($ch[$i].inner_template_container_id, $gencode);
+		}
+		
+		// dynamic
+		if($dynamic == 1){
+			$tagid =  $position + $i;
+			ContainerTmpl.renderDynamicPrimitive($ch[$i].inner_template_primitive_id, $gencode, $tagid, $html);
+			continue;
+		}
+		
+		// static
+		$innerUrl = $path + "?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}";
+		$tagid =  $position + $i;
+		$html = $html + '<div alns:inner="' + $innerUrl + '" alns:tagid="' + $tagid + '" alns:ignoreself="true" >';
+		$html = $html + "</div>\n";
+	}
+	
+	return $html;
+}
+
+
+function ContainerTmpl.renderDynamicPrimitive($template_primitive_id, $gencode, $tagid, $html)
+{
+	$dynPath = PrimitiveTmpl.getPrimitiveDirPath($template_primitive_id) + "dyn" + $gencode + ".html";
+	$paramsStr = PrimitiveTmpl.getParamValuesString($template_primitive_id);
+	$innerUrl = $dynPath + "?node_id={$IN.node_id}&cms_page_id={$IN.cms_page_id}$page={$IN.page}&publish={$IN.publish}" + $paramsStr;
+	
+	
+	$html = $html + '<div alns:inner="' + $innerUrl + '" alns:tagid="' + $tagid + '" alns:ignoreself="true" >';
+	$html = $html + "</div>\n";
+	
+}
+
+function ContainerTmpl.getContainerDirPath($template_container_id)
+{
+	SELECT tree_model.page_path, template_container.template_container_name INTO tree_model
+	FROM
+		template_container LEFT JOIN tree_model
+		ON
+			template_container.node_id = tree_model.node_id
+	WHERE
+		template_container.template_container_id = $template_container_id AND
+		tree_model.tree_id = 'container';
+	
+	$dir = "/html_tmpl/container" + $tree_model[0].page_path + "/";
+	
+	return $dir;
+}
+
+function ContainerTmpl.getTemplate($template_container_id)
+{
+	SELECT * INTO template_container
+	FROM
+		template_container
+	WHERe
+		template_container.template_container_id = $template_container_id;
+	
+	return $template_container[0];
+}

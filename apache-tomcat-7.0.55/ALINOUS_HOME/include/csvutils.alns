@@ -1,0 +1,91 @@
+
+/*
+include("/include/csvutils.alns");
+*/
+
+function CsvRecord.loadRecords($filePath)
+{
+	if(!File.exists($filePath)){
+		return null;
+	}
+	
+	Csv.openReadFile($filePath, "utf-8");
+	
+	@header = Csv.readLine($filePath);
+	
+	@line = Csv.readLine($filePath);
+	while(Array.size(@line) > 0){
+		
+		for($i = 0; $i < Array.size(@header); $i++){
+			$name = $header[$i];
+			if($name == null || $name == ""){
+				continue;
+			}
+			
+			$val = Variable.get("line[" + $i + "]");
+				
+			$script = '$rec.' + $name + ' = $val;';
+			Script.evaluate($script);
+		}
+		
+		$idx = Array.size(@records);
+		$records[$idx] = $rec;
+		
+		@line = Csv.readLine($filePath);
+	}	
+	
+	Csv.closeReadFile($filePath);
+	
+	return @records;
+}
+
+function CsvRecord.storeRecords(@records, $outPath)
+{
+	if(Array.size(@records) == 0){
+		return 0;
+	}
+	
+	@header = Variable.listNames($records[0]);
+	
+	Csv.openOutputFile($outPath, "utf-8");
+	
+	// Write Header
+	Csv.addFields($outPath, @header);
+	Csv.outLineEnd($outPath);
+	
+	$size = Array.size(@records);
+	for($i = 0; $i < $size; $i++){
+		@column = CsvRecord.makeColumn($records[$i], @header);
+		
+		Csv.addFields($outPath, @column);
+		Csv.outLineEnd($outPath);
+	}
+	
+	Csv.closeOutputFile($outPath);
+	
+	return 0;
+}
+
+function CsvRecord.makeColumn($record, @header)
+{
+	$size = Array.size(@header);
+	for($i = 0; $i < $size; $i++){
+		$column[$i] = Variable.get("record." + $header[$i]);	
+	}
+	
+	return @column;
+}
+
+function CsvRecord.getIndex(@header, $field)
+{
+	$size = Array.size(@header);
+	for($i = 0; $i < $size; $i++){
+		if($header[$i] == $field){
+			return $i;
+		}
+	}
+	
+	return null;
+}
+
+

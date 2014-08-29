@@ -1,0 +1,80 @@
+
+$offset = $IN.iDisplayStart;
+$limit = $IN.iDisplayLength;
+
+$ORDER[0] = "wmil_internal_link.target_page";
+if($IN.iSortCol_0 == 0){
+	$ORDER[0] = "wmil_internal_link.target_page";
+}
+else if($IN.iSortCol_0 == 1){
+	$ORDER[0] = "wmil_internal_link.num_links";
+}
+$orderDirection = $IN.sSortDir_0;
+$ORDER[0].ORDER = $orderDirection;
+
+if($IN.sSearch != null && $IN.sSearch != ""){
+	$likeStr = "%" + $IN.sSearch + "%";
+}
+
+SELECT * INTO wmil_internal_link
+FROM
+	wmil_internal_link LEFT JOIN wmil_internal_link_file
+	ON
+		wmil_internal_link.internal_link_file_id = wmil_internal_link_file.internal_link_file_id
+WHERE
+	wmil_internal_link_file.internal_link_file_name = $IN.internal_link_file_name AND
+	wmil_internal_link.target_page LIKE $likeStr
+ORDER BY @ORDER
+LIMIT $limit OFFSET $offset
+ADJUST_WHERE = true;
+
+SELECT count(*) as cnt INTO recordsCount
+FROM
+	wmil_internal_link LEFT JOIN wmil_internal_link_file
+	ON
+		wmil_internal_link.internal_link_file_id = wmil_internal_link_file.internal_link_file_id
+WHERE
+	wmil_internal_link_file.internal_link_file_name = $IN.internal_link_file_name AND
+	wmil_internal_link.target_page LIKE $likeStr
+ADJUST_WHERE = true;
+
+$iTotalRecords = $recordsCount[0].cnt;
+$iTotalDisplayRecords = Array.size(@wmil_internal_link);
+
+$json = getJSon($IN.sEcho, $iTotalRecords, $iTotalDisplayRecords, @wmil_internal_link);
+
+return $json;
+
+function getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @records)
+{
+	$json = "{";
+	
+	$json = $json + '"sEcho":' +  $sEcho + ",\n";
+	$json = $json + '"iTotalRecords":' +  $iTotalRecords + ",\n";
+	$json = $json + '"iTotalDisplayRecords":' +  $iTotalRecords + ",\n";
+	
+	$json = $json + '"aaData": [' + "\n";
+	
+	$first = true;
+	$size = Array.size(@records);
+	for($i = 0; $i < $size; $i++){
+		if($first){
+			$first = false;
+		}else{
+			$json = $json + ',';
+		}
+		
+		$json = $json + '[' + "\n";
+		
+		$json = $json + '"' + $records[$i].target_page + '",' +  "\n";
+		$json = $json + '"' + $records[$i].num_links + '"' +  "\n";
+		
+		$json = $json + ']' + "\n";
+	}
+	
+	
+	$json = $json + ']' + "\n";
+	$json = $json + "}";
+	
+	return $json;
+}

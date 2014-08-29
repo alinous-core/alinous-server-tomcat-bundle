@@ -1,0 +1,54 @@
+
+include("/include/serialutils.alns");
+
+if($IN.cmd == "new"){
+	newimporter($IN, $SESSION);
+	redirect "/admin/cms/importer/index.html";
+}
+else if($IN.cmd == "delete"){
+	deleteImporter($IN, $SESSION);
+	redirect "/admin/cms/importer/index.html";
+}
+
+SELECT * INTO content_importer
+FROM
+	content_importer
+ORDER BY content_importer.content_importer_name;
+
+
+return 0;
+
+function deleteImporter($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM content_importer
+	WHERE
+		content_importer.content_importer_id = $IN.content_importer_id;
+	
+	COMMIT;
+}
+
+function newimporter($IN, $SESSION)
+{
+	BEGIN;
+	
+	$encode = "utf-8";
+	$content_importer_code = File.readAllText("/admin/cms/importer/default/defaultPolicy.txt", $encode);
+	
+	$content_importer_id = Common.newSerial("content_importer");
+	INSERT INTO content_importer(
+		content_importer_id,
+		content_importer_name,
+		content_importer_code
+	)
+	VALUES(
+		$content_importer_id,
+		$IN.content_importer_name,
+		$content_importer_code
+	);
+	
+	COMMIT;
+	
+	return 0;
+}

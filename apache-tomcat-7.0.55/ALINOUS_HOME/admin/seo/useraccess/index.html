@@ -1,0 +1,168 @@
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Robot crawl</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.droppable.js"></script>
+
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+
+<style>
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+
+<style type="text/css" title="currentStyle">
+	@import "/jquery/datatables/media/css/demo_page.css";
+	@import "/jquery/datatables/media/css/demo_table.css";
+</style>
+<script type="text/javascript" language="javascript" src="/jquery/datatables/media/js/jquery.dataTables.js"></script>
+<script type="text/javascript" charset="utf-8">
+<!--
+$(document).ready(function() {
+	var oTable = $('#useraccesstbl').dataTable({
+		"iDisplayLength": 25,
+		"aaSorting": [[1,'desc']],
+		"aoColumns": [
+			null,
+			{ "asSorting": [ "desc", "asc", "asc" ] },
+			{ "asSorting": [ "desc", "asc", "asc" ] },
+			null,
+			{ "bSortable": false },
+			{ "bSortable": false }
+		],
+		"bProcessing": false,
+		"bServerSide": true,
+		"sAjaxSource": "/admin/seo/useraccess/serverData.alns",
+		"fnServerParams": function ( aoData ) {
+			var start_date = 	$("#start_date").val();
+			var end_date = 	$("#end_date").val();
+			aoData.push( { "name": "start_date",
+					"value": start_date } );
+			aoData.push( { "name": "end_date",
+					"value": end_date } );
+		}
+	});
+	
+	var submitted = 0;
+	$( "#start_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#end_date" ).datepicker( "option", "minDate", selectedDate );
+		},
+		onSelect: function(selectedDate) {
+			var thisform = this.form;
+			setTimeout(function(){
+				if(submitted == 0){
+					submitted = 1;
+					thisform.submit();
+				}
+			}, 400);
+		}
+	});
+	$( "#end_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#start_date" ).datepicker( "option", "maxDate", selectedDate );
+		},
+		onSelect: function(selectedDate) {
+			var thisform = this.form;
+			setTimeout(function(){
+				if(submitted == 0){
+					submitted = 1;
+					thisform.submit();
+				}
+			}, 400);
+		}
+	});
+});
+-->
+</script>
+
+</head>
+<body>
+
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; Access Log</h1>
+
+<h2>User Access Log</h2>
+
+<form name="frm" action="index.html" method="POST" enctype="multipart/form-data">
+
+Start date:
+<input type="text" id="start_date" name="start_date" value="{$IN.start_date}" style="width:120px;" />
+End date:
+<input type="text" id="end_date" name="end_date" value="{$IN.end_date}" style="width:120px;" />
+
+<button type="button" onclick="this.form.cmd.value='';this.form.submit();">Reload</button>
+
+<div id="robotaccess" style="width:100%;">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="useraccesstbl" width="100%">
+	<thead>
+		<tr>
+			<th width="220">Remote Host</th>
+			<th width="80">Time</th>
+			<th width="400">Path</th>
+			<th width="400">Referer</th>
+			<th>User Agent</th>
+			<th width="30">Return Code</th>
+		</tr>
+	</thead>
+	<tbody>
+		
+	</tbody>
+	<tfoot>
+		<tr>
+			<th>Remote Host</th>
+			<th>Time</th>
+			<th>Path</th>
+			<th>Referer</th>
+			<th>User Agent</th>
+			<th>Return Code</th>
+		</tr>
+	</tfoot>
+</table>
+</div>
+
+<input type="hidden" name="cmd" value="" />
+
+</form>
+
+
+</div>
+
+</body>
+</html>

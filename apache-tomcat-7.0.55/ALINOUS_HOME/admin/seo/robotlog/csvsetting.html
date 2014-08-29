@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Content Keywords of the Web Master tools</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<style>
+#usedItems, #unusedItems { list-style-type: none; margin: 0; padding: 0 0 2.5em; float: left; margin-right: 10px; }
+#usedItems li { margin: 0 5px 5px 5px; padding: 5px; font-size: 1.2em; width: 220px; }
+#unusedItems li { margin: 0 5px 5px 5px; padding: 5px; font-size: 1.2em; width: 220px; }
+</style>
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.mouse.js"></script>
+<script src="/jquery/ui/jquery.ui.sortable.js"></script>
+
+<script src="/jquery/ui/jquery.ui.draggable.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.resizable.js"></script>
+<script src="/jquery/ui/jquery.ui.button.js"></script>
+<script src="/jquery/ui/jquery.ui.dialog.js"></script>
+<script src="/jquery/ui/jquery.ui.effect.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$( "#usedItems, #unusedItems" ).sortable({
+		connectWith: ".connectedSortable",
+		stop: function(event, ui) {
+			// var currenId = this.getAttribute("id");
+			
+			var currenId = "usedItems";			
+			var result = $("#" + currenId).sortable("toArray");
+			var queryString = "cmd=update&sortId=" + currenId + "&data=" + result;
+			
+			$.ajax({
+				url: "/admin/seo/robotlog/csvsettingupdate.alns",
+				data : queryString,
+				dataType: "html",
+				success: function( data ) {
+					
+				}
+			});
+			
+			currenId = "unusedItems";			
+			result = $("#" + currenId).sortable("toArray");
+			queryString = "cmd=update&sortId=" + currenId + "&data=" + result;
+			
+			$.ajax({
+				url: "/admin/seo/robotlog/csvsettingupdate.alns",
+				data : queryString,
+				dataType: "html",
+				success: function( data ) {
+					
+				}
+			});
+		},
+		receive: function( event, ui ) {
+			var currenId = this.getAttribute("id");
+			var draggingid = ui.item[0].getAttribute("id");
+			var essential = ui.item[0].getAttribute("essential");
+			
+			if(currenId == "unusedItems" && essential == "1"){
+				$( ".connectedSortable" ).sortable( "cancel" );
+								
+				alert("This item is essential.");
+				
+				return;
+			}
+		}
+	}).disableSelection();
+	
+
+});
+
+function submitCmd(form, cmd)
+{
+	form.cmd.value = cmd;
+	form.submit();
+}
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h2>Access log format configuration</h2>
+
+<form name="frm" action="csvsetting.html" method="POST">
+
+<blockquote>
+
+<h2>Default format</h2>
+
+<button type="button" onclick="submitCmd(this.form, 'common')">Reset with common</button>
+<button type="button" onclick="submitCmd(this.form, 'combined')">Reset with combined</button>
+
+<input type="hidden" name="cmd" value="" />
+
+<h2>Apache log format</h2>
+<table>
+	<tr>
+		<th>
+			Use
+		</th>
+		<th>
+			Unuse
+		</th>
+	</tr>
+	<tr>
+		<td valign="top">
+			<ul id="usedItems" class="connectedSortable" style="width:230px;">
+				<li class="ui-state-default clickable" id="{$oneRecord.item_type}"
+					essential="{$oneRecord.item_essential}"
+					alns:iterate="@itemsUsed" alns:variable="oneRecord">{$oneRecord.item_type_desc}</li>
+			</ul>
+		</td>
+		<td valign="top">
+			<ul id="unusedItems" class="connectedSortable" style="width:230px;">
+				<li class="ui-state-default clickable" id="{$oneRecord.item_type}"
+					essential="{$oneRecord.item_essential}"
+					alns:iterate="@itemsUnused" alns:variable="oneRecord">{$oneRecord.item_type_desc}</li>
+			</ul>
+		</td>
+	</tr>
+</table>	
+
+</blockquote>
+
+</form>
+
+</div>
+
+</body>
+</html>

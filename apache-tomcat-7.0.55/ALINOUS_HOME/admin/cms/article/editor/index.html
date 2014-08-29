@@ -1,0 +1,340 @@
+<html>
+<body>
+<style>
+<!--
+button {
+    height: 25px;
+    margin: 0 0 0 0;
+    padding: 0 0 0 0 !important;
+    font-size 5px;
+    vertical-align: top !important;
+}
+
+.ui-button-text{
+	padding: 0 5px 0 5px !important;
+	margin: 0 0 0 0;
+}
+
+.ui-tabs .ui-tabs-panel {
+    background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
+    border-width: 0;
+    display: block;
+    padding: 5px 1.4em;
+}
+-->
+</style>
+
+
+<form name="frm" action="index.html" method="POST" alns:alinousform="false">
+
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1"><img src="/admin/cms/article/img/page_white_edit.png" style="margin: 0 4px 0 0;" />Edit Contents</a></li>
+		<li><a href="#tabs-2"><img src="/admin/cms/article/img/image.png" style="margin: 0 4px 0 0;" />Resources</a></li>
+		<li><a href="#tabs-3"><img src="/admin/cms/tags/img/tag_red.png" style="margin: 0 4px 0 0;" />Tags</a></li>
+		<li><a href="#tabs-4"><img src="/admin/cms/article/img/page_white_code.png" style="margin: 0 4px 0 0;" />Additional Code</a></li>
+		<li><a href="#tabs-5"><img src="/admin/cms/article/img/world.png" style="margin: 0 4px 0 0;" />Site Setting</a></li>
+	</ul>
+	<div id="tabs-1" order="0">
+		<div id="div_detail">
+			<h2 class="h2_detail"><a href="#"><img src="/admin/cms/article/img/application_cascade.png" style="margin: 0 4px 0 0;" />Contents [ {$cms_page.page_title} ]</a>
+				<button type="button">Close</button>
+			</h2>
+			<table width="100%">
+				<tr>
+					<td width="200">
+						<b>Title</b>
+					</td>
+					<td>
+						<input tpye="text" name="page_title" value="{$cms_page.page_title}" maxlength="255" style="width:100%;"/>
+					</td>
+				</tr>
+				<tr>
+					<td width="200">
+						<b>Sub Title</b>
+					</td>
+					<td>
+						<input tpye="text" name="page_sub_title" value="{$cms_page.page_sub_title}" maxlength="255" style="width:100%;"/>
+					</td>
+				</tr>
+				<tr>
+					<td width="200">
+						<b>Short Title</b>
+					</td>
+					<td>
+						<input tpye="text" name="page_short_title" value="{$cms_page.page_short_title}" maxlength="255" style="width:100%;"/>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Template</b>
+					</td>
+					<td>
+						<table>
+							<tr>
+								<td>
+									<b>Main</b>
+								</td>
+								<td>
+									<select name="template_top_id" value="{$cms_page.template_top_id}">
+									<option value="0">Default</option>
+									<option alns:iterate="@template_top" alns:variable="oneRecord"
+										value="{$oneRecord.template_top_id}">{$oneRecord.template_top_name}</option>
+									</select>
+								</td>
+								<td>
+									<b>Secondary</b>
+								</td>
+								<td>
+									<select name="second_template_top_id" value="{$cms_page.second_template_top_id}">
+									<option value="0">Not Set</option>
+									<option alns:iterate="@template_top" alns:variable="oneRecord"
+										value="{$oneRMainecord.template_top_id}">{$oneRecord.template_top_name}</option>
+									</select>
+									Root Context:
+									<input type="text" name="second_template_context" value="{$cms_page.second_template_context}" size="5" maxlength="255"/>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Page Type(Option)</b>
+					</td>
+					<td>
+						<input tpye="text" name="page_type" value="{$cms_page.page_type}" maxlength="255" style="width:200px;"/>
+					</td>
+				</tr>
+				
+				<tr>
+					<td>
+						<b>URL Setting</b>
+					</td>
+					<td>
+						<select name="force_folder" value="{$cms_page.force_folder}">
+						<option value="0">leaf</option>
+						<option value="1">node(/index.html)</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Created Time</b>
+					</td>
+					<td>
+						<input type="text" name="created_time_date" value="{$cms_page.created_time_date}"
+							readonly="readonly" style="width:100px;" />
+						<input type="text" name="created_time_time" value="{$cms_page.created_time_time}" style="width:100px;" />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Last Modified Time</b>
+					</td>
+					<td>
+						<input type="text" name="updated_time_date" value="{$cms_page.updated_time_date}"
+							readonly="readonly" style="width:100px;" />
+						<input type="text" name="updated_time_time" value="{$cms_page.updated_time_time}" style="width:100px;" />
+							
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Force to Extract this node :</b>
+					</td>
+					<td>
+						<select name="force_extract" value="{$cms_page.force_extract}">
+						<option value="0">Extract on selected</option>
+						<option value="1">Everytime extract</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Description</b>
+					</td>
+					<td>
+						<textarea name="page_description" rows="4" style="width:100%;">{$cms_page.page_description}</textarea>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<b>Headline and Short Title</b>
+					</td>
+					<td>
+						<textarea name="page_body_headline" rows="4" style="width:100%;">{$cms_page.page_body_headline}</textarea>
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'draft')}">
+			<b>Draft Only</b>
+			<button type="button" class="h2_detail"><img src="/admin/cms/article/img/application_cascade.png" style="margin: 0 4px 0 0;" />Detail</button>
+			<button type="button" onclick="previewPage(this.form)">Preview</button>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+			<button type="button" onclick="ImportContent.openDialog(this.form)">Import</button>
+		</div>
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'published')}">
+			
+			<b>Published</b>
+			<button type="button" class="h2_detail"><img src="/admin/cms/article/img/application_cascade.png" style="margin: 0 4px 0 0;" />Detail</button>
+			<button type="button" onclick="previewPage(this.form)">Preview</button>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+			<button type="button" onclick="saveByCmd('remove-publish')">Revert to Draft</button>
+			<button type="button" onclick="ImportContent.openDialog(this.form)">Import</button>
+		</div>
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'published-with-draft')}">
+			<b>Published+Draft</b>
+			<button type="button" class="h2_detail"><img src="/admin/cms/article/img/application_cascade.png" style="margin: 0 4px 0 0;" />Detail</button>
+			<button type="button" onclick="previewPage(this.form)">Preview</button>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+			<button type="button" onclick="saveByCmd('discard-draft')">Discard Draft</button>
+			<button type="button" onclick="saveByCmd('remove-publish')">Remove Published</button>
+			<button type="button" onclick="ImportContent.openDialog(this.form)">Import</button>
+		</div>
+		
+		<div id="wysiwyg">
+			<textarea cols="100" rows="30" name="page_body" id="page-content" style="width:100%;">{$cms_page.page_body}</textarea>
+		</div>
+	</div>
+	<div id="tabs-2" order="1">
+		
+		<div id="reource-area" alns:tagid="reource-area"
+			alns:inner="/admin/cms/resources/index.html?resource_owner_id={$cms_page.cms_page_id }&resource_owner_type=cms_page"></div>
+	</div>
+	<div id="tabs-3" order="2">
+		<h2>Tag Setting</h2>
+		<p>
+			<button type="button" onclick="addTag(this.form)">Add Tags</button>
+		</p>
+		
+		
+		<table class="stdtable" style="width:600px;">
+			<tr>
+				<th>
+					TagName
+				</th>
+				<th width="150">
+					Remove
+				</th>
+			</tr>
+			<tr alns:iterate="@cms_tag" alns:variable="tag">
+				<td>
+					<img src="/admin/cms/tags/img/tag_red.png" style="margin: 0 4px 0 0;" />{$tag.tag_name}
+				</td>
+				<td align="center">
+					<button type="button" onclick="removeTag(this.form, '{$tag.cms_tag_id}')">Remove Tag</button>
+				</td>
+			</tr>
+		</table>
+		
+		
+	</div>
+	<div id="tabs-4" order="3">
+		<p>
+			Input Addtional Html Header Code
+		</p>
+		<textarea name="page_addtional_code" id="page_addtional_code" rows="8" style="width:100%;">{$cms_page.page_addtional_code}</textarea>
+	</div>
+	<div id="tabs-5" order="4">
+		<span alns:if="{BOOL($node.page_depth == 1)}">
+			<h2>Domain and Template Set</h2>
+			
+			<p>
+				Input the Domain and Template to use
+			</p>
+			
+			<table class="stdtable" width="100%">
+				<tr>
+					<th>
+						Domain Name
+					</th>
+					<th width="220">
+						Force https
+					</th>
+					<th>
+						Template Setting
+					</th>
+					<th width="180">
+						Remove Setting
+					</th>
+				</tr>
+				
+				<tr alns:iterate="@site_setting" alns:variable="site">
+					<td>
+						{$site.site_domain}
+					</td>
+					<td>
+						<span alns:if="{BOOL($site.force_https == 0)}">Use Http and Https</span>
+						<span alns:if="{BOOL($site.force_https == 1)}">Redirect Http to Https</span>
+					</td>
+					<td>
+						<span alns:if="{BOOL($site.template_use == 0)}">Use Default Template</span>
+						<span alns:if="{BOOL($site.template_use == 1)}">
+							Use Secondary Template<br />
+							Use Context Root:
+							<span alns:if="{BOOL($site.use_context == 1)}">
+								YES, Redirect to the Context Path
+							</span>
+							<span alns:if="{BOOL($site.use_context == 0)}">
+								NO, don't Redirect to use same Url
+							</span>
+						</span>
+						
+					</td>
+					<td align="center">
+						<button type="button" onclick="removeSiteSetting(this.form, '{$site.site_domain}')">Delete</button>
+					</td>
+				</tr>
+				
+				<tr>
+					<td>
+						<input type="text" name="site_domain" value="" style="width:100%;"/>
+					</td>
+					<td>
+						<select name="force_https">
+						<option value="0">Use Http and Https</option>
+						<option value="1">Redirect Http to Https</option>
+						</select>
+					</td>
+					<td>
+						<select name="template_use" onchange="siteTemplateChange(this.form)">
+						<option value="0">Use Default Template</option>
+						<option value="1">Use Secondary Template</option>
+						</select>
+						:
+						<select name="use_context" disabled="disabled">
+						<option value="1">Redirect to the Context Path</option>
+						<option value="0">Don't Redirect, use same Url</option>
+						</select>
+					</td>
+					<td align="center">
+						<button type="button" onclick="newSiteSetting(this.form)">Add New Setting</button>
+					</td>
+				</tr>
+			</table>
+		</span>
+	</div>
+</div>
+
+
+
+<input type="hidden" name="group_code" value="" />
+<input type="hidden" name="cms_tag_id" value="" />
+<input type="hidden" name="cmd" value="" />
+
+<input type="hidden" name="selectedNodeId" value="{$IN.selectedNodeId}" />
+<input type="hidden" name="nicedit_cms_page_id" id="nicedit_cms_page_id" value="{$cms_page.cms_page_id }" />
+
+<input type="hidden" name="effect_range" value="" />
+<input type="hidden" name="update_tm" value="" />
+
+</form>
+
+</body>
+</html>

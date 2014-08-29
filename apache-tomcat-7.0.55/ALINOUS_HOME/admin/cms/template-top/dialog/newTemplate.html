@@ -1,0 +1,65 @@
+<html>
+<body>
+<script>
+<!-- 
+$(function() {
+	$('#newTtemplate').click(function() {
+		var template_top_code = document.editNodeFrm.template_top_code.value;
+		var template_top_name = document.editNodeFrm.template_top_name.value;
+		
+		if(template_top_code == ""){
+			alert("Input the Template Code.");
+			return;
+		}
+		if(template_top_code.match(/[^A-Za-z0-9_-]+/)){
+			alert("Please input Templat Code in alphabets, numbers, '_' and '-'.");
+			return;
+		}
+		
+		if(template_top_name == ""){
+			alert("Input the Template's Name.");
+			return;
+		}
+		
+		document.partsFrm.template_top_code.value = template_top_code;
+		document.partsFrm.template_top_name.value = template_top_name;
+		
+		document.partsFrm.cmd.value = "addTemplate";
+		document.partsFrm.submit();		
+	});
+});
+-->
+</script>
+
+<form name="editNodeFrm" action="index.html" method="POST">
+
+<h1>Create a new Template</h1>
+
+<table>
+	<tr>
+		<td width="160">
+			Template Code:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="template_top_code" value="" />
+		</td>
+	</tr>
+	<tr>
+		<td width="160">
+			Template Name:
+		</td>
+		<td>
+			<input type="text" size="80" style="width:400px;" name="template_top_name" value="" />
+		</td>
+	</tr>
+</table>
+
+<center>
+	<button type="button" id="newTtemplate">New Template</button>
+	<button type="button" onclick='$( "#dialog" ).dialog( "close" );'>Cancel</button>
+</center>
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+
+include("/include/treemodel.alns");
+
+@list = TreeModel.getOpenListById("cms", $IN.nodeId);
+
+$json = Record.dom2json(@list);
+
+return $json;

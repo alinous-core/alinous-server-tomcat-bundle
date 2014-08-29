@@ -1,0 +1,16 @@
+
+include("/include/rss.alns");
+
+$retCode = "";
+if($IN.cmd == "pubhub"){
+	$retCode = pubhub($IN, $SESSION);
+}
+
+
+return 0;
+
+
+function pubhub($IN, $SESSION)
+{
+	return Rss.pubhubPush($IN.rss_setting_id);
+}

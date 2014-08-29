@@ -1,0 +1,64 @@
+
+include("/include/heatmap.alns");
+include("/include/serialutils.alns");
+include("/include/progress.alns");
+
+startJob($IN, $SESSION);
+
+
+return 0;
+
+function startJob($IN, $SESSION)
+{
+	$docSize = Heatmap.getDocumentSize($IN.hm_master_url);
+	$start = toTimestamp($IN.start_date, $IN.start_time);
+	$end = toTimestamp($IN.end_date, $IN.end_time);
+	
+	BEGIN;
+	$context = Heatmap.createHeatmapData($IN.hm_master_name, $IN.archive_page_id, $start, $end
+				, $docSize.width, $docSize.height);
+	
+	COMMIT;
+	
+	$params.jobId = "mouse-heatmap-" + $context.hm_master_id;
+	$params.hm_raster_id = $context.hm_raster_id;
+	
+	$numPages = Heatmap.countPageAccesses($IN.hm_master_url, $start, $end);
+	$jobMax = 20 + $docSize.height + $numPages + 50;
+	
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
+}
+
+function backgroundJob($params)
+{
+	$IN = $params.IN;
+	$SESSION = $params.SESSION;
+	
+	$docSize = Heatmap.getDocumentSize($IN.hm_master_url);
+	$start = toTimestamp($IN.start_date, $IN.start_time);
+	$end = toTimestamp($IN.end_date, $IN.end_time);
+		
+	BEGIN;
+	Heatmap.initRaster($params.hm_raster_id, $docSize.width, $docSize.height);
+	COMMIT;
+	
+	ProgressJob.progress(20, $params.jobId);
+	
+	try{
+		Heatmap.createHeatMap($params.hm_raster_id, $IN.hm_master_url, $start, $end, 
+							$IN.archive_page_id, $SESSION, $params.jobId);
+	}finally{
+		ProgressJob.jobFinished($params.jobId);
+	}
+}
+
+function toTimestamp($date, $time)
+{
+	@dateValues = String.split($date, "/");
+	
+	return $dateValues[2] + "-" + $dateValues[0] + "-" + $dateValues[1]
+		+ " " + $time + ":00";
+}
+

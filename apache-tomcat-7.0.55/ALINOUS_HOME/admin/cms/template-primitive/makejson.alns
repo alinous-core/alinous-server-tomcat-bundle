@@ -1,0 +1,90 @@
+
+if($IN.node == null){
+	$json = getFirstNode();
+}
+else{
+	$json = getChildrenNodes($IN.node);
+}
+
+return $json;
+
+function getChildrenNodes($node)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.node_id = $node;
+	
+	$depth = $tree_model[0].page_depth + 1;
+	$path = $tree_model[0].page_path + "/%";
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model left join template_primitive
+		ON
+			tree_model.tree_id = 'primitive' AND
+			tree_model.node_id = template_primitive.node_id
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.page_path like $path AND
+		tree_model.page_depth = $depth
+	ORDER BY tree_model.page_order;
+	
+	return record2Json(@tree_model);
+}
+
+function getFirstNode()
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model left join template_primitive_category
+		ON
+			tree_model.tree_id = 'primitive' AND
+			tree_model.node_id = template_primitive_category.node_id
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.page_depth = 1 AND
+		template_primitive_category.node_id IS NOT NULL
+	ORDER BY tree_model.page_order;
+
+
+	return record2JsonCategory(@tree_model);
+}
+
+function record2JsonCategory(@tree_model)
+{
+	$size = Array.size(@tree_model);
+	for($i = 0; $i < $size; $i++){
+		$DATA[$i].label = $tree_model[$i].category_name;
+		$DATA[$i].id = $tree_model[$i].node_id;
+		$DATA[$i].nodeType = 'category';
+		
+		if($tree_model[$i].page_children > 0){
+			$DATA[$i].load_on_demand = true;
+		}
+	}
+	
+	
+	$json = Record.dom2json(@DATA);
+	return $json;
+}
+
+function record2Json(@tree_model)
+{
+	$size = Array.size(@tree_model);
+	for($i = 0; $i < $size; $i++){
+		$DATA[$i].label = $tree_model[$i].template_primitive_name;
+		$DATA[$i].id = $tree_model[$i].node_id;
+		$DATA[$i].nodeType = 'primitive';
+		
+		if($tree_model[$i].page_children > 0){
+			$DATA[$i].load_on_demand = true;
+		}
+	}
+	
+	
+	$json = Record.dom2json(@DATA);
+	return $json;
+}

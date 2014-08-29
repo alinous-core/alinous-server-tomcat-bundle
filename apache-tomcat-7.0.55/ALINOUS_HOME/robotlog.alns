@@ -1,0 +1,162 @@
+
+include("/admin/seo/robotlog/loganalyze.alns");
+
+$logline = $args[0];
+
+// System.println("*************************** " + $logline);
+
+$sync = parallel(1){
+	$config = AccessLog.readConfig();
+	AccessLog.analyze($logline, $config);
+};
+
+return 0;
+
+
+function AccessLog.analyze($logline, $config)
+{
+	@logArray = AccessLogLineReader.parseLine($logline);
+	
+	$isRobot = AccessLog.isRobot(@logArray, $config);
+	
+	$remoteHost = $logArray[$config.remoteHost];
+	$remoteHost = AccessLog.resolveIp($remoteHost);
+	$access_time =  $logArray[$config.time];
+	$access_time = AccessLogLineReader.parseTime($access_time);
+	
+	$user_name = "";
+	$path = "";
+	$protocol = "";
+	$method = "";
+	
+	$requestFirstLine = $logArray[$config.requestFirstLine];
+	@firstlines = String.split($requestFirstLine, " ");
+	
+	if($firstlines[1] != null){
+		$path = $firstlines[1];
+	}
+	if($firstlines[0] != null){
+		$method = $firstlines[0];
+	}
+	if($firstlines[2] != null){
+		$protocol = $firstlines[2];
+	}
+	
+	$bytes = 0;
+	$referer = "";
+	if($config.referer >= 0){
+		$referer = $logArray[$config.referer];
+	}
+	$response_status = "";
+	if($config.status >= 0){
+		$response_status = $logArray[$config.status];
+	}
+	
+	$robot_type = "googlebot";
+	$user_agent = "";
+	if($config.userAgent >= 0){
+		$user_agent = $logArray[$config.userAgent];
+		$rb = AccessLog.getRobotType($user_agent);
+		if($rb != null){
+			$robot_type = AccessLog.getRobotType($user_agent);
+		}
+	}
+	
+	if(!$isRobot){
+		if(String.endsWith($path, ".html") == false && String.endsWith($path, "/") == false){
+			return 0;
+		}
+		if(String.startsWith($path, "/admin/")){
+			return 0;
+		}
+		
+		BEGIN;
+		
+		INSERT INTO wmc_user_access(
+			remote_host,
+			access_time,
+			path,
+			protocol,
+			method,
+			bytes,
+			referer,
+			response_status,
+			user_agent
+		)VALUES(
+			$remoteHost,
+			$access_time,
+			$path,
+			$protocol,
+			$method,
+			$bytes,
+			$referer,
+			$response_status,
+			$user_agent
+		);
+		
+		COMMIT;
+		return 0;
+	}
+	
+	$lock = $remoteHost + "-" + $access_time + "-" + $path;
+	synchronized($lock){
+		BEGIN;
+		
+		SELECT * INTO wmc_robot_access FROM wmc_robot_access
+		WHERE
+			wmc_robot_access.remote_host = $remoteHost AND
+			wmc_robot_access.access_time = $access_time AND
+			wmc_robot_access.path = $path
+		FOR UPDATE;
+		
+		if(Array.size(@wmc_robot_access) == 0){
+			INSERT INTO wmc_robot_access(
+				remote_host,
+				access_time,
+				robot_type,
+				user_name,
+				path,
+				protocol,
+				method,
+				bytes,
+				referer,
+				response_status,
+				user_agent
+			)
+			VALUES(
+				$remoteHost,
+				$access_time,
+				$robot_type,
+				$user_name,
+				$path,
+				$protocol,
+				$method,
+				$bytes,
+				$referer,
+				$response_status,
+				$user_agent
+			);
+		}
+		else{
+			/*
+			UPDATE wmc_robot_access
+			SET
+				robot_type = $robot_type,
+				user_name = $user_name,
+				path = $path,
+				protocol = $protocol,
+				method = $method,
+				bytes = $bytes,
+				referer = $referer,
+				response_status = $response_status,
+				user_agent = $user_agent
+			WHERE
+				wmc_robot_access.remote_host = $remoteHost AND
+				wmc_robot_access.access_time = $access_time AND
+				wmc_robot_access.path = $path;
+			*/
+		}
+		
+		COMMIT;
+	}
+}

@@ -1,0 +1,79 @@
+include("/include/heatmap.alns");
+include("/include/progress.alns");
+include("/include/heatmapscroll.alns");
+include("/include/serialutils.alns");
+
+createScrollHeatmap($IN, $SESSION);
+
+return 0;
+
+function createScrollHeatmap($IN, $SESSION)
+{
+	$docSize = Heatmap.getDocumentSize($IN.hm_master_url);
+	$start = toTimestamp($IN.start_date, $IN.start_time);
+	$end = toTimestamp($IN.end_date, $IN.end_time);
+	
+	BEGIN;
+	$hm_scroll_hm_id = Common.newSerial("hm_scroll_hm");
+	INSERT INTO hm_scroll_hm(
+		hm_scroll_hm_id,
+		hm_scroll_name,
+		hm_height,
+		archive_page_id,
+		hm_start,
+		hm_end
+	)
+	VALUES(
+		$hm_scroll_hm_id,
+		$IN.hm_master_name, // hm_scroll_name,
+		$docSize.height, // hm_height,
+		$IN.archive_page_id, // archive_page_id,
+		$start, // hm_start,
+		$end // hm_end
+	);
+	
+	COMMIT;
+	
+	$numPages = Heatmap.countPageAccesses($IN.hm_master_url, $start, $end);
+	$jobMax = 20 + $docSize.height + $numPages + 50;
+	
+	$params.jobId = "scroll-heatmap-" + $hm_scroll_hm_id;
+	$params.IN = $IN;
+	$params.SESSION = $SESSION;
+	$params.hm_scroll_hm_id = $hm_scroll_hm_id;
+	$params.docSize = $docSize;
+	$params.page_url = $IN.hm_master_url;
+	$params.start = $start;
+	$params.end = $end;
+	
+	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
+	
+}
+
+function backgroundJob($params)
+{
+	$IN = $params.IN;
+	$SESSION = $params.SESSION;
+	
+	try{
+		BEGIN;
+		HeatmapScroll.initRecords($params.hm_scroll_hm_id, $params.docSize.height, $params.docSize.width);
+		COMMIT;
+		
+		HeatmapScroll.makeScrollData($params.hm_scroll_hm_id, $params.page_url,
+						$params.start, $params.end,
+						$params.jobId, $SESSION);
+		
+		HeatmapScroll.generateImage($params.hm_scroll_hm_id, $params.docSize.width, $SESSION);
+	}finally{
+		ProgressJob.jobFinished($params.jobId);
+	}
+}
+
+function toTimestamp($date, $time)
+{
+	@dateValues = String.split($date, "/");
+	
+	return $dateValues[2] + "-" + $dateValues[0] + "-" + $dateValues[1]
+		+ " " + $time + ":00";
+}

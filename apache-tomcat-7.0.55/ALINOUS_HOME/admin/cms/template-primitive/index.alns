@@ -1,0 +1,155 @@
+
+include("/include/serialutils.alns");
+include("/include/treemodel.alns");
+include("/admin/cms/template-primitive/edit/commands.alns");
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/include/template_top.alns");
+
+include("/admin/cms/resources/includedCommand.alns");
+
+include("/include/templatedirty.alns");
+include("/include/pagedirty.alns");
+include("/include/csvutils.alns");
+
+initParams($IN, $SESSION);
+
+$ret = execCommand($IN, $SESSION);
+if($ret > 0){
+	if($ret == 2){
+		download $ret.path, $ret.fileName;
+	}
+	redirect "/admin/cms/template-primitive/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+Resource.execCommand($IN, $SESSION);
+
+if($IN.cmd =="createFirst"){
+	createFirst($IN, $SESSION);
+	redirect "/admin/cms/template-primitive/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+else if($IN.cmd =="addCategory"){
+	addCategory($IN, $SESSION);
+	redirect "/admin/cms/template-primitive/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+else if($IN.cmd == "deleteNode"){
+	deleteNode($IN, $SESSION);
+	redirect "/admin/cms/template-primitive/index.html";
+}
+else if($IN.cmd == "addPrimitive"){
+	addPrimitive($IN, $SESSION);
+	redirect "/admin/cms/template-primitive/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+SELECT * INTO template_primitive_category
+FROM
+	template_primitive_category;
+
+$sizeCategory = Array.size(@template_primitive_category);
+
+return 0;
+
+function addPrimitive($IN, $SESSION)
+{
+	BEGIN;
+	
+	if($IN.position == "inside"){
+		$nodeId = TreeModel.insertInside('primitive', $IN.categoryNodeId, $IN.template_primitive_code);
+	}else{
+		$nodeId = TreeModel.insertAfter('primitive', $IN.nodeId, $IN.template_primitive_code);
+	}
+	$template_primitive_id = Common.newSerial("template_primitive");
+	
+	INSERT INTO template_primitive(
+		template_primitive_id,
+		node_id,
+		template_primitive_name,
+		is_dynamic,
+		is_paging,
+		code_css,
+		code_js,
+		code_alinous,
+		code_html,
+		code_max_page
+	)
+	VALUES(
+		$template_primitive_id,
+		$nodeId, // node_id,
+		$IN.template_primitive_name,
+		$IN.is_dynamic,
+		$IN.is_paging,
+		'', // code_css,
+		'', // code_js,
+		'', // code_alinous,
+		'', // code_html,
+		'' // code_max_page
+	);
+	
+	COMMIT;
+}
+
+function deleteNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	$callback = "/admin/cms/template-primitive/moveCallback.alns";
+	TreeModel.removeNode('primitive', $IN.nodeId, true, $callback);
+	
+	
+	COMMIT;
+}
+
+function addCategory($IN, $SESSION)
+{
+	BEGIN;
+	
+	$nodeId = TreeModel.insertAfter('primitive', $IN.categoryNodeId, $IN.category_code);
+	
+	$template_primitive_category_id = Common.newSerial("template_primitive_category");
+	
+	INSERT INTO template_primitive_category(
+		template_primitive_category_id,
+		node_id,
+		category_name
+	)
+	VALUES(
+		$template_primitive_category_id,
+		$nodeId, // node_id,
+		$IN.category_name
+	);	
+	
+	COMMIT;
+
+	return 0;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.selectedNodeId == null){
+		$IN.selectedNodeId = "";
+	}
+}
+
+function createFirst($IN, $SESSION)
+{
+	BEGIN;
+	
+	$nodeId = TreeModel.newNode("primitive", 0, $IN.category_code, 1);
+	
+	$template_primitive_category_id = Common.newSerial("template_primitive_category");
+	
+	INSERT INTO template_primitive_category(
+		template_primitive_category_id,
+		node_id,
+		category_name
+	)
+	VALUES(
+		$template_primitive_category_id,
+		$nodeId, // node_id,
+		$IN.category_name
+	);
+	
+	
+	COMMIT;
+}

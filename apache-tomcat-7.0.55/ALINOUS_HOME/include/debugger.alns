@@ -1,0 +1,55 @@
+/*
+include("/include/debugger.alns");
+*/
+
+
+function WebDebugger.getBreakpoints($modulePath)
+{
+	SELECT * INTO debug_break_points
+	FROM
+		debug_break_points
+	WHERE
+		debug_break_points.module_path = $modulePath;
+	
+	return @debug_break_points;
+}
+
+function WebDebugger.clearBreakpoints($modulePath)
+{
+	DELETE FROM debug_break_points
+	WHERE
+		debug_break_points.module_path = $modulePath;
+}
+
+
+function WebDebugger.removeBreakpoint($modulePath, $line)
+{
+	DELETE FROM	debug_break_points
+	WHERE
+		debug_break_points.module_path = $modulePath AND
+		debug_break_points.line = $line;
+	
+	return 0;
+}
+
+function WebDebugger.addBreakpoint($modulePath, $line)
+{
+	SELECT * INTO debug_break_points
+	FROM
+		debug_break_points
+	WHERE
+		debug_break_points.module_path = $modulePath AND
+		debug_break_points.line = $line
+	FOR UPDATE;
+	
+	if(Array.size(@debug_break_points) == 0){
+		INSERT INTO debug_break_points(
+			module_path,
+			line
+		)
+		VALUES(
+			$modulePath , // module_path,
+			$line
+		);
+	}
+}

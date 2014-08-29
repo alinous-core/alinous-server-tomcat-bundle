@@ -1,0 +1,163 @@
+
+include("/include/serialutils.alns");
+include("/include/treemodel.alns");
+
+include("/include/template_primitive.alns");
+include("/include/template_container.alns");
+include("/admin/cms/template-container/edit/command.alns");
+include("/admin/cms/resources/includedCommand.alns");
+
+include("/include/pagedirty.alns");
+
+
+initParams($IN, $SESSION);
+
+$ret = executeCommand($IN, $SESSION);
+if($ret != 0){
+	redirect "/admin/cms/template-container/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+Resource.execCommand($IN, $SESSION);
+
+if($IN.cmd =="createFirst"){
+	createFirst($IN, $SESSION);
+	redirect "/admin/cms/template-container/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+else if($IN.cmd =="addCategory"){
+	addCategory($IN, $SESSION);
+	redirect "/admin/cms/template-container/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+else if($IN.cmd == "deleteNode"){
+	deleteNode($IN, $SESSION);
+	redirect "/admin/cms/template-container/index.html";
+}
+else if($IN.cmd == "addContainer"){
+	addContainer($IN, $SESSION);
+	redirect "/admin/cms/template-container/index.html?selectedNodeId=" + $IN.selectedNodeId;
+}
+
+SELECT * INTO template_container_category
+FROM
+	template_container_category;
+$containerSize = Array.size(@template_container_category);
+
+return 0;
+
+
+function initParams($IN, $SESSION)
+{
+	if($IN.selectedNodeId == null){
+		$IN.selectedNodeId = "";
+	}
+}
+
+function addContainer($IN, $SESSION)
+{
+	BEGIN;
+	
+	if($IN.position == "inside"){
+		$nodeId = TreeModel.insertInside('container', $IN.categoryNodeId, $IN.template_container_code);
+	}else{
+		$nodeId = TreeModel.insertAfter('container', $IN.nodeId, $IN.template_container_code);
+	}
+	
+	$template_container_id = Common.newSerial("template_container");
+	
+	
+	$div_id = $IN.template_container_code;
+	$div_left_id =  $IN.template_container_code + "-left";
+	$div_right_id =  $IN.template_container_code + "-right";
+	
+	$code_css = File.readAllText("/admin/cms/template-container/defaults/css.txt", "utf-8");
+	$code_css = String.replace($code_css, "container", $div_id);
+	
+	
+	INSERT INTO template_container(
+		template_container_id,
+		node_id,
+		template_container_name,
+		div_id,
+		div_left_id,
+		div_right_id,
+		code_css,
+		code_js,
+		code_alinous,
+		num_lines,
+		has_paging
+	)
+	VALUES(
+		$template_container_id,
+		$nodeId, // node_id,
+		$IN.template_container_name,
+		$div_id,
+		$div_left_id,
+		$div_right_id,
+		$code_css, // code_css,
+		'', // code_js,
+		'return 0;', // code_alinous,
+		2, // /num_lines,
+		0 // has_paging
+	);
+	
+	COMMIT;
+}
+
+function deleteNode($IN, $SESSION)
+{
+	BEGIN;
+	
+	$callback = "/admin/cms/template-container/moveCallback.alns";
+	TreeModel.removeNode('container', $IN.nodeId, true, $callback);
+	
+	
+	COMMIT;
+}
+
+function addCategory($IN, $SESSION)
+{
+	BEGIN;
+	
+	$nodeId = TreeModel.insertAfter('container', $IN.categoryNodeId, $IN.category_code);
+	
+	$template_container_category_id = Common.newSerial("template_container_category");
+	
+	INSERT INTO template_container_category(
+		template_container_category_id,
+		node_id,
+		category_name
+	)
+	VALUES(
+		$template_container_category_id,
+		$nodeId, // node_id,
+		$IN.category_name
+	);	
+	
+	COMMIT;
+
+	return 0;
+}
+
+function createFirst($IN, $SESSION)
+{
+	BEGIN;
+	
+	$nodeId = TreeModel.newNode("container", 0, $IN.category_code, 1);
+	
+	$template_container_category_id = Common.newSerial("template_container_category");
+	
+	INSERT INTO template_container_category(
+		template_container_category_id,
+		node_id,
+		category_name
+	)
+	VALUES(
+		$template_container_category_id,
+		$nodeId, // node_id,
+		$IN.category_name
+	);
+	
+	
+	COMMIT;
+}
+
+

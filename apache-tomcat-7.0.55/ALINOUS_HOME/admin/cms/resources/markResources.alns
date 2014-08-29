@@ -1,0 +1,68 @@
+
+include("/include/serialutils.alns");
+
+if($IN.cmd == "newTag"){
+	newTag($IN, $SESSION);
+}
+else if($IN.cmd == "delete"){
+	deleteTag($IN, $SESSION);
+}
+
+
+@cms_resource_group = getTags($IN, $SESSION);
+
+return 0;
+
+function deleteTag($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = $IN.resource_owner_type AND
+		cms_resource_group.resource_owner_id = $IN.resource_owner_id AND
+		cms_resource_group.cms_resource_group_id = $IN.cms_resource_group_id;
+	
+	DELETE FROM cms_resource_to_group
+	WHERE
+		cms_resource_to_group.cms_resource_group_id = $IN.cms_resource_group_id;
+	
+	COMMIT;
+}
+
+function newTag($IN, $SESSION)
+{
+	BEGIN;
+	
+	$cms_resource_group_id = Common.newSerial("cms_resource_group");
+	
+	INSERT INTO cms_resource_group(
+		cms_resource_group_id,
+		resource_owner_type,
+		resource_owner_id,
+		group_code
+	)
+	VALUES(
+		$cms_resource_group_id,
+		$IN.resource_owner_type,
+		$IN.resource_owner_id,
+		$IN.group_code
+	);
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getTags($IN, $SESSION)
+{
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = $IN.resource_owner_type AND
+		cms_resource_group.resource_owner_id = $IN.resource_owner_id
+	ORDER BY cms_resource_group.group_code;
+	
+	return @cms_resource_group;
+}

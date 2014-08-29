@@ -1,0 +1,249 @@
+<html>
+<body>
+<script src="/admin/cms/resources/groupingTags.js"></script>
+<script>
+<!--
+$(function() {
+	$("#newImageResource").click( function() {
+		var url = "/admin/cms/resources/addImageResourceDialog.html";
+		var resource_owner_type = $("#resource_owner_type").val();
+		var resource_owner_id = $("#resource_owner_id").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				resource_owner_type: resource_owner_type,
+				resource_owner_id: resource_owner_id
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	$("#newTextResource").click( function() {
+		var url = "/admin/cms/resources/addTextResource.html";
+		var resource_owner_type = $("#resource_owner_type").val();
+		var resource_owner_id = $("#resource_owner_id").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				resource_owner_type: resource_owner_type,
+				resource_owner_id: resource_owner_id
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	$("#newUrlResource").click( function() {
+		var url = "/admin/cms/resources/addUrlResource.html";
+		var resource_owner_type = $("#resource_owner_type").val();
+		var resource_owner_id = $("#resource_owner_id").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				resource_owner_type: resource_owner_type,
+				resource_owner_id: resource_owner_id
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	
+	$("#sortableResources").sortable({
+		scroll: false,
+		update: function(event, ui) {
+			var result = $("#sortableResources").sortable("toArray");
+						
+			$.ajax({
+				url: "/admin/cms/resources/command.alns",
+				data : {
+					result: result,
+					cmd: 'sort'
+				},
+				dataType: "html",
+				success: function( data ) {
+					
+				}
+			});
+		}
+	});
+});
+
+function deleteResource(form, cms_resource_id)
+{
+	var bl = confirm("About to delete a resource. Are you sure ?");
+	if(!bl){
+		return;
+	}
+	
+	var url = "/admin/cms/resources/command.alns";
+	var resource_owner_type = $("#resource_owner_type").val();
+	var resource_owner_id = $("#resource_owner_id").val();
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			resource_owner_type: resource_owner_type,
+			resource_owner_id: resource_owner_id,
+			cmd: 'delete',
+			cms_resource_id: cms_resource_id
+		},
+		dataType: 'html',
+		success: function(data) {
+			form.cmd.value = "";
+			form.submit();
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function saveResourcesInfo(form)
+{
+	form.cmd.value = "resource.updateAll";
+	form.submit();
+}
+
+function editTextResource(cms_resource_id)
+{
+		var url = "/admin/cms/resources/editTextResource.html";
+		var resource_owner_type = $("#resource_owner_type").val();
+		var resource_owner_id = $("#resource_owner_id").val();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+				resource_owner_type: resource_owner_type,
+				resource_owner_id: resource_owner_id,
+				cms_resource_id: cms_resource_id
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+}
+
+-->
+</script>
+
+
+<h2>Resources</h2>
+
+<button type="button" id="saveResources" onclick="saveResourcesInfo(this.form)">Save Resources</button>
+<button type="button" id="newImageResource">New Image</button>
+<button type="button" id="newTextResource">New Text</button>
+<button type="button" id="newUrlResource">New Url</button>
+<button type="button" id="newResourceGroup" onclick="ResourceTag.loadDialog()"><img src="/admin/cms/resources/img/tag_red.png" />Grouping Tags</button>
+
+
+<table width="100%" class="stdtable">
+<thead>
+	<tr>
+		<th width="15">
+			Pos
+		</th>
+		<th width="160">
+			Thumbnail
+		</th>
+		<th>
+			Path, Title and Description
+		</th>
+		<th width="120">
+			Marking
+		</th>
+		<th width="80">
+			Type
+		</th>
+		<th width="100">
+			Delete
+		</th>
+	</tr>
+</thead>
+<tbody id="sortableResources">
+	<tr alns:iterate="@cms_resource" alns:variable="oneRecord" id="res_{$oneRecord.cms_resource_id}">
+		<td>
+			<img src="/admin/cms/resources/img/orderarrow.png" />
+		</td>
+		<td align="center" valign="middle">
+			<img src="{$oneRecord.src}" width="{$oneRecord.width}" 
+				alns:if="{BOOL($oneRecord.resource_type == 'image')}" /><br />
+			<a href="{$oneRecord.src}" target="_blank" alns:if="{BOOL($oneRecord.resource_type == 'url')}">
+				<img src="/admin/cms/resources/img/link_go.png"  /></a>
+			<button type="button" onclick="editTextResource({$oneRecord.cms_resource_id})"
+				alns:if="{BOOL($oneRecord.resource_type == 'text')}">Edit text</button>
+		</td>
+		<td valign="top">
+			<input type="text" name="imgsrc_{$oneRecord.cms_resource_id}" value="{$oneRecord.src}"
+				onfocus="this.select();" onclick="this.select();" style="width:100%;" 
+				readonly="readonly"/><br />
+			<input type="text" name="resource_title_{$oneRecord.cms_resource_id}" value="{$oneRecord.resource_title}"
+				style="width:100%;" />
+			<textarea name="resource_description_{$oneRecord.cms_resource_id}" style="width:100%;" rows="4">{$oneRecord.resource_description}</textarea>
+		
+			<input type="hidden" name="cms_resource_ids[]" value="{$oneRecord.cms_resource_id}" />
+		</td>
+		<td valign="top">
+			<div alns:iterate="@oneRecord.tagStatus" alns:variable="tag">
+			<input type="checkbox" name="tags_{$oneRecord.cms_resource_id}[]" value="{$tag.cms_resource_group_id}"
+				checked="{$tag.checked}" />
+			<img src="/admin/cms/resources/img/tag_red.png" />
+			{$tag.group_code}
+			</div>
+			<br />
+		</td>
+		<td align="center">
+			{$oneRecord.resource_type}
+		</td>
+		<td align="center">
+			<button type="button" onclick="deleteResource(this.form, '{$oneRecord.cms_resource_id}')">Delete</button>
+		</td>
+	</tr>
+</tbody>
+</table>
+
+<input type="hidden" name="resource_owner_type" id="resource_owner_type" value="{$IN.resource_owner_type}" />
+<input type="hidden" name="resource_owner_id" id="resource_owner_id" value="{$IN.resource_owner_id}" />
+
+</body>
+</html>

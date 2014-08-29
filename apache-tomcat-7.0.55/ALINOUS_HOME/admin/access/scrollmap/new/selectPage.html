@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript">
+<!-- 
+$(function() {
+	$('#start_time').timepicker({ 'timeFormat': 'H:i' });
+	$('#end_time').timepicker({ 'timeFormat': 'H:i' });
+	
+	$( "#start_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#end_date" ).datepicker( "option", "minDate", selectedDate );
+		}
+	});
+	$( "#end_date" ).datepicker({
+		defaultDate: "+1w",
+		changeMonth: true,
+		numberOfMonths: 3,
+		onClose: function( selectedDate ) {
+			$( "#start_date" ).datepicker( "option", "maxDate", selectedDate );
+		}
+	});
+	
+	$("#btnnextarchive").click(function() {
+		var url = "/admin/access/scrollmap/new/selectVersion.html";
+		
+		var hm_master_name = $("#hm_master_name").val();
+		var hm_master_url = $("#hm_master_url").val();
+		var start_date = $("#start_date").val();
+		var start_time = $("#start_time").val();
+		var end_date = $("#end_date").val();
+		var end_time = $("#end_time").val();
+		
+		if(hm_master_url == ""){
+			alert("Input page url to analyze");
+			return;
+		}
+		
+		$( "#dialog" ).dialog( "close" );
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {hm_master_name: hm_master_name,
+				hm_master_url: hm_master_url,
+				start_date: start_date,
+				start_time: start_time,
+				end_date: end_date,
+				end_time: end_time},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+				$("#dialog").dialog("open");
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+	});
+	
+	$.ajax({
+		url: "/admin/access/scrollmap/new/urlassist.alns",
+		dataType: "json",
+		success: function( data ) {
+			$( "#hm_master_url" ).autocomplete({
+				source: data,
+				minLength: 0
+			});
+		}
+	});
+});
+-->
+</script>
+</head>
+<body>
+
+<h1>Select Page and Period</h1>
+
+<form name="dlgfrm" action="selectPage.html" method="POST">
+
+<h2>HeatMap Name</h2>
+<input type="text" name="hm_master_name" id="hm_master_name" value="{$IN.hm_master_name}" size="60" />
+
+<h2>HeatMap Page</h2>
+<input type="text" name="hm_master_url" id="hm_master_url" value="{$IN.hm_master_url}" size="80" />
+
+<h2>Analyzing period</h2>
+<input type="text" id="start_date" name="start_date" value="{$IN.start_date}" style="width:120px;" />
+<input type="text" id="start_time" name="start_time" value="{$IN.start_time}" style="width:80px;" />
+
+-
+<input type="text" id="end_date" name="end_date" value="{$IN.end_date}" style="width:120px;" />
+<input type="text" id="end_time" name="end_time" value="{$IN.end_time}" style="width:80px;"/>
+<button type="button" id="btnnextarchive">Next &gt;</button>
+</form>
+
+
+
+
+</body>
+</html>

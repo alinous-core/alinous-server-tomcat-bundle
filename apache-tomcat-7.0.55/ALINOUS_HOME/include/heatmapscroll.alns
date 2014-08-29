@@ -1,0 +1,247 @@
+/*
+include("/include/heatmapscroll.alns");
+*/
+
+include("/include/heatmap.alns");
+
+function HeatmapScroll.generateImage($hm_scroll_hm_id, $width, $SESSION)
+{
+	SELECT * INTO hm_scroll_hm
+	FROM
+		hm_scroll_hm LEFT JOIN archive_page
+		ON
+			hm_scroll_hm.archive_page_id = archive_page.archive_page_id
+	WHERE
+		hm_scroll_hm.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	$docSize = Heatmap.getDocumentSize($hm_scroll_hm[0].page_url);
+	
+	$path = "/tmp/testmap" + $SESSION + "_" + $hm_scroll_hm_id + ".png";
+	
+	
+	SELECT * INTO hm_scroll_hm_line
+	FROM
+		hm_scroll_hm_line
+	WHERE
+		hm_scroll_hm_line.hm_scroll_hm_id = $hm_scroll_hm_id
+	ORDER BY hm_scroll_hm_line.line_idx;
+	
+	SELECT max(hm_scroll_hm_line.line_value) as max INTO max
+	FROM
+		hm_scroll_hm_line
+	WHERE
+		hm_scroll_hm_line.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	$maxValue = Cast.toDouble($max[0].max);
+	
+	LasterBuffer.newBuffer($path, $docSize.width, $docSize.height);
+	
+	Heatmap.createImage($path, $docSize.width, $docSize.height);
+	
+	Heatmap.loadImage($path);
+	
+	$size = Array.size(@hm_scroll_hm_line);
+	for($i = 0; $i < $size; $i++){
+		Heatmap.lineScrolled($path, $i, $width, $hm_scroll_hm_line[$i].line_value, 0, $maxValue);
+	}
+		
+	Heatmap.saveImage($path);
+	Heatmap.closeImage($path);
+	
+	
+	$imageData = Base64.encodeFromFile($path);
+	
+	BEGIN;
+	
+	SELECT hm_scroll_result_image.hm_scroll_hm_id INTO hm_scroll_result_image
+	FROM
+		hm_scroll_result_image
+	WHERE
+		hm_scroll_result_image.hm_scroll_hm_id = $hm_scroll_hm_id
+	FOR UPDATE;
+	
+	if(Array.size(@hm_scroll_result_image) == 0){
+		INSERT INTO hm_scroll_result_image(
+			hm_scroll_hm_id,
+			image_base64
+		)
+		VALUES(
+			$hm_scroll_hm_id,
+			$imageData // image_base64
+		);
+	}else{
+		UPDATE hm_scroll_result_image
+		SET
+			image_base64 = $imageData
+		WHERE
+			hm_scroll_result_image.hm_scroll_hm_id = $hm_scroll_hm_id;
+	}
+	
+	COMMIT;
+	
+	File.remove($path);
+	
+}
+
+function HeatmapScroll.makeScrollData($hm_scroll_hm_id, $hm_master_url, $start, $end,
+						$jobId, $SESSION)
+{
+	SELECT user_id, access_id, documet_width, documet_height, window_height
+	INTO wic_user_page_access
+	FROM
+		wic_user_page_access
+	WHERE
+		wic_user_page_access.url = $hm_master_url AND
+		wic_user_page_access.access_time >= $start AND
+		wic_user_page_access.access_time <= $end
+	ORDER BY wic_user_page_access.access_time DESC;
+	
+
+	$size = Array.size(@wic_user_page_access);
+	for($i = 0; $i < $size; $i++){
+		HeatmapScroll.analyzeOnePage($hm_scroll_hm_id,
+			$wic_user_page_access[$i].user_id, $wic_user_page_access[$i].access_id,
+			$wic_user_page_access[$i].documet_width, $wic_user_page_access[$i].documet_height,
+			$wic_user_page_access[$i].window_height, $SESSION);
+	}
+}
+
+function HeatmapScroll.analyzeOnePage($hm_scroll_hm_id, $user_id, $access_id, $documet_width, $documet_height,
+					 $window_height, $SESSION)
+{
+	SELECT * INTO wic_user_motion_archive
+	FROM
+		wic_user_motion_archive
+	WHERE
+		wic_user_motion_archive.user_id = $user_id AND
+		wic_user_motion_archive.access_id = $access_id AND
+		wic_user_motion_archive.motion_type = "scrolled"
+	ORDER BY wic_user_motion_archive.round;
+	
+	if(Array.size(@wic_user_motion_archive) == 0){
+		return 0;
+	}
+	
+	$path = $SESSION + "-" + $hm_scroll_hm_id;
+	ScrollHeatmap.newBuffer($path, $documet_height);
+	
+	$maxY = 0;
+	$size = Array.size(@wic_user_motion_archive);
+	for($i = 0; $i < $size; $i++){
+		@vals = String.split($wic_user_motion_archive[$i].records, " ");
+		
+		$valsSize = Array.size(@vals);
+		for($j = 0; $j < $valsSize; $j++){
+			@event = String.split($vals[$j], ",");
+			$current.x = Cast.toNumber($event[0]);
+			$current.y = Cast.toNumber($event[1]);
+			$current.delta = Cast.toNumber($event[2]);
+			
+			// handle lastrecord
+			if($last.delta != null){
+				$stayTime = $current.delta - $last.delta;
+				if($stayTime > 60000){
+					$stayTime = 60000;
+				}
+				$maxValue = $stayTime * 0.1;
+				
+				ScrollHeatmap.appendScrolled($path, $last.y, $window_height, $maxValue);
+				
+				// check scroll reach
+				$clientBottom = $last.y + $window_height;
+				if($maxY < $clientBottom){
+					$maxY = $clientBottom;
+				}
+				
+			}
+			
+			// set last record
+			$last = $current;
+		}
+	}
+	
+	// export data
+	BEGIN;
+	
+	$resultStr = ScrollHeatmap.getResult($path);
+	@results = String.split($resultStr, " ");
+	$size = Array.size(@results);
+	for($i = 0; $i < $size; $i++){
+		UPDATE hm_scroll_hm_line
+		SET
+			line_value = line_value + $results[$i]
+		WHERE
+			hm_scroll_hm_line.hm_scroll_hm_id = $hm_scroll_hm_id AND
+			hm_scroll_hm_line.line_idx = $i;
+	}
+	
+	// set scroll reach
+	UPDATE hm_scroll_reach
+	SET
+		reached = reached + 1
+	WHERE
+		hm_scroll_reach.line_idx < $maxY;
+	
+	COMMIT;
+	
+	ScrollHeatmap.close($path);
+	
+	return 0;
+}
+
+function HeatmapScroll.initRecords($hm_scroll_hm_id, $height, $width)
+{
+	DELETE FROM hm_scroll_hm_line
+	WHERE
+		hm_scroll_hm_line.hm_scroll_hm_id = $hm_scroll_hm_id;
+	DELETE FROM hm_scroll_reach
+	WHERE
+		hm_scroll_reach.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	for($i = 0; $i < $height; $i++){
+		INSERT INTO hm_scroll_hm_line(
+			hm_scroll_hm_id,
+			hm_width,
+			line_idx,
+			line_value
+		)
+		VALUES(
+			$hm_scroll_hm_id,
+			$width, // hm_width,
+			$i, // line_idx,
+			0 // line_value
+		);
+		
+		INSERT INTO hm_scroll_reach(
+			hm_scroll_hm_id,
+			line_idx,
+			reached
+		)
+		VALUES(
+			$hm_scroll_hm_id,
+			$i, // line_idx,
+			0 // reached
+		);
+	}
+	
+}
+
+function HeatmapScroll.deleteScroll($hm_scroll_hm_id)
+{
+	DELETE FROM hm_scroll_hm
+	WHERE
+		hm_scroll_hm.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	DELETE FROM hm_scroll_hm_line
+	WHERE
+		hm_scroll_hm_line.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	DELETE FROM hm_scroll_reach
+	WHERE
+		hm_scroll_reach.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+	DELETE FROM hm_scroll_result_image
+	WHERE
+		hm_scroll_result_image.hm_scroll_hm_id = $hm_scroll_hm_id;
+	
+}

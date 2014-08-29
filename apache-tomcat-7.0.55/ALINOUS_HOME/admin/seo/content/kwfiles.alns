@@ -1,0 +1,16 @@
+
+SELECT DISTINCT wmc_content_keywords.wmc_content_keywords_file_name,
+		wmc_content_keywords.wmc_content_keywords_timestamp
+INTO wmc_content_keywords
+FROM
+	wmc_content_keywords
+ORDER BY wmc_content_keywords.wmc_content_keywords_timestamp DESC;
+
+$size = Array.size(@wmc_content_keywords);
+for($i = 0; $i < $size; $i++){
+	$ar[$i] = $wmc_content_keywords[$i].wmc_content_keywords_file_name;
+}
+
+$str = Record.dom2json(@ar);
+
+return $str;

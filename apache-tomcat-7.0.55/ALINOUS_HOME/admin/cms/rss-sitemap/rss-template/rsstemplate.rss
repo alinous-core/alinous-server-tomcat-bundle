@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>{$title}</title>
+        <link>{$rdfAbout}</link>
+        <description>{$rss_setting.description}</description>
+        <language>en</language>
+        <copyright>{$rss_setting.copyright}</copyright>
+        <docs>http://blogs.law.harvard.edu/tech/rss</docs>
+        <lastBuildDate>{$cms_page[0].pub}</lastBuildDate>
+        <generator>Alinous Visual Block CMS</generator>
+        
+        <atom:link href="{$self}" rel="self" type="application/rss+xml" />
+        <atom:link alns:iterate="@hubs" alns:variable="hub" rel="hub" href="{$hub}" />
+        
+        <item alns:iterate="@cms_page" alns:variable="rec">
+          <title><![CDATA[ {$rec.page_title} ]]></title>
+          <description><![CDATA[ {$rec.page_description} ]]></description>
+          <pubDate>{$rec.pub}</pubDate>
+          
+          <link>{$rec.url}</link>
+          <guid>{$rec.url}</guid>
+        </item>
+    </channel>
+	
+</rss>

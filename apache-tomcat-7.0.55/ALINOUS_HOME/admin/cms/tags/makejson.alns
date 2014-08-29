@@ -1,0 +1,73 @@
+
+if($IN.node == null){
+	$json = getFirstNode($IN.site);
+}
+else{
+	$json = getChildrenNodes($IN.node);
+}
+
+return $json;
+
+function getChildrenNodes($node)
+{
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.node_id = $node;
+	
+	$depth = $tree_model[0].page_depth + 1;
+	$path = $tree_model[0].page_path + "/%";
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model left join cms_tag
+		ON
+			tree_model.tree_id = 'tag' AND
+			tree_model.node_id = cms_tag.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_path like $path AND
+		tree_model.page_depth = $depth
+	ORDER BY tree_model.page_order;
+	
+	return record2Json(@tree_model);
+}
+
+function getFirstNode($site)
+{
+	$likeStr = $site + "%";
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model left join cms_tag
+		ON
+			tree_model.tree_id = 'tag' AND
+			tree_model.node_id = cms_tag.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_depth = 2 AND
+		tree_model.page_path LIKE $likeStr
+	ORDER BY tree_model.page_order;
+
+
+	return record2Json(@tree_model);
+}
+
+function record2Json(@tree_model)
+{
+	$size = Array.size(@tree_model);
+	for($i = 0; $i < $size; $i++){
+		$DATA[$i].label = $tree_model[$i].tag_name;
+		$DATA[$i].id = $tree_model[$i].node_id;
+		
+		if($tree_model[$i].page_children > 0){
+			$DATA[$i].load_on_demand = true;
+		}
+	}
+	
+	
+	$json = Record.dom2json(@DATA);
+	return $json;
+}

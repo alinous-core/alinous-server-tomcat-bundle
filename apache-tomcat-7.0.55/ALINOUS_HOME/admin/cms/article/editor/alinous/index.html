@@ -1,0 +1,45 @@
+<html>
+<body>
+
+<form name="newAlinousInner" action="index.html" method="POST" id="newAlinousInner" alns:if="{BOOL($paramSet == 0)}">
+<b>Alinous Part</b>
+
+<select name="template_id">
+<option alns:iterate="@primitives" alns:variable="t" value="{$t.template_primitive_id}">{$t.template_primitive_name}</option>
+</select>
+
+<input type="hidden" name="cmd" value="" />
+<input type="submit" name="sbmt"value="newObject" />
+</form>
+
+<form name="editAlinousInner" action="index.html" method="POST" id="editAlinousInner" alns:if="{BOOL($paramSet == 1)}">
+<b>Alinous Part Parameters</b>
+
+<table width="100%">
+	<tr>
+		<td>
+			Module Path
+		</td>
+		<td>
+			{$path}
+		</td>
+	</tr>
+	<tr alns:iterate="@params" alns:variable="p">
+		<td>
+			{$p.name}
+		</td>
+		<td>
+			<input type="text" maxlength="255" name="param_{$p.name}" value="{$p.value}" />
+		</td>
+	</tr>
+</table>
+
+<input type="submit" name="sbmt" value="Update" />
+<input type="hidden" name="params" value="{$paramStr}" />
+<input type="hidden" name="path" value="{$path}" />
+<input type="hidden" name="tagId" value="{$IN.tagId}" />
+
+</form>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+
+include("/include/serialutils.alns");
+
+if($IN.cmd == "add"){
+	addTags($IN, $SESSION);
+}
+
+$cms_page = getPage($IN, $SESSION);
+
+@tags = getTags($cms_page);
+
+return 0;
+
+function addTags($IN, $SESSION)
+{
+	$size = Array.size(@IN.selectedTagIds);
+	if($size == 0){
+		return 0;
+	}
+	
+	BEGIN;
+	
+	for($i = 0; $i < $size; $i++){
+		SELECT * INTO cms_tag_page
+		FROM
+			cms_tag_page
+		WHERE
+			cms_tag_page.cms_page_id = $IN.cms_page_id AND
+			cms_tag_page.cms_tag_id = $IN.selectedTagIds[$i];
+		
+		if(Array.size(@cms_tag_page) > 0){
+			continue;
+		}
+		
+		$page_order = Common.newSerial("cms_tag_page");
+		
+		INSERT INTO cms_tag_page(
+			cms_tag_id,
+			cms_page_id,
+			page_order
+		)
+		VALUES(
+			$IN.selectedTagIds[$i], // cms_tag_id,
+			$IN.cms_page_id,
+			$page_order
+		);
+		
+		UPDATE cms_page
+		SET
+			dirty = now()
+		WHERE
+			cms_page.cms_page_id = $IN.cms_page_id;
+	}
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getTags($cms_page)
+{
+	$idx = String.indexOf($cms_page.page_path, "/", 1);
+	if($idx < 0){
+		$sitePath = $cms_page.page_path + "/%";
+	}else{
+		$sitePath = String.subString($cms_page.page_path, 0, $idx) + "/%";
+	}
+	
+	$page_depth = 2;
+	
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag LEFT JOIN tree_model
+		ON
+			cms_tag.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_depth = $page_depth AND
+		tree_model.page_path LIKE $sitePath
+	ORDER BY tree_model.page_order;
+	
+	$size = Array.size(@cms_tag);
+	for($i = 0; $i < $size; $i++){
+		$pos = Array.size(@tags);
+		$tags[$pos] = $cms_tag[$i];
+		$tags[$pos].parentId = "";
+		
+		// children
+		gatherChildPathes($cms_tag[$i], @tags);
+	}
+	
+	
+	return @tags;
+}
+
+function gatherChildPathes($parentTag, @tags)
+{
+	$likeStr = $parentTag.page_path + "/%";
+	$page_depth = $parentTag.page_depth + 1;
+	
+	SELECT * INTO cms_tag
+	FROM
+		cms_tag LEFT JOIN tree_model
+		ON
+			cms_tag.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'tag' AND
+		tree_model.page_depth = $page_depth AND
+		tree_model.page_path LIKE $likeStr
+	ORDER BY tree_model.page_order;
+	
+	$size = Array.size(@cms_tag);
+	for($i = 0; $i < $size; $i++){
+	$pos = Array.size(@tags);
+		$tags[$pos] = $cms_tag[$i];
+		$tags[$pos].parentId = $parentTag.cms_tag_id;
+		
+		// children
+		gatherChildPathes($cms_tag[$i], @tags);
+	}
+}
+
+
+function getPage($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.node_id = $IN.selectedNodeId;
+	
+	return $cms_page[0];
+}
