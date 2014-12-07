@@ -19,7 +19,7 @@
      define subcomponents such as "Valves" at this level.
      Documentation at /docs/config/server.html
  -->
-<Server port="-1" shutdown="SHUTDOWN">
+<Server port="8005" shutdown="SHUTDOWN">
   <!-- Security listener. Documentation at /docs/config/listeners.html
   <Listener className="org.apache.catalina.security.SecurityListener" />
   -->
@@ -83,11 +83,11 @@
          style configuration. When using the APR/native implementation, the
          OpenSSL style configuration is required as described in the APR/native
          documentation -->
-    <!--
-    <Connector port="8443" protocol="org.apache.coyote.http11.Http11Protocol"
+    
+    <Connector port="443" protocol="org.apache.coyote.http11.Http11Protocol"
                maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
                clientAuth="false" sslProtocol="TLS" />
-    -->
+    
 
     <!-- Define an AJP 1.3 Connector on port 8009 -->
     <!--Connector port="8009" protocol="AJP/1.3" redirectPort="8443" / -->
