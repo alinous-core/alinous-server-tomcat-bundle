@@ -7,6 +7,9 @@ include("/admin/cms/publish/publish_inline.alns");
 include("/include/template_primitive.alns");
 include("/include/template_container.alns");
 
+include("/include/imageresource.alns");
+include("/include/pathutils.alns");
+
 if($IN.cmd == "start"){
 	startPublish($IN, $SESSION);
 	redirect "/admin/cms/publish/index.html";
@@ -44,11 +47,17 @@ function startPublish($IN, $SESSION)
 	$params.SESSION = $SESSION;
 	ProgressJob.startJob("manualpublish", $jobMax, "backbroundWrapper", $params);
 	
+	
+	
 	return 0;
 }
 
 function backbroundWrapper($params)
 {
+	try{
+		ImgResource.syncAll();
+	}catch($e){}
+	
 	// do publish here
 	SELECT cms_page.cms_page_id INTO cms_page
 	FROM

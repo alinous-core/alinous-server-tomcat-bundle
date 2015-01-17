@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Content Keywords of the Web Master tools</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script src="/admin/cms/article/jqcookiestate.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$(".jq").button();
+	$(".pageNavi a").button();
+});
+
+function back(form)
+{
+	form.cmd.value = "back";
+	form.submit();
+}
+
+function openEditor(selectedNodeId)
+{
+	window.open( "/admin/cms/article/index.html?jscmd=open&selectedNodeId=" + selectedNodeId , "_blank" );
+}
+
+
+-->
+</script>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker &gt; Analyze Content Keywords Balance</h1>
+
+<h2>Pages using Keyword({$IN.keyword})</h2>
+
+<form name="frm" action="pages.html" method="POST">
+
+<button type="button" class="jq" onclick="back(this.form)">Back</button>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="keyword" value="{$IN.keyword}" />
+<input type="hidden" name="site_path" value="{$IN.site_path}" />
+<input type="hidden" name="last_scroll" value="{$IN.last_scroll}" />
+
+<blockquote>
+<table class="stdtable">
+	<tr>
+		<th width="100">
+			Edit
+		</th>
+		<th>
+			Title
+		</th>
+		<th>
+			URL
+		</th>
+		<th width="120">
+			Occurrence
+		</th>
+	</tr>
+	<tr alns:iterate="@cms_page" alns:variable="oneRecord">
+		<td align="center">
+			<button type="button" onclick="openEditor('{$oneRecord.node_id}')">Edit</button>
+		</td>
+		<td>
+			{$oneRecord.page_title}
+		</td>
+		<td>
+			<a href="{$oneRecord.url}" target="_blank">{$oneRecord.url}</a>
+		</td>
+		<td align="center">
+			{$oneRecord.count} ( {$oneRecord.rate}% )
+		</td>
+	</tr>
+</table>
+</blockquote>
+
+</form>
+
+</div>
+
+</body>
+</html>

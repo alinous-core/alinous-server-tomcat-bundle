@@ -1,0 +1,82 @@
+
+
+if($IN.cmd == "back"){
+	return "/admin/seo/balance/index.html?scroll=" + $IN.last_scroll;
+}
+
+@cms_page = getPages($IN, $SESSION);
+
+return 0;
+
+function getPages($IN, $SESSION)
+{
+	SELECT cms_page.cms_page_id, cms_page.node_id, cms_page.page_title, cms_page.page_sub_title, 
+			tree_model.page_path,
+		sum(wmc_keyowrds.occurrence) as count
+	INTO cms_page
+	FROM
+		(cms_page LEFT JOIN wmc_keyowrds
+		ON
+			cms_page.cms_page_id = wmc_keyowrds.cms_page_id AND
+			wmc_keyowrds.keyword = $IN.keyword)
+		LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'cms'
+	WHERE
+		wmc_keyowrds.ignore = 0
+	GROUP BY cms_page.cms_page_id, cms_page.node_id, cms_page.page_title, cms_page.page_sub_title, tree_model.page_path
+	ORDER BY count DESC;
+	
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		SELECT sum(wmc_keyowrds.occurrence) as total INTO wmc_keyowrds
+		FROM
+			wmc_keyowrds
+		WHERE
+			wmc_keyowrds.cms_page_id = $cms_page[$i].cms_page_id;
+		
+		$total = Cast.toDouble($wmc_keyowrds[0].total);
+		$oc = Cast.toDouble($cms_page[$i].count);
+		
+		$cms_page[$i].rate = $oc * 100 / $total;
+		$cms_page[$i].rate = Double.setScale($cms_page[$i].rate, 2);
+		
+		if($cms_page[$i].page_sub_title != ""){
+			$cms_page[$i].page_title = $cms_page[$i].page_title + " - " + $cms_page[$i].page_sub_title;
+		}
+		
+		$cms_page[$i].url = getUrl($cms_page[$i].cms_page_id);
+	}
+	
+	
+	return @cms_page;
+}
+
+function getUrl($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+  	
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return "/";
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+    if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+    	return $path + "/";
+    }
+    
+    return $path + ".html";
+}

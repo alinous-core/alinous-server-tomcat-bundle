@@ -1,0 +1,26 @@
+/*
+include("/admin/resetaccesslog.alns");
+*/
+
+// http://localhost:8080/admin/resetaccesslog.alns
+
+
+resetAccess($IN, $SESSION);
+
+return 0;
+
+
+function resetAccess($IN, $SESSION)
+{
+	BEGIN;
+	
+	DELETE FROM wmc_user_access;
+	DELETE FROM wmc_robot_access;
+	DELETE FROM wmc_sitemap;
+	
+	DELETE FROM serial
+	WHERE
+		serial.serial_id IN ('wmc_user_access', 'wmc_robot_access');
+	
+	COMMIT;
+}

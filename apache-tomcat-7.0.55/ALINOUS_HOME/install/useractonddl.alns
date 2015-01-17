@@ -21,6 +21,7 @@ function WebActions.ddl()
 		useragent varchar(255) not null default '',
 		
 		url text not null default '',
+		qyerystring text not null default '',
 		referrer text,
 		window_width int not null default 0,
 		window_height int not null default 0,

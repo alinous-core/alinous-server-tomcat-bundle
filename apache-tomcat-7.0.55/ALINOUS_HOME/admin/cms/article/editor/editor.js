@@ -75,12 +75,37 @@ function newSiteSetting(form)
 	form.submit();
 }
 
+function newSpSiteSetting(form)
+{
+	if(form.sp_site_domain.value == ""){
+		alert("Input Domain Name.");
+		return;
+	}
+	if(form.sp_src_site_domain.value == ""){
+		alert("Input Source Domain Name.");
+		return;
+	}
+	
+	form.cmd.value = "site.newSpDomain";
+	form.submit();
+}
+
+
 function removeSiteSetting(form, site_domain)
 {
 	form.site_domain.value = site_domain;
 	form.cmd.value = "site.removeDomain";
 	form.submit();
 }
+
+function removeSpSiteSetting(form, site_domain)
+{
+	form.site_domain.value = site_domain;
+	form.cmd.value = "site.removeSpDomain";
+	form.submit();
+}
+
+
 
 function saveByCmd(cmd)
 {
@@ -128,6 +153,17 @@ function siteTemplateChange(form)
 		form.use_context.disabled = false;
 	}else{
 		form.use_context.disabled = true;
+	}
+}
+
+function spSiteTemplateChange(form)
+{
+	var val = form.sp_template_use.value;
+		
+	if(val == 1){
+		form.sp_use_context.disabled = false;
+	}else{
+		form.sp_use_context.disabled = true;
 	}
 }
 

@@ -115,6 +115,68 @@ function WmcContentKeywords.ddl()
 		
 		PRIMARY KEY(remote_host, access_time, path)
 	);
+	
+	// keyword balance
+	CREATE TABLE wmc_keyowrds(
+		site_path varchar(255),
+		cms_page_id int not null,
+		page int not null default 0,
+		
+		location varchar(64) not null default '',
+		
+		keyword varchar(255) not null default '',
+		occurrence int not null default 0,
+		
+		wmc_content_keywords_id int not null default 0,
+		ignore int not null default 0,
+		
+		PRIMARY KEY(site_path, cms_page_id, page, location, keyword)
+	);
+	
+	CREATE INDEX idx_wmc_keyowrds_cms_page_id
+	ON
+		wmc_keyowrds(cms_page_id);
+	
+	CREATE TABLE wmc_keyowrds_ignore(
+		site_path varchar(255),
+		keyword varchar(255) not null default '',
+		
+		PRIMARY KEY(site_path, keyword)
+	);
+	
+	
+	CREATE TABLE wmc_theme_coefficient(
+		location varchar(32),
+		value REAL not null default 1,
+		
+		PRIMARY KEY(location)
+	);
+	
+	CREATE TABLE wmc_theme(
+		site_path varchar(255),
+		cms_page_id int not null,
+		page int not null default 0,
+		
+		keyword varchar(255) not null default '',
+		value REAL not null default 0,
+		
+		PRIMARY KEY(site_path, cms_page_id, page, keyword)
+	);
+	
+	CREATE INDEX idx_wmc_theme_cms_page_id
+	ON
+		wmc_theme(cms_page_id);
+	
+	
+	CREATE TABLE wmc_theme_similarity(
+		site_path varchar(255),
+		cms_page_id int not null,
+		cms_page_id_2 int not null,
+		
+		value REAL not null default 0,
+		
+		PRIMARY KEY(site_path, cms_page_id, cms_page_id_2)
+	);
 }
 
 function WmcContentKeywords.makeItems()

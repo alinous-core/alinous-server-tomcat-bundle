@@ -35,6 +35,9 @@ $(function() {
 		var end_date = $("#end_date").val();
 		var end_time = $("#end_time").val();
 		
+		var referrer = $("#referrer").val();
+		var keywords = $("#keywords").val();
+		
 		if(hm_master_url == ""){
 			alert("Input page url to analyze");
 			return;
@@ -50,7 +53,10 @@ $(function() {
 				start_date: start_date,
 				start_time: start_time,
 				end_date: end_date,
-				end_time: end_time},
+				end_time: end_time,
+				referrer: referrer,
+				keywords: keywords
+			},
 			dataType: 'html',
 			success: function(data) {
 				$('#dialog').html(data);
@@ -86,7 +92,33 @@ $(function() {
 <input type="text" name="hm_master_name" id="hm_master_name" value="{$IN.hm_master_name}" size="60" />
 
 <h2>HeatMap Page</h2>
-<input type="text" name="hm_master_url" id="hm_master_url" value="{$IN.hm_master_url}" size="80" />
+
+<table>
+	<tr>
+		<td>
+			URL
+		</td>
+		<td>
+			<input type="text" name="hm_master_url" id="hm_master_url" value="{$IN.hm_master_url}" size="80" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Referrer
+		</td>
+		<td>
+			<input type="text" name="referrer" id="referrer" value="{$IN.referrer}" size="80" /><br />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Keywords
+		</td>
+		<td>
+			<input type="text" name="keywords" id="keywords" value="{$IN.keywords}" size="80" />
+		</td>
+	</tr>
+</table>
 
 <h2>Analyzing period</h2>
 <input type="text" id="start_date" name="start_date" value="{$IN.start_date}" style="width:120px;" />

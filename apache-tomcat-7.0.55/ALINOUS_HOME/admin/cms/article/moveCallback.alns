@@ -1,15 +1,145 @@
 
+include("/include/serialutils.alns");
 include("/include/page.alns");
 
 if($IN.cmd == "delete"){
 	deletePage($IN, $SESSION);
 }
+else if($IN.cmd == "moved"){
+	handleMoved($IN, $SESSION);
+}
 
 return 0;
+
+function handleMoved($IN, $SESSION)
+{
+	$lastPagePath = toUrlPath($IN.nodeId, $IN.lastPagePath);
+	$pagePath = toUrlPath($IN.nodeId, $IN.pagePath);
+	$site_path = getSite($IN.lastPagePath);
+	
+	if($lastPagePath == $pagePath){
+		return 0;
+	}
+	
+	BEGIN;
+	
+	SELECT * INTO tree_move
+	FROM
+		tree_move
+	WHERE
+		tree_move.node_id = $IN.nodeId AND
+		tree_move.dst_location = $lastPagePath AND
+		tree_move.done = 0;
+	
+	if(Array.size(@tree_move) > 0){
+		if($tree_move[0].src_location == $pagePath){
+			DELETE FROM tree_move
+			WHERE
+				tree_move.node_id = $IN.nodeId AND
+				tree_move.dst_location = $lastPagePath AND
+				tree_move.done = 0;
+		}else{
+			UPDATE tree_move
+			SET
+				dst_location = $pagePath
+			WHERE
+				tree_move.node_id = $IN.nodeId AND
+				tree_move.dst_location = $lastPagePath AND
+				tree_move.done = 0;
+		}
+	}else{
+		$tree_move_id = Common.newSerial("tree_move");
+		
+		INSERT INTO tree_move(
+			tree_move_id,
+			site_path,
+			node_id,
+			src_location,
+			dst_location,
+			done 
+		)
+		VALUES(
+			$tree_move_id,
+			$site_path,
+			$IN.nodeId, // node_id,
+			$lastPagePath, // src_location,
+			$pagePath, // dst_location,
+			0 // done 
+		);
+	}
+	
+	
+	COMMIT;
+	
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $IN.nodeId;
+	
+	$context[0].path = $lastPagePath;
+	$context[0].newPath = $pagePath;
+	$context[0].type = "directory";
+	
+	$page_body = UrlMigration.replaceImages($cms_page[0].page_body, @context);
+	$draft_page_body = UrlMigration.replaceImages($cms_page[0].draft_page_body, @context);
+	
+	BEGIN;
+	
+	UPDATE cms_page
+	SET
+		page_body = $page_body,
+		draft_page_body = $draft_page_body
+	WHERE
+		cms_page.node_id = $IN.nodeId;
+	
+	
+	COMMIT;
+	
+	return 0;
+}
+
+function getSite($pagePath)
+{
+	$endIndex = String.indexOf($pagePath, "/", 1);
+	
+	$path = String.subString($pagePath, 0, $endIndex);
+	return $path;
+}
+
+function toUrlPath($nodeId, $pagePath)
+{
+	SELECT cms_page.force_folder, tree_model.page_children INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'cms'
+	WHERE
+		cms_page.node_id = $nodeId;
+	
+	if(Array.size(@cms_page)){
+		return null;
+	}
+	
+	$endIndex = String.length($pagePath);
+	$beginIndex = String.indexOf($pagePath, "/", 1);
+	
+	$path = String.subString($pagePath, $beginIndex, $endIndex);
+	
+	if($cms_page[0].force_folder == 0 && $cms_page[0].page_children == 0){
+		return $path + ".html";
+	}
+	
+	return $path + "/";
+}
+
 
 function deletePage($IN, $SESSION)
 {
 	BEGIN;
 	CmsPage.removePage($IN.nodeId);
-	COMMIT;
+	COMMIT;	
+	
+	
 }

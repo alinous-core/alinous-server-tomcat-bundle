@@ -7,6 +7,7 @@ var AlinousJsTools = {
 	defaultSpan : 3000,
 	eventSendOnce : 32,
 	mouseMoveSense : 20,
+	milliseconds : 600000,
 	
 	startTime : new Date().getTime(),
 	alinousLogToolsInit : function(document)
@@ -58,12 +59,6 @@ var AlinousJsTools = {
 				accessserial = cookies.alinous_access_log;
 			}
 			
-			var userAgent = window.navigator.userAgent;
-			var referrer = "";
-			if(document.referrer){
-				referrer = document.referrer;
-			}
-			
 			var documetWidth = document.documentElement.scrollWidth || document.body.scrollWidth;
 			var documetHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
 			
@@ -72,6 +67,24 @@ var AlinousJsTools = {
 			
 			var url = encodeURIComponent(location.href);
 			
+			var userAgent = window.navigator.userAgent;
+			var referrer = "";
+			if(document.referrer){
+				referrer = document.referrer;
+			}
+			if(window.location.search.length > 0){
+				var query = window.location.search.substring(1);
+				var parameters = query.split( '&' );
+				
+				for( var i = 0; i < parameters.length; i++ ){
+					var element = parameters[ i ].split( '=' );
+					if(element[0] == "referrer"){
+						// alert(element[1]);
+						referrer = element[1];
+					}
+				}
+			}
+						
 			var lang = "";
 			if(navigator.language){
 				lang = encodeURIComponent(navigator.language);
@@ -163,16 +176,17 @@ var AlinousJsTools = {
 				y : y,
 				diffTime : diffTime				
 			};
-
-			clickBuffers[clickBufferIdx].push(record);
 			
-			
-			flushClickEvents();
-			flushScrollEvents();
-			flushMouseMoveEvents();
-			flushResizeEvents();
-			
-			// alert("flushed");
+			if(diffTime < AlinousJsTools.milliseconds){
+				clickBuffers[clickBufferIdx].push(record);			
+				
+				flushClickEvents();
+				flushScrollEvents();
+				flushMouseMoveEvents();
+				flushResizeEvents();
+				
+				// alert("flushed");
+			}
 		};
 	 	
 	 	var fireScrolled = function(event)
@@ -197,7 +211,9 @@ var AlinousJsTools = {
 				diffTime : diffTime
 			};
 			
-			scrollBuffers[scrollBufferIdx].push(record);			
+			if(diffTime < AlinousJsTools.milliseconds){
+				scrollBuffers[scrollBufferIdx].push(record);
+			}		
 		}
 		
 		var fireMouseMoved = function(event)
@@ -236,7 +252,9 @@ var AlinousJsTools = {
 			
 			lastMousePosition = record;
 			
-			mmvBuffers[mmvBufferIdx].push(record);
+			if(diffTime < AlinousJsTools.milliseconds){
+				mmvBuffers[mmvBufferIdx].push(record);
+			}
 		}
 		
 		var fireOnResize = function()
@@ -253,7 +271,9 @@ var AlinousJsTools = {
 				diffTime : diffTime
 			};
 			
-			windowSizeBuffers[windowSizeBufferIdx].push(record);		
+			if(diffTime < AlinousJsTools.milliseconds){
+				windowSizeBuffers[windowSizeBufferIdx].push(record);
+			}
 		}
 		
 		var fireReport = function()
@@ -262,12 +282,17 @@ var AlinousJsTools = {
 				console.log("fireReport !! ");
 			}
 			
-			flushClickEvents();
-			flushScrollEvents();
-			flushMouseMoveEvents();
-			flushResizeEvents();
-			
-			setTimeout(fireReport, AlinousJsTools.defaultSpan);
+			var currentTime = new Date().getTime();
+			var diffTime = currentTime - AlinousJsTools.startTime;
+			if(diffTime < AlinousJsTools.milliseconds){
+				flushClickEvents();
+				flushScrollEvents();
+				flushMouseMoveEvents();
+				flushResizeEvents();
+				
+				setTimeout(fireReport, AlinousJsTools.defaultSpan);
+			}
+
 		};
 		
 		var flushResizeEvents = function()

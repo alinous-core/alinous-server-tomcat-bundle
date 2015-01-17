@@ -59,7 +59,8 @@ function regenerate($IN, $SESSION)
 {
 	SELECT hm_master.hm_master_id, hm_master.hm_master_name,
 		hm_master.hm_raster_id, hm_master.hm_start, hm_master.hm_end,
-		archive_page.archive_page_id, archive_page.page_url
+		archive_page.archive_page_id, archive_page.page_url,
+		hm_master.referrer, hm_master.keywords
 	INTO hm_master
 	FROM
 		hm_master LEFT JOIN archive_page
@@ -78,6 +79,8 @@ function regenerate($IN, $SESSION)
 	$params.archive_page_id = $hm_master[0].archive_page_id;
 	$params.start = $start;
 	$params.end = $end;
+	$params.referrer = $hm_master[0].referrer;
+	$params.keywords = $hm_master[0].keywords;
 	
 	$numPages = Heatmap.countPageAccesses($hm_master[0].page_url, $start, $end);
 	$jobMax = 20 + $docSize.height + $numPages + 50;
@@ -105,6 +108,7 @@ function backgroundJob($params)
 	
 	try{
 		Heatmap.createHeatMap($params.hm_raster_id, $params.hm_master_url,  $params.start, $params.end,
+							$params.referrer, $params.keywords,
 							$params.archive_page_id, $SESSION, $params.jobId);
 	}finally{
 		ProgressJob.jobFinished($params.jobId);

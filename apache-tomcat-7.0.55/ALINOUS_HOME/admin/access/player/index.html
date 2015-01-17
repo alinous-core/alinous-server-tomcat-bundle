@@ -21,7 +21,7 @@
 function reload(form)
 {
 	form.page.value = 0;
-	form.cmd.value = "";
+	form.cmd.value = "reload";
 	form.submit();
 }
 
@@ -53,6 +53,46 @@ $(function() {
 
 
 <form name="frm" action="index.html" method="POST">
+
+<table>
+	<tr>
+		<td width="100">
+			User Id:
+		</td>
+		<td>
+			<input type="text" name="user_id" value="{$IN.user_id}" maxlength="12" style="width:80px;" />
+		</td>
+		<td width="100">
+			 Remote Host:
+		</td>
+		<td>
+			<input type="text" name="remote_host" value="{$IN.remote_host}" maxlength="512" style="width:200px;" />
+		</td>
+		<td width="100">
+			Access Url:
+		</td>
+		<td>
+			<input type="text" name="url" value="{$IN.url}" maxlength="512" style="width:300px;" />
+		</td>
+	</tr>
+</table>
+<table>
+	<tr>
+		<td width="100">
+			Referer:
+		</td>
+		<td>
+			<input type="text" name="referrer" value="{$IN.referrer}" maxlength="512" style="width:300px;" />
+		</td>
+		<td>
+			Keywords:
+		</td>
+		<td colspan="3">
+			<input type="text" name="keywords" value="{$IN.keywords}" maxlength="512" style="width:300px;" />
+		</td>
+	</tr>
+</table>
+
 
 <button type="button" onclick="reload(this.form)">Reload</button>
 

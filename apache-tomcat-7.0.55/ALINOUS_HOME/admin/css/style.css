@@ -6,7 +6,7 @@ body {
 
 
 #wrap h1{
-	background: url("images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #cccccc;
+	background: url("/admin/css/images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #cccccc;
 	
 	border: 1px solid #aaaaaa;
 	color: #222222;
@@ -22,7 +22,7 @@ body {
 }
 
 #wrap2 h1{
-	background: url("images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #cccccc;
+	background: url("/admin/css/images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 50% 50% #cccccc;
 	
 	border: 1px solid #aaaaaa;
 	color: #222222;

@@ -1,0 +1,56 @@
+<html>
+<head>
+<script>
+<!-- 
+$(function() {
+	$(".jq").button();
+	
+	$( "#removeignore" ).click(function() {
+		var checks = document.getElementsByName("igkeywords[]");
+	
+		var str = "";
+		for (var i = 0; i < checks.length; i++) {
+			if(checks[i].checked){
+				if(str != ""){
+					str = str + ",";
+				}				
+				str = str + checks[i].value;
+			}
+		}
+		
+		if(str == ""){
+			$( "#dialog" ).dialog( "close" );
+			return;
+		}
+		
+		document.frm.cmd.value = "removeignore";
+		document.frm.keywords.value = str;
+		document.frm.submit();
+	});
+});
+-->
+</script>
+</head>
+<body>
+
+<h1>Ignored Keywords</h1>
+
+<form name="dlgfrm" action="ignore.html">
+<button type="button" class="jq" id="removeignore">Renmove checked keywords</button>
+
+<table class="stdtable">
+	<tr alns:iterate="@wmc_keyowrds_ignore" alns:variable="oneRecord">
+		<td width="30" align="center">
+			<input type="checkbox" name="igkeywords[]" value="{$oneRecord.keyword}" /> 
+		</td>
+		<td>
+			{$oneRecord.keyword}
+		</td>
+	</tr>
+</table>
+
+
+</form>
+
+</body>
+</html>

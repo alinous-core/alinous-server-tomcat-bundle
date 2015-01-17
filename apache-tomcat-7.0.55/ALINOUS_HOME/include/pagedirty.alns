@@ -12,13 +12,17 @@ function PageDirty.detectTop($template_top_id, $is_paging)
 	SET
 		dirty = now()
 	WHERE
-		cms_page.template_top_id = $template_top_id;
+		cms_page.template_top_id = $template_top_id OR
+		cms_page.second_template_top_id = $template_top_id;
 	
 	UPDATE cms_page
 	SET
 		force_folder = $force_folder
 	WHERE
-		cms_page.template_top_id = $template_top_id AND
+		(
+			cms_page.template_top_id = $template_top_id OR
+			cms_page.second_template_top_id = $template_top_id
+		) AND
 		cms_page.force_folder = 0;
 	
 	

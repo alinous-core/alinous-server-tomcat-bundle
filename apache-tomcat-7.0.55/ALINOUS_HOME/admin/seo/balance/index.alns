@@ -1,0 +1,313 @@
+
+include("/admin/cms/publish/publish.alns");
+include("/include/progress.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "check"){
+	checkBalance($IN, $SESSION);
+}
+else if($IN.cmd == "ignore"){
+	ignore($IN, $SESSION);
+}
+else if($IN.cmd == "pages"){
+	return "/admin/seo/balance/pages.html?keyword=" + $IN.keyword
+			+ "&site_path=" + $IN.site_path
+			+ "&last_scroll=" + $IN.scroll;
+}
+else if($IN.cmd == "removeignore"){
+	removeIgnore($IN, $SESSION);
+}
+
+@wmc_keyowrds = getKeywords($IN, $SESSION);
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id = 'checkBalance';
+	
+	if(Array.size(@job_progress) > 0){
+		return $job_progress[0].job_id;
+	}
+	
+	return 0;
+}
+
+function removeIgnore($IN, $SESSION)
+{
+	@keywords = String.split($IN.keywords, ",");
+	
+	BEGIN;
+	
+	$size = Array.size(@keywords);
+	for($i = 0; $i < $size; $i++){
+		DELETE FROM wmc_keyowrds_ignore
+		WHERE
+			wmc_keyowrds_ignore.site_path = $IN.site_path AND
+			wmc_keyowrds_ignore.keyword = $keywords[$i];
+		
+		UPDATE wmc_keyowrds
+		SET
+			ignore = 0
+		WHERE
+			wmc_keyowrds.site_path = $IN.site_path AND
+			wmc_keyowrds.keyword = $keywords[$i];
+	}
+	
+	COMMIT;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.site_path == null){
+		SELECT cms_page.cms_page_id, cms_page.node_id, tree_model.page_path INTO cms_page
+		FROM
+			cms_page left join tree_model
+			ON
+				cms_page.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'cms'
+		ORDER BY cms_page.cms_page_id
+		LIMIT 1;
+		
+		$IN.site_path = getSitePath($cms_page[0].page_path);
+	}
+	if($IN.scroll == null){
+		$IN.scroll = 0;
+	}
+}
+
+function ignore($IN, $SESSION)
+{
+	BEGIN;
+	
+	INSERT INTO wmc_keyowrds_ignore(
+		site_path,
+		keyword
+	)
+	VALUES(
+		$IN.site_path,
+		$IN.keyword
+	);
+	
+	UPDATE wmc_keyowrds
+	SET
+		ignore = 1
+	WHERE
+		wmc_keyowrds.site_path = $IN.site_path AND
+		wmc_keyowrds.keyword = $IN.keyword;
+	
+	COMMIT;
+}
+
+function getKeywords($IN, $SESSION)
+{
+	SELECT wmc_keyowrds.site_path, wmc_keyowrds.keyword, sum(wmc_keyowrds.occurrence) as count INTO wmc_keyowrds
+	FROM
+		wmc_keyowrds
+	WHERE
+		wmc_keyowrds.ignore = 0	
+	GROUP BY wmc_keyowrds.site_path, wmc_keyowrds.keyword, wmc_keyowrds.ignore
+	ORDER BY count DESC
+	LIMIT 500;
+	
+	if($wmc_keyowrds[0].count == null){
+		return null;
+	}
+	
+	$max = Cast.toNumber($wmc_keyowrds[0].count);
+	
+	$size = Array.size(@wmc_keyowrds);
+	for($i = 0; $i < $size; $i++){
+		$wmc_keyowrds[$i].index = $i + 1;
+		
+		$wmc_keyowrds[$i].rate = Cast.toNumber($wmc_keyowrds[$i].count) * 100 / $max;
+	}
+	
+	return @wmc_keyowrds;
+}
+
+function checkBalance($IN, $SESSION)
+{
+	if(ProgressJob.jobStarted("checkBalance")){
+		return 0;
+	}
+	
+	SELECT count(*) as cnt INTO cms_page
+	FROM
+		cms_page left join tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms';
+
+	
+	if($cms_page[0].cnt == null){
+		return 0;
+	}
+	$jobMax = Cast.toNumber($cms_page[0].cnt);
+	ProgressJob.startJob("checkBalance", $jobMax, "doCheckBalance", $params);
+}
+
+
+function doCheckBalance($params)
+{
+	// get latest keywordds
+	SELECT * INTO wmc_content_keywords
+	FROM
+		wmc_content_keywords
+	ORDER BY wmc_content_keywords.wmc_content_keywords_timestamp DESC
+	LIMIT 1;
+	
+	SELECT * INTO wmc_content_keywords
+	FROM
+		wmc_content_keywords
+	WHERE
+		wmc_content_keywords.wmc_content_keywords_file_name = $wmc_content_keywords[0].wmc_content_keywords_file_name;
+	
+	$idx = 0;
+	$size = Array.size(@wmc_content_keywords);
+	for($i = 0; $i < $size; $i++){
+		@match = String.split($wmc_content_keywords[$i].variants_encountered, ",");
+		$len = Array.size(@match);		
+		for($j = 0; $j < $len; $j++){
+			$match[$j] = String.trim($match[$j]);
+		}
+		
+		@words[$idx].match = @match;
+		$idx++;
+	}
+	
+	
+	// select contents
+	SELECT cms_page.cms_page_id, cms_page.node_id, tree_model.page_path INTO cms_page
+	FROM
+		cms_page left join tree_model
+		ON
+			cms_page.node_id = tree_model.node_id
+	WHERE
+		tree_model.tree_id = 'cms'
+	ORDER BY cms_page.cms_page_id;
+	
+	// reset
+	BEGIN;
+	
+	DELETE FROM wmc_keyowrds;
+	
+	COMMIT;
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		try{
+			checkBalanceForContent($cms_page[$i].cms_page_id, $cms_page[$i].node_id, $cms_page[$i].page_path, @words);
+		}catch($e){
+			
+		}
+		
+		ProgressJob.progress(1, "checkBalance");
+	}
+	
+	ProgressJob.jobFinished("checkBalance");
+}
+
+
+function checkBalanceForContent($cms_page_id, $node_id, $page_path, @words)
+{
+	checkFile($cms_page_id, $page_path, 0, "", @words);
+	
+}
+
+function checkFile($cms_page_id, $page_path, $page, $contextPath, @words)
+{
+	$module = Publish.getPublishPagePath($cms_page_id, $page, $contextPath);
+	
+	if(!File.exists($module.fileName)){
+		return 0;
+	}
+	
+	$xhtml = File.readAllText($module.fileName, "utf-8");
+	
+	$result = KeywordsAnalyzer.analyze($xhtml);
+	
+	$site_path = getSitePath($page_path);
+	
+	registerLocationKeywords($site_path, $cms_page_id, $page, "title", @result.title);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "body", @result.body);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "aside", @result.aside);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "nav", @result.nav);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "article", @result.article);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "header", @result.header);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "footer", @result.footer);
+	
+	registerLocationKeywords($site_path, $cms_page_id, $page, "h1", @result.h1);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "h2", @result.h2);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "h3", @result.h3);
+	registerLocationKeywords($site_path, $cms_page_id, $page, "h4", @result.h4);
+	
+	return 0;
+}
+
+
+
+function registerLocationKeywords($site_path, $cms_page_id, $page, $location, @count)
+{
+	BEGIN;
+	
+	$size = Array.size(@count);
+	for($i = 0; $i < $size; $i++){
+		SELECT * INTO wmc_keyowrds_ignore
+		FROM
+			wmc_keyowrds_ignore
+		WHERE
+			wmc_keyowrds_ignore.keyword = $count[$i].keyword;
+		
+		$ignore = 0;
+		if(Array.size(@wmc_keyowrds_ignore) > 0){
+			$ignore = 1;
+		}
+		
+		INSERT INTO wmc_keyowrds(
+			site_path,
+			cms_page_id,
+			page,
+			location,
+			keyword,
+			occurrence,
+			wmc_content_keywords_id,
+			ignore
+		)
+		VALUES(
+			$site_path,
+			$cms_page_id,
+			$page,
+			$location,
+			$count[$i].keyword,  // keyword,
+			$count[$i].count,  // occurrence,
+			0, // wmc_content_keywords_id,
+			$ignore // ignore
+		);
+	}
+	
+	COMMIT;
+}
+
+function getSitePath($page_path)
+{
+	$idx = String.indexOf($page_path, "/", 1);
+	if($idx < 0){
+		return $page_path;
+	}
+	return String.subString($page_path, 0, $idx);
+}
+
+
+
+

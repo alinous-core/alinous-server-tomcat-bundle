@@ -1,0 +1,138 @@
+
+$path = $args[0];
+$host = $args[1];
+$siteDomainPath = $args[2];
+
+// detect page
+$page = 0;
+
+$pagingPath = $path;
+if(String.endsWith($path, "/")){
+	$endIndex = String.length($path) - 1;
+	$pagingPath = String.subString($path, 0, $endIndex);
+}
+$lastIdx = String.lastIndexOf($pagingPath, "/");
+
+if($lastIdx > 0){
+	$endIndex = String.length($pagingPath);
+	$lastSection = String.subString($pagingPath, $lastIdx + 1, $endIndex);
+	if(String.isNumber($lastSection)){
+		$page = Cast.toNumber($lastSection);
+		
+		$path = String.subString($pagingPath, 0, $lastIdx);
+	}
+}
+
+// delete ".html"
+$lastIdx = String.lastIndexOf($path, ".html");
+if($lastIdx > 0){
+	$path = String.subString($path, 0, $lastIdx);
+}
+
+$pagePath = $siteDomainPath + $path;
+if(String.endsWith($pagePath, "/")){
+	$endIndex = String.length($pagePath) - 1;
+	$pagePath = String.subString($pagePath, 0, $endIndex);
+}
+
+SELECT node_id, page_children INTO tree_model
+FROM
+	tree_model
+WHERE
+	tree_model.tree_id = 'cms' AND
+	tree_model.page_path = $pagePath;
+
+if(Array.size(@tree_model) == 0){
+	$ctx = getContextFromPath($path);
+	$strPath = stripContextFromPath($path);
+	
+	$pagePath = $siteDomainPath + $strPath;
+	if(String.endsWith($pagePath, "/")){
+		$endIndex = String.length($pagePath) - 1;
+		$pagePath = String.subString($pagePath, 0, $endIndex);
+	}
+	
+	SELECT node_id, page_children INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		tree_model.page_path = $pagePath;
+	
+	if(Array.size(@tree_model) == 0){
+		// check redirect
+		$likeStr = $strPath + "%";
+		
+		SELECT * INTO http_path_match
+		FROM
+			http_path_match
+		WHERE
+			http_path_match.site_path = $siteDomainPath AND
+			// http_path_match.match_type = 'file-match' AND
+			http_path_match.match_path LIKE $likeStr;
+		if(Array.size(@http_path_match) > 0){
+			$obj.path = $ctx;
+			$obj.templateId = 0;
+			return $obj;
+		}
+		
+		$obj.path = "";
+		$obj.templateId = 0;
+		return $obj;
+	}
+		
+	SELECT second_template_context, second_template_top_id INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.node_id = $tree_model[0].node_id;
+	
+	$obj.path = "/" + $cms_page[0].second_template_context;
+	$obj.templateId = $cms_page[0].second_template_top_id;
+	
+	if($obj.path == $ctx){
+		return $obj;
+	}
+	
+	$obj.path = "";
+	$obj.templateId = 0;
+	
+	return $obj;
+}
+
+SELECT second_template_context, second_template_top_id INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.node_id = $tree_model[0].node_id;
+
+
+$obj.path = "/" + $cms_page[0].second_template_context;
+$obj.templateId = $cms_page[0].second_template_top_id;
+if($obj.templateId == null){
+	$obj.templateId = 0;
+}
+
+return $obj;
+
+function getContextFromPath($path)
+{
+	$pos = String.indexOf($path, "/", 1);
+	if($pos < 0){
+		return null;
+	}
+	
+	return String.subString($path, 0, $pos);
+}
+
+function stripContextFromPath($path)
+{
+	$pos = String.indexOf($path, "/", 1);
+	if($pos < 0){
+		return null;
+	}
+	$len = String.length($path);
+	
+	return String.subString($path, $pos, $len);
+}
+

@@ -1,0 +1,348 @@
+
+include("/include/progress.alns");
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "theme"){
+	Theme.calcTheme($IN, $SESSION);
+}
+else if($IN.cmd == "similarity"){
+	similarity($IN, $SESSION);
+}
+else if($IN.cmd == "showsimilar"){
+	return "/admin/seo/theme/similar.html?cms_page_id=" + $IN.cms_page_id
+			+ "&site_path=" + $IN.site_path
+			+ "&last_scroll=" + $IN.scroll;
+}
+
+@cms_page = getPages($IN, $SESSION);
+
+// progress bar
+$showProgress = isRunning($IN, $SESSION);
+
+return 0;
+
+function isRunning($IN, $SESSION)
+{
+	SELECT * INTO job_progress
+	FROM
+		job_progress
+	WHERE
+		job_progress.job_id IN('calcTheme', 'calcSimilarity');
+	
+	if(Array.size(@job_progress) > 0){
+		return $job_progress[0].job_id;
+	}
+	
+	return 0;
+}
+
+function getPages($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'cms'
+	ORDER BY tree_model.page_path;
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		if($cms_page[$i].page_sub_title != ""){
+			$cms_page[$i].page_title = $cms_page[$i].page_title + " - " + $cms_page[$i].page_sub_title;
+		}
+		
+		$cms_page[$i].path =  getUrl($cms_page[$i].cms_page_id);
+	}
+	
+	
+	return @cms_page;
+}
+
+function getUrl($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+  	
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return "/";
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+    if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+    	return $path + "/";
+    }
+    
+    return $path + ".html";
+}
+
+function similarity($IN, $SESSION)
+{
+	if(ProgressJob.jobStarted("calcSimilarity")){
+		return 0;
+	}
+	
+	SELECT count(DISTINCT wmc_theme.cms_page_id) as cnt INTO wmc_theme
+	FROM
+		wmc_theme
+	WHERE
+		wmc_theme.site_path = $IN.site_path;
+	
+	if($wmc_theme[0].cnt == null){
+		ProgressJob.jobFinished("calcSimilarity");
+		return 0;
+	}
+	
+	$jobMax = Cast.toNumber($wmc_theme[0].cnt);
+	$params.IN = $IN;
+	ProgressJob.startJob("calcSimilarity", $jobMax, "Simularity.calcSimilarity", $params);
+}
+
+function Simularity.calcSimilarity($params)
+{
+	BEGIN;
+	DELETE FROM wmc_theme_similarity
+	WHERE
+		wmc_theme_similarity.site_path = $params.IN.site_path;
+	COMMIT;
+	
+	SELECT DISTINCT wmc_theme.cms_page_id INTO wmc_theme
+	FROM
+		wmc_theme
+	WHERE
+		wmc_theme.site_path = $params.IN.site_path
+	ORDER BY wmc_theme.cms_page_id;
+	
+	$size = Array.size(@wmc_theme);
+	for($i = 0; $i < $size; $i++){
+		Simularity.calcOnePage($params.IN.site_path, $wmc_theme[$i].cms_page_id);
+		
+		ProgressJob.progress(1, "calcSimilarity");
+	}
+	
+	ProgressJob.jobFinished("calcSimilarity");
+}
+
+
+function Simularity.calcOnePage($site_path, $cms_page_id)
+{
+	/*SELECT wmc_theme_similarity.cms_page_id_2 INTO t FROM wmc_theme_similarity
+	WHERE
+		wmc_theme_similarity.cms_page_id = $cms_page_id;*/
+
+	SELECT DISTINCT wmc_theme.cms_page_id INTO wmc_theme
+	FROM
+		wmc_theme
+	WHERE
+		wmc_theme.site_path = $site_path AND
+		NOT
+			wmc_theme.cms_page_id IN (
+				SELECT wmc_theme_similarity.cms_page_id_2 FROM wmc_theme_similarity
+				WHERE
+					wmc_theme_similarity.cms_page_id = $cms_page_id
+			)
+	ORDER BY wmc_theme.cms_page_id;
+	
+	
+	SELECT wmc_theme.keyword AS keyword, wmc_theme.value AS value
+	INTO
+		wmc_theme_current
+	FROM
+		wmc_theme
+	WHERE
+		wmc_theme.cms_page_id = $cms_page_id;
+	
+	BEGIN;
+	
+	$size = Array.size(@wmc_theme);
+	for($i = 0; $i < $size; $i++){
+		if($cms_page_id == $wmc_theme[$i].cms_page_id){
+			continue;
+		}
+		
+		Simularity.calc($site_path, @wmc_theme_current, $cms_page_id, $wmc_theme[$i].cms_page_id);
+	}
+	
+	COMMIT;
+}
+
+function Simularity.calc($site_path, @wmc_theme, $cms_page_id, $cms_page_id2)
+{
+	SELECT wmc_theme.keyword AS keyword, wmc_theme.value AS value
+	INTO
+		wmc_theme2
+	FROM
+		wmc_theme
+	WHERE
+		wmc_theme.cms_page_id = $cms_page_id2;
+	
+	$sim = KeywordTheme.similarity(@wmc_theme, @wmc_theme2);
+		
+	
+	INSERT INTO wmc_theme_similarity(
+		site_path,
+		cms_page_id,
+		cms_page_id_2,
+		value
+	)
+	VALUES(
+		$site_path,
+		$cms_page_id,
+		$cms_page_id2,
+		$sim // value
+	);
+	
+	INSERT INTO wmc_theme_similarity(
+		site_path,
+		cms_page_id,
+		cms_page_id_2,
+		value
+	)
+	VALUES(
+		$site_path,
+		$cms_page_id2,
+		$cms_page_id,
+		$sim // value
+	);
+	
+	
+	
+	return $sim;
+}
+
+function Theme.calcTheme($IN, $SESSION)
+{
+	if(ProgressJob.jobStarted("calcTheme")){
+		return 0;
+	}
+	
+	SELECT count(DISTINCT wmc_keyowrds.cms_page_id) as cnt INTO wmc_keyowrds
+	FROM
+		wmc_keyowrds
+	WHERE
+		wmc_keyowrds.site_path = $IN.site_path;
+	
+	if($wmc_keyowrds[0].cnt == null){
+		ProgressJob.jobFinished("calcTheme");
+		return 0;
+	}
+	$jobMax = Cast.toNumber($wmc_keyowrds[0].cnt);
+	$params.IN = $IN;
+	ProgressJob.startJob("calcTheme", $jobMax, "Theme.doCalcTheme", $params);
+}
+
+
+function Theme.doCalcTheme($params)
+{
+	BEGIN;
+	DELETE FROM wmc_theme
+	WHERE
+		wmc_theme.site_path = $params.IN.site_path;
+	COMMIT;
+	
+	SELECT DISTINCT wmc_keyowrds.cms_page_id INTO wmc_keyowrds
+	FROM
+		wmc_keyowrds
+	WHERE
+		wmc_keyowrds.site_path = $params.IN.site_path
+	ORDER BY wmc_keyowrds.cms_page_id;
+	
+	$size = Array.size(@wmc_keyowrds);
+	for($i = 0; $i < $size; $i++){
+		Theme.calcOnePage($params.IN, $wmc_keyowrds[$i].cms_page_id);
+		
+		ProgressJob.progress(1, "calcTheme");
+	}
+	
+	ProgressJob.jobFinished("calcTheme");
+}
+
+function Theme.calcOnePage($IN, $cms_page_id)
+{
+	SELECT wmc_keyowrds.keyword as keyword, wmc_keyowrds.location as location,
+		wmc_keyowrds.occurrence as occurrence INTO wmc_keyowrds
+	FROM
+		wmc_keyowrds
+	WHERE
+		wmc_keyowrds.cms_page_id = $cms_page_id AND
+		wmc_keyowrds.ignore = 0;
+	
+	$coefficient.title = $IN.title;
+	$coefficient.body = $IN.body;
+	$coefficient.header = $IN.header;
+	$coefficient.footer = $IN.footer;
+	$coefficient.aside = $IN.aside;
+	$coefficient.nav = $IN.nav;
+	$coefficient.article = $IN.article;
+	$coefficient.h1 = $IN.h1;
+	$coefficient.h2 = $IN.h2;
+	$coefficient.h3 = $IN.h3;
+	$coefficient.h4 = $IN.h4;
+	
+	@result = KeywordTheme.calc($coefficient, @wmc_keyowrds);
+	
+	BEGIN;
+	
+	$size = Array.size(@result);
+	for($i = 0; $i < $size; $i++){
+		INSERT INTO wmc_theme(
+			site_path,
+			cms_page_id,
+			page,
+			keyword,
+			value
+		)
+		VALUES(
+			$IN.site_path,
+			$cms_page_id,
+			0,
+			$result[$i].keyword,
+			$result[$i].value
+		);
+	}
+	
+	
+	COMMIT;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.site_path == null){
+		SELECT cms_page.cms_page_id, cms_page.node_id, tree_model.page_path INTO cms_page
+		FROM
+			cms_page left join tree_model
+			ON
+				cms_page.node_id = tree_model.node_id
+		WHERE
+			tree_model.tree_id = 'cms'
+		ORDER BY cms_page.cms_page_id
+		LIMIT 1;
+		
+		$IN.site_path = getSitePath($cms_page[0].page_path);
+	}
+	if($IN.scroll == null){
+		$IN.scroll = 0;
+	}
+}
+
+function getSitePath($page_path)
+{
+	$idx = String.indexOf($page_path, "/", 1);
+	if($idx < 0){
+		return $page_path;
+	}
+	return String.subString($page_path, 0, $idx);
+}
+
+

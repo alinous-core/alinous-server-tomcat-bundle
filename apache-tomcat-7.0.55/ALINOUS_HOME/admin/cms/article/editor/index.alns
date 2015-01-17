@@ -6,6 +6,8 @@ include("/include/sitesetting.alns");
 
 $cms_page = getPage($IN, $SESSION);
 
+
+
 SELECT template_top_id, template_top_name INTO template_top
 FROM
 	template_top
@@ -20,12 +22,49 @@ if($node.page_depth == 1){
 		site_setting.site_path = $node.page_path
 	ORDER BY site_setting.template_use, site_setting.site_domain;
 	
+	SELECT * INTO site_mobile_setting
+	FROM
+		site_mobile_setting
+	WHERE
+		site_mobile_setting.site_path = $node.page_path
+	ORDER BY site_mobile_setting.template_use, site_mobile_setting.site_domain;
+	
 	SiteSetting.sync();
+	SiteSetting.syncSp();
 }
 
 @cms_tag = getTags($cms_page.cms_page_id);
 
+$pageUrl = getUrl($cms_page.cms_page_id);
+
 return 0;
+
+function getUrl($cms_page_id)
+{
+	SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+	INTO tree_model
+	FROM
+		tree_model LEFT JOIN cms_page
+		ON
+		tree_model.node_id = cms_page.node_id
+	WHERE
+		tree_model.tree_id = 'cms' AND
+		cms_page.cms_page_id = $cms_page_id;
+  	
+	$idx = String.indexOf($tree_model[0].page_path, "/", 1);
+	if($idx < 0){
+		return "/";
+	}
+	$len = String.length($tree_model[0].page_path);
+	$path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+	if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+		return $path + "/";
+	}
+    
+	return $path + ".html";
+}
 
 function getTags($cms_page_id)
 {

@@ -7,6 +7,7 @@ include("/include/progress.alns");
 
 
 function Heatmap.createHeatMap($hm_raster_id, $hm_master_url, $start, $end,
+						$referrer, $keywords,
 						$archive_page_id, $SESSION, $jobId)
 {
 	$docSize = Heatmap.getDocumentSize($hm_master_url);
@@ -17,8 +18,9 @@ function Heatmap.createHeatMap($hm_raster_id, $hm_master_url, $start, $end,
 	LasterBuffer.newBuffer($path, $docSize.width, $docSize.height);
 	
 	
-	Heatmap.analyzePageAccesses($SESSION, $path, $hm_master_url, $start, $end
-				, $docSize.width, $docSize.height, $jobId);
+	Heatmap.analyzePageAccesses($SESSION, $path, $hm_master_url, $referrer, $keywords,
+				$start, $end,
+				$docSize.width, $docSize.height, $jobId);
 	
 	$progress = 0;
 	for($i = 0; $i < $docSize.height; $i++){
@@ -93,8 +95,25 @@ function Heatmap.getDocumentSize($url)
 	return $wic_user_page_access[0];
 }
 
-function Heatmap.analyzePageAccesses($SESSION, $path, $url, $start, $end, $width, $height, $jobId)
+function Heatmap.analyzePageAccesses($SESSION, $path, $url, $referrer, $keywords, $start, $end, $width, $height, $jobId)
 {
+	if($referrer != ""){
+		$arg_referrer = "%" + String.trim($referrer) + "%";
+	}
+	if($keywords != ""){
+		@words = String.split($keywords, ",");
+		
+		$idx = 0;
+		$size = Array.size(@words);
+		for($i = 0; $i < $size; $i++){
+			$val = String.trim($words[$i]);
+			if($val != ""){
+				$arg_keywords[$idx++] = "http%?%" + $val + "%";
+			}
+		}
+		
+	}
+	
 	SELECT user_id, access_id
 	INTO wic_user_page_access
 	FROM
@@ -102,8 +121,11 @@ function Heatmap.analyzePageAccesses($SESSION, $path, $url, $start, $end, $width
 	WHERE
 		wic_user_page_access.url = $url AND
 		wic_user_page_access.access_time >= $start AND
-		wic_user_page_access.access_time <= $end
-	ORDER BY wic_user_page_access.access_time DESC;
+		wic_user_page_access.access_time <= $end AND
+		wic_user_page_access.referrer LIKE $arg_referrer AND
+		wic_user_page_access.referrer LIKE @arg_keywords
+	ORDER BY wic_user_page_access.access_time DESC
+	ADJUST_WHERE = TRUE;
 	
 	$size = Array.size(@wic_user_page_access);
 	for($i = 0; $i < $size; $i++){
@@ -291,7 +313,8 @@ function Heatmap.getContext($hm_raster_id)
 }
 
 
-function Heatmap.createHeatmapData($hm_master_name, $archive_page_id,	$hm_start, $hm_end, $width, $height)
+function Heatmap.createHeatmapData($hm_master_name, $archive_page_id,
+		$referrer, $keywords, $hm_start, $hm_end, $width, $height)
 {
 	$hm_raster_id = Common.newSerial("hm_raster");
 	INSERT INTO hm_raster(
@@ -311,6 +334,8 @@ function Heatmap.createHeatmapData($hm_master_name, $archive_page_id,	$hm_start,
 		hm_master_name,
 		hm_raster_id,
 		archive_page_id,
+		referrer,
+		keywords,
 		hm_start,
 		hm_end
 	)
@@ -319,6 +344,8 @@ function Heatmap.createHeatmapData($hm_master_name, $archive_page_id,	$hm_start,
 		$hm_master_name,
 		$hm_raster_id,
 		$archive_page_id,
+		$referrer,
+		$keywords,
 		$hm_start,
 		$hm_end
 	);

@@ -1,0 +1,18 @@
+
+
+SELECT * INTO wmc_theme
+FROM
+	wmc_theme
+WHERE
+	wmc_theme.cms_page_id = $IN.cms_page_id
+ORDER BY wmc_theme.value DESC;
+
+$max = Cast.toDouble($wmc_theme[0].value);
+$size = Array.size(@wmc_theme);
+for($i = 0; $i < $size; $i++){
+	$wmc_theme[$i].value = Double.setScale($wmc_theme[$i].value, 2);
+	$wmc_theme[$i].rate = $wmc_theme[$i].value * 100 / $max;
+}
+
+
+return 0;

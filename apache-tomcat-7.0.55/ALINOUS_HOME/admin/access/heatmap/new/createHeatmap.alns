@@ -15,8 +15,9 @@ function startJob($IN, $SESSION)
 	$end = toTimestamp($IN.end_date, $IN.end_time);
 	
 	BEGIN;
-	$context = Heatmap.createHeatmapData($IN.hm_master_name, $IN.archive_page_id, $start, $end
-				, $docSize.width, $docSize.height);
+	$context = Heatmap.createHeatmapData($IN.hm_master_name, $IN.archive_page_id, 
+				$IN.referrer, $IN.keywords, $start, $end,
+				$docSize.width, $docSize.height);
 	
 	COMMIT;
 	
@@ -47,7 +48,8 @@ function backgroundJob($params)
 	ProgressJob.progress(20, $params.jobId);
 	
 	try{
-		Heatmap.createHeatMap($params.hm_raster_id, $IN.hm_master_url, $start, $end, 
+		Heatmap.createHeatMap($params.hm_raster_id, $IN.hm_master_url, $start, $end,
+							$IN.referrer, $IN.keywords,
 							$IN.archive_page_id, $SESSION, $params.jobId);
 	}finally{
 		ProgressJob.jobFinished($params.jobId);

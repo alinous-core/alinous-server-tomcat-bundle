@@ -34,6 +34,12 @@ function onchecked(checkbox)
 	}
 }
 
+function submitFormStayPage(form, cmd)
+{
+	form.cmd.value = cmd;
+	form.submit();
+}
+
 function submitForm(form, cmd)
 {
 	form.page.value = 0;
@@ -131,7 +137,22 @@ function selectAll(form)
 	}
 	
 	return false;
-};
+}
+
+function onchangeTitles(form, cms_page_id)
+{
+	// alert("changed");
+		
+	var checks = document.getElementsByName("cms_page_ids[]");
+	for (var i = 0; i < checks.length; i++) {
+		
+		
+		if(checks[i].value == cms_page_id){
+			checks[i].checked = true;
+		}
+	}
+	
+}
 -->
 </script>
 
@@ -187,6 +208,7 @@ function selectAll(form)
 
 <blockquote>
 <button type="button" onclick="submitForm(this.form, 'search')">Search</button>
+<button type="button" onclick="submitFormStayPage(this.form, 'changeTitles')">Change Titles</button>
 <button type="button" onclick="submitForm(this.form, 'publish')">Publish</button>
 <button type="button" onclick="selectTmpl()">Change Template</button>
 <button type="button" onclick="selectPageType()">Change Page Type</button>
@@ -238,7 +260,12 @@ function selectAll(form)
 				onclick="onchecked(this)" checked="{$oneRecord.checked}">
 		</td>
 		<td>
-			{$oneRecord.page_title}<br />
+			<input type="text" name="page_title_{$oneRecord.cms_page_id}" value="{$oneRecord.page_title}"
+				onchange="onchangeTitles(this.form, '{$oneRecord.cms_page_id}')" style="width:100%;" /><br />
+			<input type="text" name="page_sub_title_{$oneRecord.cms_page_id}" value="{$oneRecord.page_sub_title}"
+				onchange="onchangeTitles(this.form, '{$oneRecord.cms_page_id}')" style="width:100%;" /><br />
+			<input type="text" name="page_short_title_{$oneRecord.cms_page_id}" value="{$oneRecord.page_short_title}"
+				onchange="onchangeTitles(this.form, '{$oneRecord.cms_page_id}')" style="width:50%;" /><br />
 			<input type="text" name="pathes[]" value="{$oneRecord.page_path}" readonly="readonly" style="width:100%;" />
 		</td>
 		<td>
@@ -299,6 +326,7 @@ function selectAll(form)
 
 <input type="hidden" name="apply_template_top_id" value="" />
 <input type="hidden" name="apply_second_template_top_id" value="" />
+<input type="hidden" name="apply_second_template_context" value="" />
 <input type="hidden" name="apply_page_type" value="" />
 </form>
 

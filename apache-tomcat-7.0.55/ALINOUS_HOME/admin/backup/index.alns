@@ -48,6 +48,7 @@ function backup($IN, $SESSION)
 	backupContents($IN, $SESSION, $backupDir, "tree_model");
 	backupContents($IN, $SESSION, $backupDir, "tree_model_serial");
 	backupContents($IN, $SESSION, $backupDir, "cms_page");
+	backupContents($IN, $SESSION, $backupDir, "tree_move");
 	
 	// resources.alns
 	backupContents($IN, $SESSION, $backupDir, "cms_resource");
@@ -72,6 +73,7 @@ function backup($IN, $SESSION)
 	
 	// site.alns
 	backupContents($IN, $SESSION, $backupDir, "site_setting");
+	backupContents($IN, $SESSION, $backupDir, "site_mobile_setting");
 	backupContents($IN, $SESSION, $backupDir, "sitemap_setting");
 	backupContents($IN, $SESSION, $backupDir, "sitemap_page_type");
 	backupContents($IN, $SESSION, $backupDir, "rss_setting");
@@ -145,6 +147,7 @@ function recover($tmpFile, $outDir)
 	recoverTable($outDir, "tree_model");
 	recoverTable($outDir, "tree_model_serial");
 	recoverTable($outDir, "cms_page");
+	recoverTable($outDir, "tree_move");
 	
 	// resources.alns
 	recoverTable($outDir, "cms_resource");
@@ -169,6 +172,7 @@ function recover($tmpFile, $outDir)
 	
 	// site.alns
 	recoverTable($outDir, "site_setting");
+	recoverTable($outDir, "site_mobile_setting");
 	recoverTable($outDir, "sitemap_setting");
 	recoverTable($outDir, "sitemap_page_type");
 	recoverTable($outDir, "rss_setting");
@@ -180,11 +184,11 @@ function recover($tmpFile, $outDir)
 	recoverTable($outDir, "wmc_content_keywords");
 	recoverTable($outDir, "wmc_content_keywords_url");
 	recoverTable($outDir, "wmc_robot_access");
-	recoverTable($outDir, "wmc_robot_accesslog_setting");
-	recoverTable($outDir, "wmc_robot_ip_domain");
+	// recoverTable($outDir, "wmc_robot_accesslog_setting");
+	// recoverTable($outDir, "wmc_robot_ip_domain");
 	recoverTable($outDir, "wmil_internal_link_file");
 	recoverTable($outDir, "wmil_internal_link");
-	recoverTable($outDir, "wmc_user_access");
+	// recoverTable($outDir, "wmc_user_access");
 	
 	// archiveddl.alns
 	recoverTable($outDir, "archive_page");
@@ -220,6 +224,7 @@ function recover($tmpFile, $outDir)
 	
 	// forward and redirect
 	SiteSetting.sync();
+	SiteSetting.syncSp();
 	Redirects.sync(null);
 	
 	// sitemap, rss and robots txt

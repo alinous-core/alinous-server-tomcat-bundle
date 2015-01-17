@@ -3,6 +3,8 @@ include("/include/paging.alns");
 
 initParams($IN, $SESSION);
 
+
+
 $maxPagingNumberScroll = 10;
 $limit = 10;
 $pageNumber = $IN.page;
@@ -19,25 +21,62 @@ function initParams($IN, $SESSION)
 	if($IN.page == null){
 		$IN.page = 0;
 	}
+	if($IN.user_id == null){
+		$IN.user_id = "";
+	}
+	if($IN.referrer == null){
+		$IN.referrer = "";
+	}
+	if($IN.remote_host == null){
+		$IN.remote_host = "";
+	}
+	if($IN.url == null){
+		$IN.url = "";
+	}
+	if($IN.keywords == null){
+		$IN.keywords = "";
+	}
+	
 }
 
 function getRecords($IN, $SESSION, $limit)
 {
+	$params = getQueryParams($IN, $SESSION);
+	
+	@keywords = @params.keywords;
+	
 	$offset = $limit * $IN.page;
 	SELECT * INTO wic_user_page_access
 	FROM
-		wic_user_page_access			
+		wic_user_page_access
+	WHERE
+		wic_user_page_access.user_id = $params.user_id AND
+		wic_user_page_access.referrer LIKE $params.referrer AND
+		wic_user_page_access.remote_host LIKE $params.remote_host AND
+		wic_user_page_access.url = $params.url AND
+		wic_user_page_access.referrer LIKE @keywords
 	ORDER BY wic_user_page_access.access_time DESC
-	LIMIT $limit OFFSET $offset;
+	LIMIT $limit OFFSET $offset
+	ADJUST_WHERE = true;
 	
 	return @wic_user_page_access;
 }
 
 function getNumRecord($IN, $SESSION)
 {
+	$params = getQueryParams($IN, $SESSION);
+	@keywords = @params.keywords;
+	
 	SELECT COUNT(*) AS cnt INTO wic_user_page_access
 	FROM
-		wic_user_page_access;
+		wic_user_page_access
+	WHERE
+		wic_user_page_access.user_id = $params.user_id AND
+		wic_user_page_access.referrer LIKE $params.referrer AND
+		wic_user_page_access.remote_host LIKE $params.remote_host AND
+		wic_user_page_access.url = $params.url AND
+		wic_user_page_access.referrer LIKE @keywords
+	ADJUST_WHERE = true;
 	
 	if($wic_user_page_access[0].cnt == null){
 		return 0;
@@ -45,3 +84,36 @@ function getNumRecord($IN, $SESSION)
 	
 	return Cast.toNumber($wic_user_page_access[0].cnt);
 }
+
+function getQueryParams($IN, $SESSION)
+{
+	if($IN.user_id != ""){
+		$params.user_id = String.trim($IN.user_id);
+	}
+	if($IN.referrer != ""){
+		$params.referrer = "%" + String.trim($IN.referrer) + "%";
+	}
+	if($IN.remote_host != ""){
+		$params.remote_host = String.trim($IN.remote_host);
+	}
+	if($IN.url != ""){
+		$params.url = String.trim($IN.url);
+	}
+	if($IN.keywords != ""){
+		@words = String.split($IN.keywords, ",");
+		
+		$idx = 0;
+		$size = Array.size(@words);
+		for($i = 0; $i < $size; $i++){
+			$val = String.trim($words[$i]);
+			if($val != ""){
+				$params.keywords[$idx++] = "http%?%" + $val + "%";
+			}
+		}
+		
+	}
+	
+	return $params;
+}
+
+

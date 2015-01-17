@@ -1,0 +1,30 @@
+
+$dom = $args[0];
+$params = $args[1];
+
+if(String.toLowerCase($dom.name) == "img"){
+	return handleText($dom, $params);
+}
+
+
+return $dom;
+
+
+function handleText($dom, $params)
+{
+	$size = Array.size(@params.words);
+	for($i = 0; $i < $size; $i++){
+		handleWord($dom, $params.words[$i]);
+	}	
+	
+	return $dom;
+}
+
+function handleWord($dom, $words)
+{
+	$size = @words.match;
+	for($i = 0; $i < $size; $i++){
+	
+	}
+}
+

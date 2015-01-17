@@ -2,7 +2,7 @@
 include("/api/loganalyze.alns");
 include("/include/serialutils.alns");
 include("/admin/access/archiver/api/webarchive.alns");
-
+include("/admin/access/include/urlutils.alns");
 
 if($IN.cmd == "init"){
 	// archive in the background
@@ -44,12 +44,13 @@ function archive($IN, $SESSION)
 {
 	$currentTime = Timestamp.now();
 	$archiveExpire = Timestamp.add($currentTime, -1, "DATE");
+	$url = UrlUtils.getUrlSection($IN.url);
 	
 	SELECT archive_page.archive_page_id INTO archive_page
 	FROM
 		archive_page
 	WHERE
-		archive_page.page_url = $IN.url AND
+		archive_page.page_url = $url AND
 		archive_page.archived_time > $archiveExpire
 	LIMIT 1;
 	
@@ -59,7 +60,7 @@ function archive($IN, $SESSION)
 	
 	// archive here
 	$encode = "utf-8";
-	WebArchive.archivePage($IN.url, $postParams, $encode, $SESSION);	
+	WebArchive.archivePage($url, $postParams, $encode, $SESSION);	
 }
 
 function getAccessCode($IN, $SESSION, $HTTP)
@@ -87,6 +88,9 @@ function getAccessCode($IN, $SESSION, $HTTP)
 	
 	$retcode = $user_id + "_" + $access_id;
 	
+	$url = UrlUtils.getUrlSection($IN.url);
+	$qyerystring = UrlUtils.getQueryString($IN.url);
+	
 	BEGIN;
 	
 	INSERT INTO wic_user_page_access(
@@ -98,6 +102,7 @@ function getAccessCode($IN, $SESSION, $HTTP)
 		platform,
 		useragent,
 		url,
+		qyerystring,
 		referrer,
 		window_width,
 		window_height,
@@ -113,7 +118,8 @@ function getAccessCode($IN, $SESSION, $HTTP)
 		$IN.lang,
 		$IN.platform,
 		$IN.useragent,
-		$IN.url,
+		$url,
+		$qyerystring,
 		$IN.referrer,
 		$IN.windowWidth, // window_width,
 		$IN.windowHeight, // window_height,

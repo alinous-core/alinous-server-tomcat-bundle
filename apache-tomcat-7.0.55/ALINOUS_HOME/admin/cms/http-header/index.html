@@ -20,6 +20,7 @@
 <!--
 $(function() {
 	$("button").button();
+	$(".pageNavi a").button();
 	
 	var dialogDiv = document.getElementById('dialog');
 	if(!dialogDiv){
@@ -74,6 +75,24 @@ function deleteHeader(form, match_path)
 	
 	form.submit();
 }
+
+function reorganizeHreg(form)
+{
+	var bl = confirm("Are you sure to reorganize links in the Html of your documents ?");
+	if(!bl){
+		return;
+	}
+	
+	form.cmd.value = "reorganizeHref";
+	form.submit();
+}
+
+function gotoPage(form, page)
+{
+	form.page.value = page;
+	form.cmd.value = "";
+	form.submit();
+}
 -->
 </script>
 </head>
@@ -100,13 +119,33 @@ function deleteHeader(form, match_path)
 		</td>
 		<td>
 			<button type="button" onclick="this.form.submit();">Select</button>
+			<button type="button" onclick="newHeader(this.form)">New Header</button>
+			<button type="button" onclick="reorganizeHreg(this.form)">Reorganize href</button>
 		</td>
 	</tr>
 </table>
 
-<button type="button" onclick="newHeader(this.form)">New Header</button>
-<br />
-<br />
+
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
 
 <table width="100%" class="stdtable">
 	<tr>
@@ -153,6 +192,7 @@ function deleteHeader(form, match_path)
 
 
 <input type="hidden" name="cmd" value="" />
+<input type="hidden" name="page" value="{$IN.page}" />
 <input type="hidden" name="arg_match_path" value="" />
 </form>
 </blockquote>

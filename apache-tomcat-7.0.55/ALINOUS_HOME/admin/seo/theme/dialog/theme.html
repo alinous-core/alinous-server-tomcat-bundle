@@ -1,0 +1,30 @@
+<html>
+<head>
+<style>
+.graph {
+	background-color: #d3d6ff;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Page Theme</h1>
+
+<table class="stdtable">
+	<tr alns:iterate="@wmc_theme" alns:variable="oneRecord">
+		<td width="120">
+			{$oneRecord.keyword}
+		</td>
+		<td width="60">
+			{$oneRecord.value}
+		</td>
+		<td>
+			<div class="graph" style="width: {$oneRecord.rate}%;">l</div>
+		</td>
+	</tr>
+</table>
+
+
+</body>
+</html>

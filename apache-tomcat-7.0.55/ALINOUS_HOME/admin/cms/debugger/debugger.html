@@ -55,8 +55,12 @@ $(function()
 
 	editor.on("gutterClick", function(cm, n) {
 		var info = cm.lineInfo(n);
-				
-		cm.setGutterMarker(n, "breakpoints", info.gutterMarkers['breakpoints'] ? removeMarker(n, modulePath) : makeMarker(n, modulePath));
+		
+		if(!info.gutterMarkers){
+			cm.setGutterMarker(n, "breakpoints", makeMarker(n, modulePath, 1));
+		}else{
+			cm.setGutterMarker(n, "breakpoints", info.gutterMarkers['breakpoints'] ? removeMarker(n, modulePath, 1) : makeMarker(n, modulePath, 1));
+		}
 	});
 	
 	initBreakpoints(editor, modulePath);

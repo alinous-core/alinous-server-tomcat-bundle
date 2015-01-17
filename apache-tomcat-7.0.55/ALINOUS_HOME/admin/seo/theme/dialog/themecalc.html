@@ -1,0 +1,139 @@
+<html>
+<head>
+<script>
+$(function() {
+	$( "#btnclosedlg" ).click(function() {
+		
+		$( "#str01" ).val($("#dlgstr01").val());
+		$( "#sel01" ).val($("#dlgsel01").val());
+		
+		$( "#dialog" ).dialog( "close" );
+	});
+	$( "#dlganalyze" ).click(function() {
+	
+		document.frm.title.value = this.form.title.value;
+		document.frm.body.value = this.form.body.value;
+		document.frm.header.value = this.form.header.value;
+		document.frm.footer.value = this.form.footer.value;
+		document.frm.aside.value = this.form.aside.value;
+		document.frm.nav.value = this.form.nav.value;
+		document.frm.article.value = this.form.article.value;
+		
+		document.frm.h1.value = this.form.h1.value;
+		document.frm.h2.value = this.form.h2.value;
+		document.frm.h3.value = this.form.h3.value;
+		document.frm.h4.value = this.form.h4.value;
+		
+		document.frm.cmd.value = "theme";
+		document.frm.submit();
+		
+	});
+	
+});
+</script>
+</head>
+<body>
+
+<h1>Analyze Theme</h1>
+
+<form name="dlgfrm" action="theme.html">
+<table>
+	<tr>
+		<td>
+			Title :
+		</td>
+		<td>
+			<input type="text" name="title" value="{$IN.title}" style="width:40px;" />
+		</td>
+		<td>
+			Body :
+		</td>
+		<td>
+			<input type="text" name="body" value="{$IN.body}" style="width:40px;" />
+		</td>
+		<td>
+			Header :
+		</td>
+		<td>
+			<input type="text" name="header" value="{$IN.header}" style="width:40px;" />
+		</td>
+		<td>
+			Footer :
+		</td>
+		<td>
+			<input type="text" name="footer" value="{$IN.footer}" style="width:40px;" />
+		</td>
+		<td>
+			Aside :
+		</td>
+		<td>
+			<input type="text" name="aside" value="{$IN.aside}" style="width:40px;" />
+		</td>
+		<td>
+			Nav :
+		</td>
+		<td>
+			<input type="text" name="nav" value="{$IN.nav}" style="width:40px;" />
+		</td>
+		<td>
+			Article :
+		</td>
+		<td>
+			<input type="text" name="article" value="{$IN.article}" style="width:40px;" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			H1 :
+		</td>
+		<td>
+			<input type="text" name="h1" value="{$IN.h1}" style="width:40px;" />
+		</td>
+		<td>
+			H2 :
+		</td>
+		<td>
+			<input type="text" name="h2" value="{$IN.h2}" style="width:40px;" />
+		</td>
+		<td>
+			H3 :
+		</td>
+		<td>
+			<input type="text" name="h3" value="{$IN.h3}" style="width:40px;" />
+		</td>
+		<td>
+			H4 :
+		</td>
+		<td>
+			<input type="text" name="h4" value="{$IN.h4}" style="width:40px;" />
+		</td>
+		<td>
+			
+		</td>
+		<td>
+			
+		</td>
+		<td>
+			
+		</td>
+		<td>
+			
+		</td>
+		<td>
+			
+		</td>
+		<td>
+			
+		</td>
+	</tr>
+
+</table>
+
+<center>
+<button type="button" id="dlganalyze">Analyze Theme</button>
+</center>
+
+</form>
+
+</body>
+</html>

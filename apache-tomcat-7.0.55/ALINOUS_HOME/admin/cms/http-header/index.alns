@@ -1,11 +1,14 @@
 
 include("/include/sitesetting.alns");
 include("/include/httpheader.alns");
+include("/include/paging.alns");
 
 if($IN.cmd == "delete"){
 	deleteHeader($IN, $SESSION);
 }
-
+else if($IN.cmd == "reorganizeHref"){
+	reorganizeHref($IN, $SESSION);
+}
 
 
 @sites = SiteSetting.getSiteFromPages();
@@ -13,15 +16,127 @@ initParams($IN, $SESSION, @sites);
 
 Redirects.sync($IN.site);
 
+$limit = 15;
 
-SELECT * INTO http_path_match
-FROM
-	http_path_match
-WHERE
-	http_path_match.site_path = $IN.site
-ORDER BY http_path_match.match_path;
+@http_path_match = getRedirects($IN, $SESSION, $limit);
+
+$totalRecords = getNumRedirects($IN, $SESSION);
+
+$navi = Paging.getNavi($IN.page, $limit, $totalRecords, 10);
 
 return 0;
+
+
+function reorganizeHref($IN, $SESSION)
+{
+	SELECT * INTO http_path_match
+	FROM
+		http_path_match
+	WHERE
+		http_path_match.site_path = $IN.site AND
+		http_path_match.redirect_host = '' AND
+		http_path_match.return_code = '301'
+	ORDER BY http_path_match.redirect_path;
+	
+	$size = Array.size(@http_path_match);
+	for($i = 0; $i < $size; $i++){
+		$context[$i].path = $http_path_match[$i].match_path;
+		$context[$i].newPath = $http_path_match[$i].redirect_path;
+		if($http_path_match[$i].match_type == "directory-match"){
+			$context[$i].type = "directory";
+		}else{
+			$context[$i].type = "file";
+		}
+	}
+	
+	SELECT * INTO site_setting
+	FROM
+		site_setting
+	WHERE
+		site_setting.site_path = $IN.site;
+	
+	$idx = 0;
+	$size = Array.size(@site_setting);
+	for($i = 0; $i < $size; $i++){
+		$siteContext[$idx].path = "http://" + $site_setting[$i].site_domain;
+		$siteContext[$idx].newPath = "";
+		$siteContext[$idx].type = "directory";
+		$idx++;
+		
+		$siteContext[$idx].path = "https://" + $site_setting[$i].site_domain;
+		$siteContext[$idx].newPath = "";
+		$siteContext[$idx].type = "directory";
+		$idx++;
+	}
+	
+	SELECT cms_page.cms_page_id INTO cms_page
+	FROM 
+		cms_page
+	ORDER BY cms_page.cms_page_id;
+	
+	$size = Array.size(@cms_page);
+	for($i = 0; $i < $size; $i++){
+		reorganizePage($cms_page[$i].cms_page_id, @context, @siteContext);
+	}
+}
+
+function reorganizePage($cms_page_id, @context, @siteContext)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	$page_body = UrlMigration.replaceAnchors($cms_page[0].page_body, @siteContext);
+	$page_body = UrlMigration.replaceAnchors($page_body, @context);
+	
+	$draft_page_body = UrlMigration.replaceAnchors($cms_page[0].draft_page_body, @siteContext);
+	$draft_page_body = UrlMigration.replaceAnchors($draft_page_body, @context);
+	
+	BEGIN;
+	
+	UPDATE cms_page
+	SET
+		page_body = $page_body,
+		draft_page_body = $draft_page_body
+	WHERE
+		cms_page.cms_page_id = $cms_page_id;
+	
+	
+	COMMIT;
+	
+}
+
+function getRedirects($IN, $SESSION, $limit)
+{
+	$offset = $IN.page * $limit;
+	
+	SELECT * INTO http_path_match
+	FROM
+		http_path_match
+	WHERE
+		http_path_match.site_path = $IN.site
+	ORDER BY http_path_match.match_path
+	LIMIT $limit OFFSET $offset;
+	
+	return @http_path_match;
+}
+
+function getNumRedirects($IN, $SESSION)
+{
+	SELECT count(*) AS cnt INTO http_path_match
+	FROM
+		http_path_match
+	WHERE
+		http_path_match.site_path = $IN.site;
+	
+	if($http_path_match[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($http_path_match[0].cnt);
+}
 
 function deleteHeader($IN, $SESSION)
 {
@@ -39,5 +154,8 @@ function initParams($IN, $SESSION, @sites)
 {
 	if($IN.site == null){
 		$IN.site = $sites[0];
+	}
+	if($IN.page == null){
+		$IN.page = 0;
 	}
 }

@@ -1,0 +1,41 @@
+
+
+/*
+include("/admin/access/include/urlutils.alns");
+*/
+
+$url = "https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=5&cad=rja&uact=8&ved=0CEEQFjAE&url=https%3A%2F%2Fwww.alinous.org%2Fweb-developer%2Fdesign-pattern%2Ffullcalendar.html&ei=jCqmVPK7No2QuASPqYKICQ&usg=AFQjCNH1PAs4fph6y1nSCeymoVsv_aWigw";
+
+$qs = UrlUtils.getQueryString($url);
+$url = UrlUtils.getUrlSection($url);
+
+
+SELECT * INTO wic_user_page_access
+FROM
+	wic_user_page_access
+WHERE
+	wic_user_page_access.platform LIKE @pl
+ADJUST_WHERE = true;
+
+return 0;
+
+function UrlUtils.getQueryString($url)
+{
+	@emenents = String.split($url, "\?");
+	if(Array.size(@emenents) < 2){
+		return "";
+	}
+	
+	return $emenents[1];
+}
+
+function UrlUtils.getUrlSection($url)
+{
+	@emenents = String.split($url, "\?");
+	if(Array.size(@emenents) < 2){
+		return $url;
+	}
+	
+	return $emenents[0];
+}
+

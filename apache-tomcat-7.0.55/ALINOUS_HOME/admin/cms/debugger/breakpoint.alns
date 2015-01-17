@@ -29,6 +29,10 @@ function addBreakpoint($IN, $SESSION)
 	BEGIN;
 	WebDebugger.addBreakpoint($IN.modulePath, $IN.line);
 	COMMIT;
+	
+	if($IN.change == 1){
+		Debugger.setBreakpoint($IN.modulePath, $IN.line);
+	}
 }
 
 function removeBreakpoint($IN, $SESSION)
@@ -36,6 +40,11 @@ function removeBreakpoint($IN, $SESSION)
 	BEGIN;
 	WebDebugger.removeBreakpoint($IN.modulePath, $IN.line);
 	COMMIT;
+	
+	if($IN.change == 1){
+		Debugger.removeBreakpoint($IN.modulePath, $IN.line);
+	}
+	// Debugger.clearAllBreakpoints($IN.modulePath);
 }
 
 function clearBreakpoints($IN, $SESSION)

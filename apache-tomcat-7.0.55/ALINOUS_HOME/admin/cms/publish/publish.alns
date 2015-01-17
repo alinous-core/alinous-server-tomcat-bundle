@@ -18,19 +18,37 @@ function Publish.publishPage($cms_page_id)
 	$contextRoot = "";
 	for($i = 0; $i < $pages; $i++){
 		TopTmpl.sync($template_top_id, "");
-		Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $i);
+		Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $i, $pages);
 	}
 	
+	// Mobile
 	$template_top_id = Publish.getSecondaryTopTemplateId($cms_page_id);
+	if($template_top_id != null && $template_top_id != 0){
+		$pages = Publish.getPaging($template_top_id, $cms_page_id, $genCode);
+		
+		SELECT cms_page.second_template_context INTO cms_page
+		FROM
+			cms_page
+		WHERE
+			cms_page.cms_page_id = $cms_page_id;
+		
+		$fileExt = "";
+		$contextRoot = $cms_page[0].second_template_context;
+		for($i = 0; $i < $pages; $i++){
+			TopTmpl.sync($template_top_id, "");
+			Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $i, $pages);
+		}		
+	}
 	
-	Publish.setDirty($cms_page_id);
+	
+	Publish.setDirty($cms_page_id, "");
 	
 	return 0;
 }
 
-function Publish.setDirty($cms_page_id)
+function Publish.setDirty($cms_page_id, $context)
 {
-	$module = Publish.getPublishPagePath($cms_page_id, 0);
+	$module = Publish.getPublishPagePath($cms_page_id, 0, $context);
 	$fileName = $module.fileName;
 	
 	$published = File.getTimestamp($fileName);
@@ -46,9 +64,9 @@ function Publish.setDirty($cms_page_id)
 	COMMIT;
 }
 
-function Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $page)
+function Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoot, $page, $numPages)
 {
-	$module = Publish.getPublishPagePath($cms_page_id, $page);
+	$module = Publish.getPublishPagePath($cms_page_id, $page, $contextRoot);
 	
 	$fileName = $module.fileName;
 	
@@ -81,6 +99,7 @@ function Publish.doPublish($template_top_id, $cms_page_id, $fileExt, $contextRoo
 	$params.cms_page_id = $cms_page[0].cms_page_id;
 	$params.node_id = $cms_page[0].node_id;
 	$params.page = $page;
+	$params.numPages = $numPages;
 	$params.publish = "publish-meta";
 	
 	Html.outputHtml($htmlPath, $metaFile, $params, false, "utf-8");
@@ -181,7 +200,7 @@ function Publish.getPaging($template_top_id, $cms_page_id, $genCode)
 
 function Publish.getSecondaryTopTemplateId($cms_page_id)
 {
-	SELECT template_top_id INTO cms_page
+	SELECT second_template_top_id INTO cms_page
 	FROM
 		cms_page
 	WHERE
@@ -214,7 +233,7 @@ function Publish.getTopTemplateId($cms_page_id)
 	return $cms_page[0].template_top_id;
 }
 
-function Publish.getPublishPagePath($cms_page_id, $page)
+function Publish.getPublishPagePath($cms_page_id, $page, $contextPath)
 {
 	SELECT cms_page.force_folder, tree_model.page_children, tree_model.page_path
 	INTO cms_page
@@ -226,24 +245,60 @@ function Publish.getPublishPagePath($cms_page_id, $page)
 		tree_model.tree_id = 'cms' AND
 		cms_page.cms_page_id = $cms_page_id;
 	
+	if($contextPath == ""){
+		$ctx = "";
+	}else{
+		$ctx = "/" + $contextPath;
+	}
+	
 	if($page == 0){
 		if($cms_page[0].page_children > 0 || $cms_page[0].force_folder > 0){
-			$module.fileName = "/html" + $cms_page[0].page_path + "/index.html";
-			$module.alinous = "/html" + $cms_page[0].page_path + "/index.alns";
+			$module.fileName = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + "/index.html";
+			$module.alinous = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + "/index.alns";
 		}else{
-			$module.fileName = "/html" + $cms_page[0].page_path + ".html";
-			$module.alinous = "/html" + $cms_page[0].page_path + ".alns";
+			$module.fileName = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + ".html";
+			$module.alinous = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + ".alns";
 		}
 		
 		return $module;
 	}
 	
-	$module.fileName = "/html" + $cms_page[0].page_path + "/" + $page + "/index.html";
-	$module.alinous = "/html" + $cms_page[0].page_path + "/" + $page + "/index.alns";
+	$module.fileName = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + "/" + $page + "/index.html";
+	$module.alinous = "/html" + Publish.addContextPath($cms_page[0].page_path, $contextPath) + "/" + $page + "/index.alns";
 	
 	return $module;
 }
 
+function Publish.addContextPath($pagePath, $context)
+{
+	if($context == ""){
+		return $pagePath;
+	}
+
+	@elements = String.split($pagePath, "/");
+	
+	$ret = "";
+	
+	$cnt = 0;
+	$size = Array.size(@elements);
+	for($i = 0; $i < $size; $i++){
+		if($elements[$i] == ""){
+			continue;
+		}
+		
+		if($cnt == 1){
+			$ret = $ret + "/" + $context;
+		}
+		$ret = $ret + "/" + $elements[$i];
+		$cnt++;
+	}
+	
+	if($cnt == 1){
+		$ret = $ret + "/" + $context;
+	}
+	
+	return $ret;
+}
 
 function Publish.getPublishPageUrlPath($cms_page_id)
 {
@@ -259,7 +314,7 @@ function Publish.getPublishPageUrlPath($cms_page_id)
 	
 	$path =  Publish.removeSiteSection($cms_page[0].page_path);
 	
-	if($cms_page[0].page_children > 0 || $cms_page[0].force_folder > 0){
+	if($cms_page[0].page_children > 0 || $cms_page[0].force_folder == 1){
 		$fileName = $path + "/index.html";
 	}else{
 		$fileName = $path + ".html";

@@ -20,6 +20,8 @@ function createScrollHeatmap($IN, $SESSION)
 		hm_scroll_name,
 		hm_height,
 		archive_page_id,
+		referrer,
+		keywords,
 		hm_start,
 		hm_end
 	)
@@ -28,6 +30,8 @@ function createScrollHeatmap($IN, $SESSION)
 		$IN.hm_master_name, // hm_scroll_name,
 		$docSize.height, // hm_height,
 		$IN.archive_page_id, // archive_page_id,
+		$IN.referrer,
+		$IN.keywords,
 		$start, // hm_start,
 		$end // hm_end
 	);
@@ -45,6 +49,8 @@ function createScrollHeatmap($IN, $SESSION)
 	$params.page_url = $IN.hm_master_url;
 	$params.start = $start;
 	$params.end = $end;
+	$params.referrer = $IN.referrer;
+	$params.keywords = $IN.keywords;
 	
 	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
 	
@@ -62,6 +68,7 @@ function backgroundJob($params)
 		
 		HeatmapScroll.makeScrollData($params.hm_scroll_hm_id, $params.page_url,
 						$params.start, $params.end,
+						$params.referrer, $params.keywords,
 						$params.jobId, $SESSION);
 		
 		HeatmapScroll.generateImage($params.hm_scroll_hm_id, $params.docSize.width, $SESSION);

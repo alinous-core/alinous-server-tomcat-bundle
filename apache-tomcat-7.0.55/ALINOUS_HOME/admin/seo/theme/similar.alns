@@ -1,0 +1,76 @@
+
+
+if($IN.cmd == "back"){
+	redirect "/admin/seo/theme/index.html?scroll=" + $IN.last_scroll;
+}
+
+$page = getCurrentPage($IN, $SESSION);
+
+@wmc_theme_similarity = similarPages($IN, $SESSION);
+
+return 0;
+
+
+function similarPages($IN, $SESSION)
+{
+	SELECT * INTO wmc_theme_similarity
+	FROM	
+		wmc_theme_similarity LEFT JOIN cms_page
+		ON
+			wmc_theme_similarity.cms_page_id_2 = cms_page.cms_page_id
+	WHERE
+		wmc_theme_similarity.cms_page_id = $IN.cms_page_id
+	ORDER BY wmc_theme_similarity.value DESC;
+	
+	$size = Array.size(@wmc_theme_similarity);
+	for($i = 0; $i < $size; $i++){
+		if($wmc_theme_similarity[$i].page_sub_title != ""){
+			$wmc_theme_similarity[$i].page_title = $wmc_theme_similarity[$i].page_title + " - " + $wmc_theme_similarity[$i].page_sub_title;
+		}
+		
+		$wmc_theme_similarity[$i].url = getUrl($wmc_theme_similarity[$i].cms_page_id_2);
+	}
+	
+	return @wmc_theme_similarity;
+}
+
+function getUrl($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+  	
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return "/";
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+    if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+    	return $path + "/";
+    }
+    
+    return $path + ".html";
+}
+
+function getCurrentPage($IN, $SESSION)
+{
+	SELECT * INTO cms_page
+	FROM
+		cms_page LEFT JOIN tree_model
+		ON
+			cms_page.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'cms'
+	WHERE
+		cms_page.cms_page_id = $IN.cms_page_id;
+	
+	return $cms_page[0];
+}

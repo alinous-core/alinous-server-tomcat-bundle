@@ -8,6 +8,7 @@ include("/include/template_primitive.alns");
 include("/include/rss.alns");
 
 $path = $args[0];
+$useContext = $args[1];
 
 if(String.endsWith($path, ".rss")){
 	@pathel = String.split($path, "/");
@@ -74,23 +75,32 @@ WHERE
 	tree_model.page_path = $path;
 
 if(Array.size(@tree_model) == 0){
+	// retry for pc's mobile page access
+	
+	
 	return 0;
 }
 
-SELECT cms_page_id, page_status, published_time, force_folder, dirty INTO cms_page
+SELECT cms_page_id, page_status, published_time, force_folder, dirty, second_template_context INTO cms_page
 FROM
 	cms_page
 WHERE
 	cms_page.node_id = $tree_model[0].node_id;
 
+//set context
+$context = "";
+if($useContext == 1){
+	$context = $cms_page[0].second_template_context;
+}
+
 // normal case
 if($page == 0 && ($tree_model[0].page_children > 0 || $cms_page[0].force_folder > 0)){
-	$fileName = "/html" + $path + "/index.html";
+	$fileName = "/html" + Publish.addContextPath($path, $context) + "/index.html";
 }else if($page == 0){
-	$fileName = "/html" + $path + ".html";
+	$fileName = "/html" + Publish.addContextPath($path, $context) + ".html";
 }
 else {
-	$fileName = "/html" + $path + "/" + $page + "/index.html";
+	$fileName = "/html" + Publish.addContextPath($path, $context) + "/" + $page + "/index.html";
 }
 
 
@@ -104,7 +114,7 @@ if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_statu
 		// FIXME publish
 		System.println("Publish because no file : " + $cms_page[0].cms_page_id);
 		
-		lazyPublish($cms_page[0], $path, $page);
+		lazyPublish($cms_page[0], $path, $page, $useContext);
 		return 0;
 	}
 	// check timestamp
@@ -114,7 +124,7 @@ if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_statu
 		// FIXME publish
 		System.println("Publish because dirty");
 		
-		lazyPublish($cms_page[0], $path, $page);
+		lazyPublish($cms_page[0], $path, $page, $useContext);
 		return 0;
 	}
 	
@@ -122,7 +132,7 @@ if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_statu
 		// FIXME publish
 		System.println("Publish because dirty");
 		
-		lazyPublish($cms_page[0], $path, $page);
+		lazyPublish($cms_page[0], $path, $page, $useContext);
 		
 		return 0;
 	}
@@ -141,13 +151,29 @@ System.println("Use Cached file");
 
 return 0;
 
-function lazyPublish($cms_page, $path, $page)
+function lazyPublish($cms_page, $path, $page, $useContext)
 {
 	$fileExt = "";
-	$contextRoot = "";
 	
-	$template_top_id = Publish.getTopTemplateId($cms_page.cms_page_id);
+	$contextRoot = "";
+	if($useContext == 1){
+		$contextRoot = $cms_page.second_template_context;
+	}
+	
+	if($useContext == 1){
+		$template_top_id = Publish.getSecondaryTopTemplateId($cms_page.cms_page_id);
+	}else{
+		$template_top_id = Publish.getTopTemplateId($cms_page.cms_page_id);
+	}
+	
+	if($template_top_id == null){
+		return 0;
+	}
+	
 	TopTmpl.sync($template_top_id, "");
 	
-	Publish.doPublish($template_top_id, $cms_page.cms_page_id, $fileExt, $contextRoot, $page);
+	$genCode = "";
+	$numPages = Publish.getPaging($template_top_id, $cms_page.cms_page_id, $genCode);
+	
+	Publish.doPublish($template_top_id, $cms_page.cms_page_id, $fileExt, $contextRoot, $page, $numPages);
 }

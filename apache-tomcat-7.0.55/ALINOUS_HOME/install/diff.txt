@@ -1,0 +1,10 @@
+ALTER TABLE hm_master
+   ADD COLUMN keywords text NOT NULL DEFAULT '';
+ALTER TABLE hm_master
+   ADD COLUMN referrer text NOT NULL DEFAULT '';
+
+ALTER TABLE hm_scroll_hm
+   ADD COLUMN keywords text NOT NULL DEFAULT '';
+ALTER TABLE hm_scroll_hm
+   ADD COLUMN referrer text NOT NULL DEFAULT '';
+

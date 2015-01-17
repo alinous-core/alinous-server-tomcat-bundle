@@ -61,10 +61,21 @@ function Editor.exexuteCommand($IN, $SESSION)
 	else if($IN.cmd == "site.newDomain"){
 		newDomain($IN, $SESSION);
 		SiteSetting.sync();
+		SiteSetting.syncSp();
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "site.newSpDomain"){
+		newSpDomain($IN, $SESSION);
+		SiteSetting.sync();
+		SiteSetting.syncSp();
 		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
 	}
 	else if($IN.cmd == "site.removeDomain"){
 		removeDomain($IN, $SESSION);
+		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
+	}
+	else if($IN.cmd == "site.removeSpDomain"){
+		removeSpDomain($IN, $SESSION);
 		return "/admin/cms/article/index.html?selectedNodeId=" + $IN.selectedNodeId;
 	}
 	else if($IN.cmd == "removeTag"){
@@ -115,6 +126,23 @@ function removeDomain($IN, $SESSION)
 	return 0;
 }
 
+function removeSpDomain($IN, $SESSION)
+{
+	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
+	
+	BEGIN;
+	
+	DELETE FROM site_mobile_setting
+	WHERE
+		site_mobile_setting.site_path = $node.page_path AND
+		site_mobile_setting.site_domain = $IN.site_domain;
+	
+	COMMIT;
+	
+	return 0;
+}
+
+
 function newDomain($IN, $SESSION)
 {
 	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
@@ -144,6 +172,37 @@ function newDomain($IN, $SESSION)
 	
 	return 0;
 }
+
+function newSpDomain($IN, $SESSION)
+{
+	$node = TreeModel.getNode("cms", $IN.selectedNodeId);
+	
+	BEGIN;
+	
+	if($IN.sp_use_context == null){
+		$IN.sp_use_context = 0;
+	}
+	
+	INSERT INTO site_mobile_setting(
+		site_path,
+		site_domain,
+		src_site_domain,
+		template_use,
+		use_context,
+		force_https
+	)
+	VALUES(
+		$node.page_path, // site_path,
+		$IN.sp_site_domain,
+		$IN.sp_src_site_domain,
+		$IN.sp_template_use,
+		$IN.sp_use_context,
+		$IN.sp_force_https
+	);
+	
+	COMMIT;
+}
+
 
 function Editor.makeDirty($nodeId, $effect_range)
 {
@@ -192,7 +251,7 @@ function Editor.makeDirty($nodeId, $effect_range)
 			SELECT node_id FROM tree_model
 			WHERE
 				tree_model.tree_id = 'cms' AND
-				tree_model.page_path LIKE $likeStr
+				(tree_model.page_path LIKE $likeStr OR tree_model.page_path = $site)
 		);
 	
 	COMMIT;
@@ -232,6 +291,7 @@ function Editor.update($IN, $SESSION)
 	UPDATE cms_page
 	SET
 		page_status = $page_status,
+		page_type = $IN.page_type,
 		
 		template_top_id = $IN.template_top_id,
 		second_template_top_id = $IN.second_template_top_id,

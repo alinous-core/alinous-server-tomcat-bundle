@@ -1,0 +1,209 @@
+<html>
+<head>
+<title>Alinous-CMS</title>
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+	$(".pageNavi a").button();
+	
+	var dialogDiv = document.getElementById('dialog');
+	if(!dialogDiv){
+		dialogDiv = document.createElement('div');
+		dialogDiv.id = 'dialog';
+		
+		var s = document.getElementsByTagName('form')[0];
+		s.parentNode.insertBefore(dialogDiv, s);
+	}
+	
+	$( "#dialog" ).dialog({
+		height: 200,
+		width: 450,
+		modal: true,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 250
+		},
+		hide: {
+			effect: "explode",
+			duration: 250
+		}
+	});
+	
+});
+
+function operate(form)
+{
+	var url = "/admin/cms/article-move/dialog/selectop.html";
+	var site = form.site.value;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site: site
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+function research(form)
+{
+	form.cmd.value = "";
+	form.page.value = 0;
+	form.submit();
+}
+function gotoPage(form, page)
+{
+	form.page.value = page;
+	form.cmd.value = "";
+	form.submit();
+}
+-->
+</script>
+</head>
+<body>
+
+<div id="wrap">
+
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Moved Documents Log</h1>
+
+<form name="frm" action="index.html" method="POST">
+
+<input type="hidden" name="page" value="{$IN.page}" />
+<input type="hidden" name="cmd" value="" />
+
+<blockquote>
+
+<table>
+	<tr>
+		<td>
+			<b>Select Site :</b>
+		</td>
+		<td>
+			<select name="site" id="site" value="{$IN.site}" style="width:100%;">
+			<option value="{$s}" alns:iterate="@sites" alns:variable="s">{$s}</option>
+			</select>
+		</td>
+		<td>
+			Source:
+		</td>
+		<td>
+			<input type="text" name="src_location" value="{$IN.src_location}" maxlength="512" style="width:280px;" />
+		</td>
+		<td>
+			Destination:
+		</td>
+		<td>
+			<input type="text" name="dst_location" value="{$IN.dst_location}" maxlength="512" style="width:280px;" />
+		</td>
+	</tr>
+	<tr>
+		<td>
+			Done:
+		</td>
+		<td>
+			<input type="checkbox" name="done" value="1" checked="{$IN.chk_done}" />
+		</td>
+		<td>
+			Pending:
+		</td>
+		<td>
+			<input type="checkbox" name="pending" value="1" checked="{$IN.chk_pending}" />
+		</td>
+		<td>
+			<button type="button" onclick="research(this.form)">Search</button>
+		</td>
+		<td>
+			<button type="button" onclick="operate(this.form)">Select Operation</button>
+		</td>
+	</tr>
+</table>
+
+
+<div class="pageNavi">
+<b>Total Records:</b> {$totalRecords}
+<span alns:if="{BOOL($navi.prevPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.prevPage})">Previous</a>
+</span>
+<span alns:if="{BOOL($navi.nextPage != null)}">
+<a href="javascript:gotoPage(document.frm, {$navi.nextPage})">Next</a>
+</span>
+
+<b>Select Page</b>
+<span alns:iterate="@navi.pages" alns:variable="p">
+	<span alns:if="{BOOL($p != $IN.page)}">
+	<a href="javascript:gotoPage(document.frm, {$p})">{$p.disp}</a>
+	</span>
+	<span alns:if="{BOOL($p == $IN.page)}">
+	<u><b>{$p.disp}</b></u>
+	</span>
+</span>
+</div>
+
+<table class="stdtable">
+	<tr>
+		<th width="20">
+			
+		</th>
+		<th  width="70">
+			Done
+		</th>
+		<th>
+			Source
+		</th>
+		<th>
+			Destination
+		</th>
+	</tr>
+	<tr alns:iterate="@tree_move" alns:variable="oneRecord">
+		<td align="center">
+			<input type="checkbox" name="tree_move_ids[]" value="{$oneRecord.tree_move_id}" />
+		</td>
+		<td align="center">
+			<span alns:if="{BOOL($oneRecord.done == 0)}">Pending</span>
+			<span alns:if="{BOOL($oneRecord.done == 1)}">Done</span>
+		</td>
+		<td>
+			{$oneRecord.src_location}
+		</td>
+		<td>
+			{$oneRecord.dst_location}
+		</td>
+	</tr>
+</table>
+</blockquote>
+
+</form>
+
+
+
+</div>
+
+
+</body>
+</html>

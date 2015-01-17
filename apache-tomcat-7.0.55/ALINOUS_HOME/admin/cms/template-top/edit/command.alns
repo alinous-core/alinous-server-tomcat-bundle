@@ -39,6 +39,7 @@ function editSave($IN, $SESSION)
 		div_id = $IN.div_id,
 		code_css = $IN.code_css,
 		code_html = $IN.code_html,
+		code_js = $IN.code_js,
 		code_alinous = $IN.code_alinous
 	WHERE
 		template_top.template_top_id = $IN.currentTemplateId;

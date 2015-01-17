@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Content Keywords of the Web Master tools</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+function chekcBalance(form)
+{
+	form.cmd.value = "check";
+	form.submit();
+}
+function reflesh(form)
+{
+	form.cmd.value = "reflesh";
+	form.submit();
+}
+
+function pages(form, keyword)
+{
+	var scroll = document.documentElement.scrollTop || document.body.scrollTop;
+	$("#scroll").val(scroll);
+	
+	form.keyword.value = keyword;
+	form.cmd.value = "pages";
+	form.submit();
+}
+
+function ignore(form, keyword)
+{
+	form.keyword.value = keyword;
+	form.cmd.value = "ignore";
+	form.submit();
+}
+
+function showIgnored(site_path)
+{
+	var url = "/admin/seo/balance/dialog/ignore.html";
+			
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			site_path: site_path
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+	var scroll = document.documentElement.scrollTop || document.body.scrollTop;
+	$("#scroll").val(scroll);
+}
+
+$(function() {
+	$(".jq").button();
+	$(".pageNavi a").button();
+	$(".playbtn").button();
+	
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 300
+		},
+		hide: {
+			effect: "explode",
+			duration: 300
+		}
+	});
+	
+	window.scroll( 0, $("#scroll").val() );
+});
+
+-->
+</script>
+<style>
+.graph {
+	background-color: #d3d6ff;
+}
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap" alns:if="{BOOL($showProgress == 0)}">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+<h2>Analyze Content Keywords Balance</h2>
+
+<form name="frm" action="index.html" method="POST">
+<p>
+	Check Keyword Balance for Content Keyword<br />
+	<button type="button" class="jq" onclick="reflesh(this.form)">Reflesh</button>
+	<button type="button" class="jq" onclick="chekcBalance(this.form)">Check Balance</button>
+	<button type="button" class="jq" onclick="showIgnored('{$IN.site_path}')">Ignored Keywords</button>
+</p>
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="keyword" value="" />
+<input type="hidden" name="keywords" value="" />
+<input type="hidden" name="site_path" value="{$IN.site_path}" />
+<input type="hidden" name="scroll" id="scroll" value="{$IN.scroll}" />
+
+<h2>Keywords</h2>
+
+<blockquote>
+<table class="stdtable">
+	<tr>
+		<th width="60">
+			Order
+		</th>
+		<th width="120">
+			Keyword
+		</th>
+		<th width="120">
+			Pages
+		</th>
+		<th width="120">
+			Ignore
+		</th>
+		<th width="120">
+			Occurrence
+		</th>
+		<th>
+			Graph
+		</th>
+	</tr>
+	<tr alns:iterate="@wmc_keyowrds" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.index}
+		</td>
+		<td>
+			{$oneRecord.keyword}
+		</td>
+		<td align="center">
+			<button type="button" onclick="pages(this.form, '{$oneRecord.keyword}')">Pages</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="ignore(this.form, '{$oneRecord.keyword}')">Ignore</button>
+		</td>
+		<td align="center">
+			{$oneRecord.count}
+		</td>
+		<td>
+			<div class="graph" style="width:{$oneRecord.rate}%;">I</div>
+			{$oneRecord.rate}%
+		</td>
+	</tr>
+</table>
+</blockquote>
+
+</form>
+
+<div id="dialog"></div>
+
+</div>
+
+<div id="wrap" alns:if="{BOOL($showProgress != 0)}">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+	<form name="frm" action="index.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress != 0)}">
+	
+	<h2>Now Analyzing Content Keywords Balance</h2>
+	
+	<input type="hidden" name="site_path" value="{$IN.site_path}" />
+	
+	
+	<input type="hidden" name="cmd" value="" />
+	<input type="hidden" name="showProgress" id="showProgress" value="{$showProgress}" />
+	
+	<blockquote>
+	<div id="progressbar"><div class="progress-label">Loading...</div></div>
+	</blockquote>
+	<script>
+	<!--
+	$(function() {
+		var progressbar = $( "#progressbar" );
+		var progressLabel = $( ".progress-label" );
+		
+		progressbar.progressbar({
+			value: false,
+			change: function() {
+				progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+			},
+			complete: function() {
+				progressLabel.text( "Complete!" );
+				
+				document.frm.submit();
+			}
+		});
+	
+		function progress() {
+			var val = progressbar.progressbar( "value" ) || 0;
+			var showProgress = $( "#showProgress" ).val();
+			var postStr = "job_id=" + showProgress;
+			
+			$.ajax({
+				type: "POST",
+				url: "/admin/seo/robotlog/watch.alns",
+				data: postStr,
+				processData: false,
+				success: function(msg)
+				{
+			    	val = parseInt(msg,10);
+			    	
+			    	progressbar.progressbar("value", val);
+			    	
+					if ( val < 100 ) {
+						setTimeout( progress, 1000 );
+					}				
+				}
+			});
+		};
+		
+		progress();
+		
+	});
+	-->
+	</script>
+	</form>
+
+</div>
+
+
+</body>
+</html>

@@ -4,8 +4,14 @@
 <!-- 
 function applyTemplate(form)
 {
+	if(form.second_template_context.value == ""){
+		alert("Input Root Context for Secondary Template");
+		return;
+	}
+	
 	document.frm.apply_template_top_id.value = form.template_top_id.value;
 	document.frm.apply_second_template_top_id.value = form.second_template_top_id.value;
+	document.frm.apply_second_template_context.value = form.second_template_context.value;
 	document.frm.cmd.value = "apply_template";
 	document.frm.page.value = 0;
 	document.frm.submit();
@@ -44,6 +50,14 @@ function applyTemplate(form)
 			<option alns:iterate="@template_top" alns:variable="t"
 				value="{$t.template_top_id}">{$t.template_top_name}</option>
 			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<b>Root Context for Secondary Template:</b>
+		</td>
+		<td>
+			<input type="text" name="second_template_context" value="mb" maxlength="12" style="width:40px;"/>
 		</td>
 	</tr>
 </table>

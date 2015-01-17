@@ -207,7 +207,7 @@ var nicEditorNewTableButton = nicEditorButton.extend({
 		new bkElement('option').setAttributes({value : '10', selected : ''}).setContent('10').appendTo(this.inputs[inputid]);
 		
 		inputid = "rows";
-		new bkElement('label').setAttributes({'for' : inputid}).setContent("Cols ").setStyle({margin : '2px 4px', fontSize : '13px', width: '70px', lineHeight : '20px', textAlign : 'right', 'float' : 'left'}).appendTo(this.form);
+		new bkElement('label').setAttributes({'for' : inputid}).setContent("Rows ").setStyle({margin : '2px 4px', fontSize : '13px', width: '70px', lineHeight : '20px', textAlign : 'right', 'float' : 'left'}).appendTo(this.form);
 		this.inputs[inputid] = new bkElement('select').setAttributes({id : inputid}).setStyle({border : '1px solid #ccc', 'float' : 'left', margin : '2px 0'}).appendTo(this.form);
 		
 		new bkElement('option').setAttributes({value : '1', selected : 'true'}).setContent('1').appendTo(this.inputs[inputid]);
@@ -243,7 +243,7 @@ var nicEditorNewTableButton = nicEditorButton.extend({
 			}
 		}
 		
-		for(var i = 0; i < rows; i++){
+		for(var i = 0; i < cols; i++){
 			var newTr = new bkElement('tr').appendTo(tableTag);
 			for(var j = 0; j < rows; j++){
 				new bkElement('td').setContent(i + "-" + j).appendTo(newTr);

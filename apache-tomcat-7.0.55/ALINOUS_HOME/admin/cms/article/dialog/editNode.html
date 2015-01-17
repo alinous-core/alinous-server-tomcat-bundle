@@ -10,11 +10,13 @@ $(function() {
 		
 		var page_title = document.editNodeFrm.page_title.value;
 		var template_top_id = document.editNodeFrm.template_top_id.value;
+		var second_template_top_id = document.editNodeFrm.second_template_top_id.value;
+		var second_template_context = document.editNodeFrm.second_template_context.value;
+		
 		var page_status = document.editNodeFrm.page_status.value;
 		var force_folder = document.editNodeFrm.force_folder.value;
 		
 		var page_type =  document.editNodeFrm.page_type.value;
-
 		
 		if(treeCode == ""){
 			alert("Input the Page Code");
@@ -46,6 +48,9 @@ $(function() {
 		
 		document.pagefrm.page_title.value = page_title;
 		document.pagefrm.template_top_id.value = template_top_id;
+		document.pagefrm.second_template_top_id.value = second_template_top_id;
+		document.pagefrm.second_template_context.value = second_template_context;
+		
 		document.pagefrm.page_status.value = page_status;
 		document.pagefrm.force_folder.value = force_folder;
 		document.pagefrm.page_type.value = page_type;
@@ -130,6 +135,20 @@ $(function() {
 				<option value="0">Use Default</option>
 				<option value="{$oneRecord.template_top_id}" alns:iterate="@template_top" alns:variable="oneRecord">{$oneRecord.template_top_name}</option>
 				</select>
+			</td>
+		</tr>
+		<tr>
+			<td width="160">
+				Second Template:
+			</td>
+			<td>
+				<select name="second_template_top_id" value="{$cms_page[0].second_template_top_id}">
+				<option value="0">Use Default</option>
+				<option value="{$oneRecord.template_top_id}" alns:iterate="@template_top" alns:variable="oneRecord">{$oneRecord.template_top_name}</option>
+				</select>
+				
+				Root Context:
+				<input type="text" name="second_template_context" value="{$cms_page[0].second_template_context}" size="5" maxlength="255"/>
 			</td>
 		</tr>
 		<tr>

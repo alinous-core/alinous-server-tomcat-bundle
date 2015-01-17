@@ -133,7 +133,13 @@ function initJqTree()
 						},
 						dataType: 'html',
 						success: function(data) {
+							var selectedNodeId = $("#selectedNodeId").val();
 							
+							if(movedNodeIdValue == selectedNodeId){
+								// alert(movedNodeIdValue + " : " + selectedNodeId);
+								
+								location.href = "/admin/cms/article/index.html?selectedNodeId=" + selectedNodeId;
+							}
 						},
 						error:function() {
 							alert('Error occur');

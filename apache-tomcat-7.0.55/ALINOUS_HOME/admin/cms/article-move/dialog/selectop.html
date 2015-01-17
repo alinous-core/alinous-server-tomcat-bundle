@@ -1,0 +1,33 @@
+<html>
+<body>
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$("button").button();
+});
+
+function sendCommand(command)
+{
+	var bl = confirm("Are you sure to execute?");
+	if(!bl){
+		return;
+	}
+	
+	document.frm.cmd.value = command;
+	document.frm.submit();
+}
+
+-->
+</script>
+
+<h2>Select Operation</h2>
+
+<form name="dlgfrm" action="selectop.html">
+
+<button type="button" onclick="sendCommand('create')">Create 301 Transfar Record</button>
+<button type="button" onclick="sendCommand('ignore')">Ignore</button>
+
+</form>
+
+</body>
+</html>

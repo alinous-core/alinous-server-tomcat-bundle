@@ -1,0 +1,220 @@
+
+include("/include/httpheader.alns");
+include("/include/paging.alns");
+include("/include/sitesetting.alns");
+
+$limit = 20;
+
+@sites = SiteSetting.getSiteFromPages();
+initParams($IN, $SESSION, @sites);
+
+if($IN.cmd == "create"){
+	create301($IN, $SESSION);
+}
+else if($IN.cmd == "ignore"){
+	ignore($IN, $SESSION);
+}
+
+@tree_move = getMovedLogs($IN, $SESSION, $limit);
+
+$totalRecords = getNumMovedLogs($IN, $SESSION);
+
+$navi = Paging.getNavi($IN.page, $limit, $totalRecords, 10);
+
+Redirects.sync($IN.site);
+
+return 0;
+
+function create301($IN, $SESSION)
+{
+	$size = Array.size(@IN.tree_move_ids);
+	for($i = 0; $i < $size; $i++){
+		$tree_move_id = $IN.tree_move_ids[$i];
+		
+		createHeader($tree_move_id, $IN.site);
+	}
+}
+
+function createHeader($tree_move_id, $site_path)
+{
+	BEGIN;
+	
+	SELECT * INTO tree_move
+	FROM
+		tree_move
+	WHERE
+		tree_move.tree_move_id = $tree_move_id
+	FOR UPDATE;
+	
+	if(Array.size(@tree_move) == 0){
+		ROLLBACK;
+		return 0;
+	}
+
+	// delete same source path
+	DELETE FROM
+		http_path_match
+	WHERE
+		http_path_match.site_path = $site_path AND
+		http_path_match.redirect_host = '' AND
+		http_path_match.match_type = 'file-match' AND
+		http_path_match.return_code = '301' AND
+		http_path_match.match_path = $tree_move[0].src_location;
+	
+	// check pop
+	SELECT * INTO http_path_match
+	FROM
+		http_path_match
+	WHERE
+		http_path_match.site_path = $site_path AND
+		http_path_match.redirect_host = '' AND
+		http_path_match.match_type = 'file-match' AND
+		http_path_match.return_code = '301' AND
+		http_path_match.redirect_path = $tree_move[0].src_location
+	FOR UPDATE;
+	
+	if(Array.size(@http_path_match) > 0){
+		UPDATE http_path_match
+		SET
+			redirect_path = $tree_move[0].dst_location
+		WHERE
+			http_path_match.site_path = $site_path AND
+			http_path_match.redirect_host = '' AND
+			http_path_match.match_type = 'file-match' AND
+			http_path_match.return_code = '301' AND
+			http_path_match.redirect_path = $tree_move[0].src_location;
+	}
+	else{
+		INSERT INTO http_path_match(
+			site_path,
+			match_path,
+			match_type,
+			return_code,
+			redirect_host,
+			redirect_path
+		)
+		VALUES(
+			$site_path,
+			$tree_move[0].src_location, // match_path,
+			'file-match', // match_type,
+			'301', // return_code,
+			'', // redirect_host,
+			$tree_move[0].dst_location // redirect_path
+		);
+	}
+	
+	UPDATE tree_move
+	SET
+		done = 1
+	WHERE
+		tree_move.tree_move_id = $tree_move_id;
+	
+	COMMIT;
+}
+
+function ignore($IN, $SESSION)
+{
+	$size = Array.size(@IN.tree_move_ids);
+	for($i = 0; $i < $size; $i++){
+	
+	}
+}
+
+function getMovedLogs($IN, $SESSION, $limit)
+{
+	$offset = $limit * $IN.page;
+	$params = queryParams($IN, $SESSION);
+	
+	SELECT * INTO tree_move
+	FROM
+		tree_move LEFT JOIN cms_page
+		ON
+			tree_move.node_id = cms_page.node_id
+	WHERE
+		tree_move.site_path = $params.site_path AND
+		tree_move.src_location LIKE $params.src_location AND
+		tree_move.dst_location LIKE $params.dst_location AND
+		(
+			tree_move.done = $params.done OR
+			tree_move.done = $params.pending
+		)
+	ORDER BY tree_move.done ASC, tree_move.src_location ASC
+	LIMIT $limit OFFSET $offset
+	ADJUST_WHERE = true;
+	
+	return @tree_move;
+}
+
+function getNumMovedLogs($IN, $SESSION)
+{
+	$params = queryParams($IN, $SESSION);
+	
+	SELECT count(*) AS cnt INTO tree_move
+	FROM
+		tree_move LEFT JOIN cms_page
+		ON
+			tree_move.node_id = cms_page.node_id
+	WHERE
+		tree_move.site_path = $params.site_path AND
+		tree_move.src_location LIKE $params.src_location AND
+		tree_move.dst_location LIKE $params.dst_location AND
+		(
+			tree_move.done = $params.done OR
+			tree_move.done = $params.pending
+		)
+	ADJUST_WHERE = true;
+	
+	if($tree_move[0].cnt == null){
+		return 0;
+	}
+	
+	return Cast.toNumber($tree_move[0].cnt);
+}
+
+function queryParams($IN, $SESSION)
+{
+	$params.site_path = $IN.site;
+	
+	if($IN.src_location != ""){
+		$params.src_location = "%" + $IN.src_location + "%";
+	}
+	if($IN.dst_location != ""){
+		$params.dst_location = "%" + $IN.dst_location + "%";
+	}
+	
+	if($IN.done == 1){
+		$params.done = 1;
+	}
+	if($IN.pending == 1){
+		$params.done = 0;
+	}
+	
+	
+	return $params;
+}
+
+function initParams($IN, $SESSION, @sites)
+{
+	if($IN.site == null){
+		$IN.site = $sites[0];
+	}
+	
+	if($IN.page == null){
+		$IN.page = 0;
+	}
+	if($IN.src_location == null){
+		$IN.src_location = "";
+	}
+	if($IN.dst_location == null){
+		$IN.dst_location = "";
+	}
+	
+	$IN.chk_done = false;
+	if($IN.done == 1){
+		$IN.chk_done = "checked";
+	}
+	$IN.chk_pending = false;
+	if($IN.pending == 1){
+		$IN.chk_pending = "checked";
+	}
+}

@@ -1,0 +1,12 @@
+
+
+SELECT * INTO wmc_keyowrds_ignore
+FROM
+	wmc_keyowrds_ignore
+WHERE
+	wmc_keyowrds_ignore.site_path = $IN.site_path
+ORDER BY wmc_keyowrds_ignore.keyword;
+
+
+
+return 0;

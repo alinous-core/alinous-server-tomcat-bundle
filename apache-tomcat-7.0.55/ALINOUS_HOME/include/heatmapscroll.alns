@@ -84,8 +84,26 @@ function HeatmapScroll.generateImage($hm_scroll_hm_id, $width, $SESSION)
 }
 
 function HeatmapScroll.makeScrollData($hm_scroll_hm_id, $hm_master_url, $start, $end,
+						$referrer, $keywords,
 						$jobId, $SESSION)
 {
+	if($referrer != ""){
+		$arg_referrer = "%" + String.trim($referrer) + "%";
+	}
+	if($keywords != ""){
+		@words = String.split($keywords, ",");
+		
+		$idx = 0;
+		$size = Array.size(@words);
+		for($i = 0; $i < $size; $i++){
+			$val = String.trim($words[$i]);
+			if($val != ""){
+				$arg_keywords[$idx++] = "http%?%" + $val + "%";
+			}
+		}
+		
+	}
+
 	SELECT user_id, access_id, documet_width, documet_height, window_height
 	INTO wic_user_page_access
 	FROM
@@ -93,8 +111,11 @@ function HeatmapScroll.makeScrollData($hm_scroll_hm_id, $hm_master_url, $start, 
 	WHERE
 		wic_user_page_access.url = $hm_master_url AND
 		wic_user_page_access.access_time >= $start AND
-		wic_user_page_access.access_time <= $end
-	ORDER BY wic_user_page_access.access_time DESC;
+		wic_user_page_access.access_time <= $end AND
+		wic_user_page_access.referrer LIKE $arg_referrer AND
+		wic_user_page_access.referrer LIKE @arg_keywords
+	ORDER BY wic_user_page_access.access_time DESC
+	ADJUST_WHERE = true;
 	
 
 	$size = Array.size(@wic_user_page_access);

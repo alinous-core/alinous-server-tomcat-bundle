@@ -28,4 +28,11 @@ function initParams($IN, $SESSION)
 	if($IN.end_time == null){
 		$IN.end_time = Timestamp.format($now, "HH':'mm");
 	}
+	
+	if($IN.referrer == null){
+		$IN.referrer = "";
+	}
+	if($IN.keywords == null){
+		$IN.keywords = "";
+	}
 }

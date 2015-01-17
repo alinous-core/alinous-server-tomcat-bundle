@@ -85,6 +85,7 @@ function addTemplate($IN, $SESSION)
 	
 	INSERT INTO template_top(
 		template_top_id,
+		position_order,
 		template_top_code,
 		template_top_name,
 		div_id,
@@ -96,6 +97,7 @@ function addTemplate($IN, $SESSION)
 	)
 	VALUES(
 		$template_top_id,
+		$template_top_id, // position_order,
 		$IN.template_top_code,
 		$IN.template_top_name,
 		'wrap', // div_id,

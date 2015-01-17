@@ -36,6 +36,7 @@ if(Array.size(@rss_setting_tags) > 0){
 			WHERE
 				rss_setting_tags.rss_setting_id =  $IN.rss_setting_id
 		) AND
+		cms_page.page_status IN('published', 'published-with-draft') AND
 		cms_page.page_type IN (
 			@page_types
 		)

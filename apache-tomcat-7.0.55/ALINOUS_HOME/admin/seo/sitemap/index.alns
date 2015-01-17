@@ -145,11 +145,18 @@ function getKeyWordOccurence($domain, $path)
 
 function getLastRobotCrawled($domain, $path)
 {
+	$mbpath = getMobilePath($domain, $path);
+	
+	$pathes[0] = $path;
+	if($mbpath != null){
+		$pathes[1] = $mbpath;
+	}
+	
 	SELECT * INTO wmc_robot_access
 	FROM
 		wmc_robot_access
 	WHERE
-		wmc_robot_access.path = $path
+		wmc_robot_access.path IN (@pathes)
 	ORDER BY wmc_robot_access.access_time DESC
 	LIMIT 1;
 	if(Array.size(@wmc_robot_access) == 0){
@@ -157,6 +164,47 @@ function getLastRobotCrawled($domain, $path)
 	}
 	
 	return $wmc_robot_access[0].access_time;
+}
+
+function getMobilePath($domain, $path)
+{	
+	SELECT * INTO site_setting
+	FROM
+		site_setting
+	WHERE
+		site_setting.site_domain = $domain;
+	
+	if(Array.size(@site_setting) == 0){
+		return null;
+	}
+	
+	$pathStr = $site_setting[0].site_path + $path;
+	
+	if(String.endsWith($pathStr, "/")){
+		$endIndex = String.length($pathStr) - 1;
+		$pathStr = String.subString($pathStr, 0, $endIndex);
+	}
+	
+	// delete ".html"
+	$lastIdx = String.lastIndexOf($pathStr, ".html");
+	if($lastIdx > 0){
+		$pathStr = String.subString($pathStr, 0, $lastIdx);
+	}
+	
+	SELECT cms_page.second_template_context INTO tree_model
+	FROM
+		tree_model LEFT JOIN cms_page
+		ON
+			tree_model.node_id = cms_page.node_id
+	WHERE
+		tree_model.tree_id ='cms' AND
+		tree_model.page_path = $pathStr;
+	
+	if(Array.size(@tree_model) == 0){
+		return null;
+	}
+	
+	return "/" + $tree_model[0].second_template_context + $path;
 }
 
 function getText($xmlObj)

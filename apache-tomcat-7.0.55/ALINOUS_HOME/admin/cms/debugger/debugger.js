@@ -76,9 +76,13 @@ function finishDebug(threadId, modulePath)
 	return closefn;
 }
 
-function removeMarker(line, modulePath) {
+function removeMarker(line, modulePath, change) {
 	var url = "/admin/cms/debugger/breakpoint.alns";
 	var codeLine = line + 1;
+	
+	if(!change){
+		change = 0;
+	}
 	
 	$.ajax({
 		type: 'POST',
@@ -86,7 +90,8 @@ function removeMarker(line, modulePath) {
 		data: {
 			cmd: "remove",
 			modulePath: modulePath,
-			line: codeLine
+			line: codeLine,
+			change: change
 		},
 		dataType: 'html',
 		success: function(data) {
@@ -100,7 +105,7 @@ function removeMarker(line, modulePath) {
 	return null;
 }
 
-function makeMarker(line, modulePath) {
+function makeMarker(line, modulePath, change) {
 	var marker = document.createElement("div");
 	marker.style.color = "#6666FF";
 	marker.innerHTML = '<img src="/admin/cms/debugger/img/brkp_obj.gif" />';
@@ -108,13 +113,18 @@ function makeMarker(line, modulePath) {
 	var url = "/admin/cms/debugger/breakpoint.alns";
 	var codeLine = line + 1;
 	
+	if(!change){
+		change = 0;
+	}
+	
 	$.ajax({
 		type: 'POST',
 		url: url,
 		data: {
 			cmd: "add",
 			modulePath: modulePath,
-			line: codeLine
+			line: codeLine,
+			change: change
 		},
 		dataType: 'html',
 		success: function(data) {

@@ -1,0 +1,68 @@
+
+initParams($IN, $SESSION);
+
+
+return 0;
+
+
+function initParams($IN, $SESSION)
+{
+	if($IN.title == null){
+		$IN.title = getCoefficient("title", 3.0);
+	}
+	if($IN.body == null){
+		$IN.body = getCoefficient("body", 1.0);
+	}
+	if($IN.header == null){
+		$IN.header = getCoefficient("header", 1.0);
+	}
+	if($IN.footer == null){
+		$IN.footer = getCoefficient("footer", 0.6);
+	}
+	if($IN.aside == null){
+		$IN.aside = getCoefficient("aside", 0.8);
+	}
+	if($IN.nav == null){
+		$IN.nav = getCoefficient("nav", 0.80);
+	}
+	if($IN.article == null){
+		$IN.article = getCoefficient("article", 1.0);
+	}
+	
+	if($IN.h1 == null){
+		$IN.h1 = getCoefficient("h1", 2.0);
+	}
+	if($IN.h2 == null){
+		$IN.h2 = getCoefficient("h2", 1.5);
+	}
+	if($IN.h3 == null){
+		$IN.h3 = getCoefficient("h3", 1.2);
+	}
+	if($IN.h4 == null){
+		$IN.h4 = getCoefficient("h4", 1.2);
+	}
+}
+
+function getCoefficient($location, $def)
+{
+	SELECT * INTO wmc_theme_coefficient
+	FROM
+		wmc_theme_coefficient
+	WHERE
+		wmc_theme_coefficient.location = $location;
+	
+	if(Array.size(@wmc_theme_coefficient) == 0){
+		INSERT INTO wmc_theme_coefficient(
+			location,
+			value
+		)
+		VALUES(
+			$location,
+			$def // value
+		);
+		
+		return $def;
+	}
+	
+	return Cast.toDouble($wmc_theme_coefficient[0].value);
+}

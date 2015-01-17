@@ -106,12 +106,12 @@ function AccessLog.getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @recor
 		
 		$json = $json + '[' + "\n";
 		
-		$json = $json + '"' + $records[$i].remote_host + '",' +  "\n";
-		$json = $json + '"' + $records[$i].access_time + '",' +  "\n";
-		$json = $json + '"' + $records[$i].path + '",' +  "\n";
-		$json = $json + '"' + $records[$i].referer + '",' +  "\n";
-		$json = $json + '"' + $records[$i].user_agent  + '",' +  "\n";
-		$json = $json + '"' + $records[$i].response_status + '"' +  "\n";
+		$json = $json + '"' + escape($records[$i].remote_host) + '",' +  "\n";
+		$json = $json + '"' + escape($records[$i].access_time) + '",' +  "\n";
+		$json = $json + '"' + escape($records[$i].path) + '",' +  "\n";
+		$json = $json + '"' + escape($records[$i].referer) + '",' +  "\n";
+		$json = $json + '"' + escape($records[$i].user_agent)  + '",' +  "\n";
+		$json = $json + '"' + escape($records[$i].response_status) + '"' +  "\n";
 		
 		$json = $json + ']' + "\n";
 	}
@@ -121,4 +121,10 @@ function AccessLog.getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @recor
 	$json = $json + "}";
 	
 	return $json;
+}
+
+function escape($str)
+{
+	$str = String.jsonEscape($str);
+	return $str;
 }

@@ -38,7 +38,7 @@ function regenerate($IN, $SESSION)
 {
 	// $IN.hm_scroll_hm_id
 	SELECT hm_scroll_hm.hm_scroll_hm_id, hm_scroll_hm.hm_start, hm_scroll_hm.hm_end,
-		archive_page.page_url
+		archive_page.page_url, hm_scroll_hm.referrer, hm_scroll_hm.keywords
 	INTO
 		hm_scroll_hm
 	FROM
@@ -63,6 +63,8 @@ function regenerate($IN, $SESSION)
 	$params.page_url = $hm_scroll_hm[0].page_url;
 	$params.start = $start;
 	$params.end = $end;
+	$params.referrer = $hm_scroll_hm[0].referrer;
+	$params.keywords = $hm_scroll_hm[0].keywords;
 	
 	ProgressJob.startJob($params.jobId, $jobMax, "backgroundJob", $params);
 	
@@ -81,6 +83,7 @@ function backgroundJob($params)
 		
 		HeatmapScroll.makeScrollData($params.hm_scroll_hm_id, $params.page_url,
 						$params.start, $params.end,
+						$params.referrer, $params.keywords,
 						$params.jobId, $SESSION);
 		
 		HeatmapScroll.generateImage($params.hm_scroll_hm_id, $params.docSize.width, $SESSION);

@@ -73,6 +73,8 @@ function addNode($IN, $SESSION)
 		cms_page_id,
 		node_id,
 		template_top_id,
+		second_template_top_id,
+		second_template_context,
 		page_type,
 		page_status,
 		force_folder,
@@ -99,6 +101,8 @@ function addNode($IN, $SESSION)
 		$cms_page_id,
 		$nodeId, // node_id,
 		$IN.template_top_id,
+		$IN.second_template_top_id,
+		$IN.second_template_context,
 		$IN.page_type,
 		$IN.page_status,
 		$IN.force_folder, // force_folder,
@@ -165,6 +169,8 @@ function createFirst($IN, $SESSION)
 		cms_page_id,
 		node_id,
 		template_top_id,
+		second_template_top_id,
+		second_template_context,
 		page_status,
 		force_folder,
 		force_extract,
@@ -190,6 +196,8 @@ function createFirst($IN, $SESSION)
 		$cms_page_id,
 		$nodeId, // node_id,
 		$IN.template_top_id,
+		$IN.second_template_top_id,
+		$IN.second_template_context,
 		$IN.page_status,
 		1, // force_folder,
 		0, // force_extract,
@@ -211,6 +219,51 @@ function createFirst($IN, $SESSION)
 		now(), // last_edit_time,
 		now() // created_time
 	);
+	
+	// first
+	SELECT * INTO site_setting
+	FROM
+		site_setting;
+	
+	if(Array.size(@site_setting) == 0){
+		$site_path = "/" + $IN.nodeCode;
+		
+		INSERT INTO site_setting(
+			site_path,
+			site_domain,
+			template_use,
+			use_context,
+			force_https
+		)VALUES(
+			$site_path,
+			'localhost:8080', // site_domain,
+			0, // template_use,
+			0, // use_context,
+			0 // force_https
+		);
+	}
+	
+	SELECT * INTO site_mobile_setting
+	FROM
+		site_mobile_setting;
+	if(Array.size(@site_mobile_setting) == 0){
+		INSERT INTO site_mobile_setting(
+			site_path,
+			site_domain,
+			src_site_domain,
+			template_use,
+			use_context,
+			force_https
+		)
+		VALUES(
+			$site_path,
+			'localhost:8080', // site_domain,
+			'localhost:8080', // src_site_domain,
+			1, // template_use,
+			1, // use_context,
+			0 //force_https
+		);
+	}
 	
 	COMMIT;
 }

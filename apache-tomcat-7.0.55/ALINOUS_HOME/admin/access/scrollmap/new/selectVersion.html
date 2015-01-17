@@ -17,6 +17,10 @@ $(function() {
 		var end_date = $("#end_date").val();
 		var end_time = $("#end_time").val();
 		
+		var referrer = $("#referrer").val();
+		var keywords = $("#keywords").val();
+		
+		
 		$.ajax({
 			type: 'POST',
 			url: url,
@@ -25,7 +29,10 @@ $(function() {
 				start_date: start_date,
 				start_time: start_time,
 				end_date: end_date,
-				end_time: end_time},
+				end_time: end_time,
+				referrer: referrer,
+				keywords: keywords
+			},
 			dataType: 'html',
 			success: function(data) {
 				$('#dialog').html(data);
@@ -52,6 +59,9 @@ $(function() {
 		var end_date = $("#end_date").val();
 		var end_time = $("#end_time").val();
 		
+		var referrer = $("#referrer").val();
+		var keywords = $("#keywords").val();
+		
 		var url = "/admin/access/scrollmap/new/createHeatmap.alns";
 		
 		$.ajax({
@@ -63,7 +73,10 @@ $(function() {
 				start_date: start_date,
 				start_time: start_time,
 				end_date: end_date,
-				end_time: end_time},
+				end_time: end_time,
+				referrer: referrer,
+				keywords: keywords
+			},
 			dataType: 'html',
 			success: function(data) {				
 				$("#dialog").dialog("close");
@@ -130,6 +143,8 @@ $(function() {
 <input type="hidden" name="end_date" id="end_date" value="{$IN.end_date}" />
 <input type="hidden" name="end_time" id="end_time" value="{$IN.end_time}" />
 
+<input type="hidden" name="referrer" id="referrer" value="{$IN.referrer}" />
+<input type="hidden" name="keywords" id="keywords" value="{$IN.keywords}" />
 
 <h2>Archived page version</h2>
 

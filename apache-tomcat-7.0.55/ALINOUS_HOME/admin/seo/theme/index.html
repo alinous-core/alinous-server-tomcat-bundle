@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Analyze Content Keywords of the Web Master tools</title>
+<!--[if lt IE 9]><![endif]--> 
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/ui/jquery.ui.menu.js"></script>
+<script src="/jquery/ui/jquery.ui.autocomplete.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+$(function() {
+	$(".jq").button();
+	$(".pageNavi a").button();
+	
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 300
+		},
+		hide: {
+			effect: "explode",
+			duration: 300
+		}
+	});
+	
+	$( "#theme" ).click(function() {
+		var url = "/admin/seo/theme/dialog/themecalc.html";
+				
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {
+			},
+			dataType: 'html',
+			success: function(data) {
+				$('#dialog').html(data);
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+		
+		
+		$( "#dialog" ).dialog( "open" );
+	});
+	
+	$( "#similarity" ).click(function() {
+		this.form.cmd.value = "similarity";
+		this.form.submit();
+	});
+	
+	window.scroll( 0, $("#scroll").val() );
+});
+
+function showTheme(cms_page_id)
+{
+	var url = "/admin/seo/theme/dialog/theme.html";
+			
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			cms_page_id: cms_page_id
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+		
+}
+
+function showSimilar(form, cms_page_id)
+{
+	var scroll = document.documentElement.scrollTop || document.body.scrollTop;
+	$("#scroll").val(scroll);
+	
+	form.cms_page_id.value = cms_page_id;
+	form.cmd.value = "showsimilar";
+	form.submit();
+}
+
+function openEditor(selectedNodeId)
+{
+	window.open( "/admin/cms/article/index.html?jscmd=open&selectedNodeId=" + selectedNodeId , "_blank" );
+}
+
+-->
+</script>
+<style>
+.ui-progressbar {
+	position: relative;
+}
+.progress-label {
+	position: absolute;
+	left: 50%;
+	top: 4px;
+	font-weight: bold;
+	text-shadow: 1px 1px 0 #fff;
+}
+</style>
+</head>
+<body>
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap" alns:if="{BOOL($showProgress == 0)}">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+<h2>Analyze Page Theme</h2>
+
+<form name="frm" action="index.html" method="POST">
+
+<button type="button" id="theme" class="jq">Analyze Theme</button>
+<button type="button" id="similarity" class="jq">Analyze Similarity</button>
+
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="site_path" value="{$IN.site_path}" />
+<input type="hidden" name="scroll" id="scroll" value="{$IN.scroll}" />
+
+
+<input type="hidden" name="title" value="" />
+<input type="hidden" name="body" value="" />
+<input type="hidden" name="header" value="" />
+<input type="hidden" name="footer" value="" />
+<input type="hidden" name="aside" value="" />
+<input type="hidden" name="nav" value="" />
+<input type="hidden" name="article" value="" />
+
+
+<input type="hidden" name="h1" value="" />
+<input type="hidden" name="h2" value="" />
+<input type="hidden" name="h3" value="" />
+<input type="hidden" name="h4" value="" />
+<input type="hidden" name="cms_page_id" value="" />
+
+<h3>Pages</h3>
+
+<blockquote>
+<table class="stdtable">
+	<tr>
+		<th>
+			Show Theme
+		</th>
+		<th>
+			Show Similar Pages
+		</th>
+		<th>
+			Edit
+		</th>
+		<th>
+			Page
+		</th>
+		<th>
+			Path
+		</th>
+	</tr>
+	<tr alns:iterate="@cms_page" alns:variable="oneRecord">
+		<td align="center">
+			<button type="button" onclick="showTheme('{$oneRecord.cms_page_id}')">Show Theme</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="showSimilar(this.form, '{$oneRecord.cms_page_id}')">Similar Pages</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="openEditor('{$oneRecord.node_id}')">Edit</button>
+		</td>
+		<td>
+			{$oneRecord.page_title}
+		</td>
+		<td>
+			<a href="{$oneRecord.path}" target="_blank">{$oneRecord.path}</a>
+		</td>
+	</tr>
+</table>
+</blockquote>
+
+</form>
+
+
+<div id="dialog"></div>
+
+</div>
+
+
+<div id="wrap" alns:if="{BOOL($showProgress != 0)}">
+
+<h1><a href="/admin/">Document CMS</a> &gt; SEO Checker</h1>
+
+	<form name="frm" action="index.html" method="POST" enctype="multipart/form-data" alns:if="{BOOL($showProgress != 0)}">
+	
+	<h2>Now Analyzing Content Keywords Theme</h2>
+	
+	<input type="hidden" name="site_path" value="{$IN.site_path}" />
+	
+	
+	<input type="hidden" name="cmd" value="" />
+	<input type="hidden" name="showProgress" id="showProgress" value="{$showProgress}" />
+	
+	<blockquote>
+	<div id="progressbar"><div class="progress-label">Loading...</div></div>
+	</blockquote>
+	<script>
+	<!--
+	$(function() {
+		var progressbar = $( "#progressbar" );
+		var progressLabel = $( ".progress-label" );
+		
+		progressbar.progressbar({
+			value: false,
+			change: function() {
+				progressLabel.text( progressbar.progressbar( "value" ) + "%" );
+			},
+			complete: function() {
+				progressLabel.text( "Complete!" );
+				
+				document.frm.submit();
+			}
+		});
+	
+		function progress() {
+			var val = progressbar.progressbar( "value" ) || 0;
+			var showProgress = $( "#showProgress" ).val();
+			var postStr = "job_id=" + showProgress;
+			
+			$.ajax({
+				type: "POST",
+				url: "/admin/seo/robotlog/watch.alns",
+				data: postStr,
+				processData: false,
+				success: function(msg)
+				{
+			    	val = parseInt(msg,10);
+			    	
+			    	progressbar.progressbar("value", val);
+			    	
+					if ( val < 100 ) {
+						setTimeout( progress, 1000 );
+					}				
+				}
+			});
+		};
+		
+		progress();
+		
+	});
+	-->
+	</script>
+	</form>
+
+</div>
+
+
+
+</body>
+</html>
+
+

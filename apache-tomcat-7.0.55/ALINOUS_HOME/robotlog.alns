@@ -63,7 +63,8 @@ function AccessLog.analyze($logline, $config)
 	}
 	
 	if(!$isRobot){
-		if(String.endsWith($path, ".html") == false && String.endsWith($path, "/") == false){
+		if(String.endsWith($path, ".html") == false && String.endsWith($path, "/") == false
+			&& String.endsWith($path, ".rss") == false){
 			return 0;
 		}
 		if(String.startsWith($path, "/admin/")){

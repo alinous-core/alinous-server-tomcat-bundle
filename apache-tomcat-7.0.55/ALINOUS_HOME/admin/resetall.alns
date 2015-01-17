@@ -1,0 +1,42 @@
+
+// http://localhost:8080/admin/resetall.alns
+
+include("/admin/resetaccesslog.alns");
+
+resetAccess($IN, $SESSION);
+resetAllArticleAndTags($IN, $SESSION);
+
+return 0;
+
+
+function resetAllArticleAndTags($IN, $SESSION)
+{
+	BEGIN;
+	
+	delete from tree_model
+	WHERE
+		tree_model.tree_id IN('cms', 'tag');
+	
+	// articles and resources
+	DELETE FROM cms_page;
+	
+	DELETE FROM cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type IN('cms_page', 'cms_tag');
+	
+	DELETE FROM cms_resource
+	WHERE
+		cms_resource.resource_owner_type IN('cms_page', 'cms_tag');
+	
+	DELETE FROM site_setting;	
+	DELETE FROM site_mobile_setting;
+	
+	DELETE FROM cms_tag;
+	DELETE FROM cms_tag_page;
+	
+	DELETE FROM serial
+	WHERE
+		serial.serial_id IN ('cms', 'tag', 'cms_tag');
+	
+	COMMIT;
+}

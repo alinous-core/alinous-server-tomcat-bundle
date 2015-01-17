@@ -33,7 +33,7 @@
 <script src="/jquery/jquery-ui.js"></script>
 
 <script src="/jquery/timepicker/jquery.timepicker.js"></script>
-<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet' />
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet'  />
 
 <link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.css">
 <link rel="stylesheet" href="/jquery/tree-table/stylesheets/jquery.treetable.theme.default.css">
@@ -95,7 +95,30 @@ $(function() {
 		}
 	});
 	
-	initJqTree();
+	var jscmd = $("#jscmd").val();
+	if(jscmd == "open"){
+		var selectedNodeId = $("#selectedNodeId").val();
+		var url = "/admin/cms/article/default_openlist.alns";
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: {nodeId: selectedNodeId},
+			dataType: 'json',
+			success: function(data) {
+				for(var i = 0; i < data.length; i++){
+					JqTreeLazyState.addCookie(data[i].node_id, data[i].page_depth, treeId);
+				}			
+				
+				initJqTree();
+			},
+			error:function() {
+				alert('Error occur');
+			}
+		});
+	}
+	else{
+		initJqTree();
+	}
 	
 	
 	$( "#tabs" ).tabs({
@@ -222,24 +245,29 @@ function firstNode()
 				<input type="hidden" name="page_title" value="" />
 				<input type="hidden" name="page_status" value="" />
 				<input type="hidden" name="template_top_id" value="" />
+				<input type="hidden" name="second_template_top_id" value="" />
+				<input type="hidden" name="second_template_context" value="" />
 				<input type="hidden" name="force_folder" value="" />
 				<input type="hidden" name="page_type" value="" />
 				
-				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />				
+				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />
+				<input type="hidden" name="jscmd" id="jscmd" value="{$IN.jscmd}" />	
 			</form>
 		</div>
 		<div>
 			<form name="firstfrm" action="index.html" method="POST">
-				<center alns:if="{BOOL($size_tree_model = 0)}"><button type="button" onclick="firstNode()">Create a new Website.</button></center>
+				<center alns:if="{BOOL($size_tree_model == 0)}"><button type="button" onclick="firstNode()">Create a new Website.</button></center>
 				<input type="hidden" name="cmd" value="" />
 				
 				<input type="hidden" id="nodeCode" name="nodeCode" value="" />
 				<input type="hidden" name="page_title" value="" />
 				<input type="hidden" name="page_status" value="" />
 				<input type="hidden" name="template_top_id" value="" />
+				<input type="hidden" name="second_template_top_id" value="" />
+				<input type="hidden" name="second_template_context" value="" />
 				
 				<input type="hidden" name="selectedNodeId" id="selectedNodeId" value="{$IN.selectedNodeId}" />
-			
+				<input type="hidden" name="jscmd" id="jscmd" value="{$IN.jscmd}" />
 			</form>
 		</div>
 	</div>

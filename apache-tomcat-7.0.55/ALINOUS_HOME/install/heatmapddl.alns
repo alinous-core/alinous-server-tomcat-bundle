@@ -39,6 +39,9 @@ function Heatmap.ddl()
 		hm_raster_id int not null,
 		archive_page_id int not null,
 		
+		referrer text not null default '',
+		keywords text not null default '',
+		
 		hm_start timestamp not null default now(),
 		hm_end timestamp not null default now(),
 		
@@ -80,6 +83,9 @@ function Heatmap.ddl()
 		hm_height int not null default 0,
 		
 		archive_page_id int not null,
+		referrer text not null default '',
+		keywords text not null default '',
+		
 		hm_start timestamp not null default now(),
 		hm_end timestamp not null default now(),
 		

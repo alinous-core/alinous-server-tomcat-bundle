@@ -43,6 +43,15 @@ button {
 			<table width="100%">
 				<tr>
 					<td width="200">
+						<b>Url</b>
+					</td>
+					<td>
+						<input tpye="text" name="pageUrl" value="{$pageUrl}" onfocus="this.select();"
+							readonly="readonly" maxlength="255" style="width:100%;"/>
+					</td>
+				</tr>
+				<tr>
+					<td width="200">
 						<b>Title</b>
 					</td>
 					<td>
@@ -88,8 +97,8 @@ button {
 								<td>
 									<select name="second_template_top_id" value="{$cms_page.second_template_top_id}">
 									<option value="0">Not Set</option>
-									<option alns:iterate="@template_top" alns:variable="oneRecord"
-										value="{$oneRMainecord.template_top_id}">{$oneRecord.template_top_name}</option>
+									<option alns:iterate="@template_top" alns:variable="oneMainecord"
+										value="{$oneMainecord.template_top_id}">{$oneMainecord.template_top_name}</option>
 									</select>
 									Root Context:
 									<input type="text" name="second_template_context" value="{$cms_page.second_template_context}" size="5" maxlength="255"/>
@@ -237,8 +246,27 @@ button {
 	</div>
 	<div id="tabs-4" order="3">
 		<p>
-			Input Addtional Html Header Code
+			Input Addtional Html Header Code. If want to capture mouse move, input "&lt;script src="/api/log.js"&gt;&lt;/script&gt;".
 		</p>
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'draft')}">
+			<b>Draft Only</b>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+		</div>
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'published')}">
+			
+			<b>Published</b>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+			<button type="button" onclick="saveByCmd('remove-publish')">Revert to Draft</button>
+		</div>
+		<div style="margin: 0;" alns:if="{BOOL($cms_page.page_status == 'published-with-draft')}">
+			<b>Published+Draft</b>
+			<button type="button" onclick="saveByCmd('update')">Update Draft</button>
+			<button type="button" onclick="saveByCmd('publish')">Publish</button>
+			<button type="button" onclick="saveByCmd('discard-draft')">Discard Draft</button>
+			<button type="button" onclick="saveByCmd('remove-publish')">Remove Published</button>
+		</div>
 		<textarea name="page_addtional_code" id="page_addtional_code" rows="8" style="width:100%;">{$cms_page.page_addtional_code}</textarea>
 	</div>
 	<div id="tabs-5" order="4">
@@ -318,6 +346,91 @@ button {
 					</td>
 				</tr>
 			</table>
+			
+			<br />
+			
+			<h2>Smart Phone Setting</h2>
+			<p>
+				Input the PC, Smart Phone domain and Template to use
+			</p>
+			<table class="stdtable" width="100%">
+				<tr>
+					<th width="200">
+						Domain Name
+					</th>
+					<th width="200">
+						Source Domain Name
+					</th>
+					<th width="220">
+						Force https
+					</th>
+					<th>
+						Template Setting
+					</th>
+					<th width="160">
+						Remove Setting
+					</th>
+				</tr>
+				
+				<tr alns:iterate="@site_mobile_setting" alns:variable="site">
+					<td>
+						{$site.site_domain}
+					</td>
+					<td>
+						{$site.src_site_domain}
+					</td>
+					<td>
+						<span alns:if="{BOOL($site.force_https == 0)}">Use Http and Https</span>
+						<span alns:if="{BOOL($site.force_https == 1)}">Redirect Http to Https</span>
+					</td>
+					<td>
+						<span alns:if="{BOOL($site.template_use == 0)}">Use Default Template</span>
+						<span alns:if="{BOOL($site.template_use == 1)}">
+							Use Secondary Template<br />
+							Use Context Root:
+							<span alns:if="{BOOL($site.use_context == 1)}">
+								YES, Redirect to the Context Path
+							</span>
+							<span alns:if="{BOOL($site.use_context == 0)}">
+								NO, don't Redirect to use same Url
+							</span>
+						</span>
+						
+					</td>
+					<td align="center">
+						<button type="button" onclick="removeSpSiteSetting(this.form, '{$site.site_domain}')">Delete</button>
+					</td>
+				</tr>
+				
+				<tr>
+					<td>
+						<input type="text" name="sp_site_domain" value="" style="width:100%;"/>
+					</td>
+					<td>
+						<input type="text" name="sp_src_site_domain" value="" style="width:100%;"/>
+					</td>
+					<td>
+						<select name="sp_force_https">
+						<option value="0">Use Http and Https</option>
+						<option value="1">Redirect Http to Https</option>
+						</select>
+					</td>
+					<td>
+						<select name="sp_template_use" value="1" onchange="spSiteTemplateChange(this.form)">
+						<option value="0">Use Default Template</option>
+						<option value="1">Use Secondary Template</option>
+						</select>
+						:
+						<select name="sp_use_context">
+						<option value="1">Add the Context Path to Url</option>
+						<option value="0">Use same Url</option>
+						</select>
+					</td>
+					<td align="center">
+						<button type="button" onclick="newSpSiteSetting(this.form)">Add New Setting</button>
+					</td>
+				</tr>
+			</table>
 		</span>
 	</div>
 </div>
@@ -327,6 +440,7 @@ button {
 <input type="hidden" name="group_code" value="" />
 <input type="hidden" name="cms_tag_id" value="" />
 <input type="hidden" name="cmd" value="" />
+
 
 <input type="hidden" name="selectedNodeId" value="{$IN.selectedNodeId}" />
 <input type="hidden" name="nicedit_cms_page_id" id="nicedit_cms_page_id" value="{$cms_page.cms_page_id }" />

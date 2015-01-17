@@ -103,7 +103,16 @@ function AccessLog.getJSon($sEcho, $iTotalRecords, $iTotalDisplayRecords, @recor
 		
 		$json = $json + '"' + $records[$i].remote_host + '",' +  "\n";
 		$json = $json + '"' + $records[$i].access_time + '",' +  "\n";
-		$json = $json + '"' + $records[$i].path + '",' +  "\n";
+		
+		// referer
+		if($records[$i].referer != null && $records[$i].referer != ""){
+			$json = $json + '"' + $records[$i].path + "<br />[" + $records[$i].referer + "]" + '",' +  "\n";
+		}
+		else{
+			$json = $json + '"' + $records[$i].path + '",' +  "\n";
+		}		
+		
+		
 		$json = $json + '"' + $records[$i].user_agent  + '",' +  "\n";
 		$json = $json + '"' + $records[$i].response_status + '"' +  "\n";
 		

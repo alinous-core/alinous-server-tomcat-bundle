@@ -8,6 +8,8 @@ function createFirstNode(form)
 	var treeCode =  $("#newTreeCode").val();
 	var page_title = form.page_title.value;
 	var template_top_id = form.template_top_id.value;
+	var second_template_top_id = form.second_template_top_id.value;
+	var second_template_context = form.second_template_context.value;
 	var page_status = form.page_status.value;
 	
 	if(treeCode == ""){
@@ -26,6 +28,8 @@ function createFirstNode(form)
 	document.firstfrm.nodeCode.value = treeCode;
 	document.firstfrm.page_title.value = page_title;
 	document.firstfrm.template_top_id.value = template_top_id;
+	document.firstfrm.second_template_top_id.value = second_template_top_id;
+	document.firstfrm.second_template_context.value = second_template_context;
 	document.firstfrm.page_status.value = page_status;
 	
 	document.firstfrm.cmd.value = 'createFirst';
@@ -63,9 +67,24 @@ function createFirstNode(form)
 		<td>
 			<select name="template_top_id">
 			<option value="0">Use Default</option>
+			<option value="{$oneRecord.template_top_id}" alns:iterate="@template_top" alns:variable="oneRecord">{$oneRecord.template_top_name}</option>
 			</select>
 		</td>
 	</tr>
+		<tr>
+			<td width="160">
+				Second Template:
+			</td>
+			<td>
+				<select name="second_template_top_id" value="0">
+				<option value="0">Use Default</option>
+				<option value="{$oneRecord.template_top_id}" alns:iterate="@template_top" alns:variable="oneRecord">{$oneRecord.template_top_name}</option>
+				</select>
+				
+				Root Context:
+				<input type="text" name="second_template_context" value="mb" size="5" maxlength="255"/>
+			</td>
+		</tr>
 	<tr>
 		<td width="160">
 			Status:
