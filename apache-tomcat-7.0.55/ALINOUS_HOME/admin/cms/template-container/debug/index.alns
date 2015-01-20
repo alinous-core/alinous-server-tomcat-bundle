@@ -36,8 +36,15 @@ function startDebug($IN, $SESSION, $COOKIE)
 	$script = File.readAllText($IN.modulePath, "utf-8");
 	$callBackScriptFile = "/admin/cms/debugger/eventCallback.alns";
 	
+	$modulePath = "/admin/cms/debugger/consoleListner.alns";
+	Debugger.registerConsole("alinous-debug", $modulePath);
 	
-	$threadId = Script.debugEvaluate($script, $IN.modulePath, $params, $callBackScriptFile, @bp);
+	try{
+		$threadId = Script.debugEvaluate($script, $IN.modulePath, $params, $callBackScriptFile, @bp);
+	}catch($e){
+		
+	}
+	
 	
 	return $threadId;
 }

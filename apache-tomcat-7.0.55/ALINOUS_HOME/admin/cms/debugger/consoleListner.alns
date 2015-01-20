@@ -2,4 +2,55 @@
 
 // $IN.message
 
+
+if(String.indexOf($IN.message, "debug_console_out", 0) > 0){
+	return 0;
+}
+if(isIgnore($IN.message)){
+	return 0;
+}
+
+BEGIN;
+
+$debug_console_out_id = getCount();
+
+INSERT INTO debug_console_out (
+	debug_console_out_id,
+	update_time,
+	body_string
+)
+VALUES(
+	$debug_console_out_id,
+	now(), // update_time,
+	$IN.message // body_string
+);	
+
+COMMIT;
+
+
 return 0;
+
+function isIgnore($message)
+{
+	if(String.startsWith($message, "RequestURI : /admin/cms/debugger/")){
+		return true;
+	}
+	if(String.indexOf($message, "debug_break_points", 0) > 0){
+		return true;
+	}
+
+	return false;	
+}
+
+function getCount()
+{
+	SELECT count(*) as CNT INTO debug_console_out
+	FROM
+		debug_console_out;
+	
+	if($debug_console_out[0].cnt == null){
+		return 1;
+	}
+	
+	return Cast.toNumber($debug_console_out[0].cnt) + 1;
+}

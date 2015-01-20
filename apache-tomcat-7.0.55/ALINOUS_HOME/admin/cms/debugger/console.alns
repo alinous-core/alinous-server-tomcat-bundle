@@ -1,0 +1,18 @@
+
+SELECT * INTO debug_console_out
+FROM
+	debug_console_out
+WHERE
+	debug_console_out.update_time > $IN.debug_time
+ORDER BY debug_console_out.update_time;
+
+$console = "";
+
+$size = Array.size(@debug_console_out);
+for($i = 0; $i < $size; $i++){
+	$console = $console + $debug_console_out[$i].body_string + "<br />";
+}
+
+
+
+return $console;

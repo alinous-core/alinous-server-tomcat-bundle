@@ -39,7 +39,14 @@ function startDebug($IN, $SESSION, $COOKIE)
 	$params.IN.page = 0;
 	$params.IN.numPages = 1;
 	
-	$threadId = Script.debugEvaluate($script, $IN.modulePath, $params, $callBackScriptFile, @bp);
+	$modulePath = "/admin/cms/debugger/consoleListner.alns";
+	Debugger.registerConsole("alinous-debug", $modulePath);
+	
+	try{
+		$threadId = Script.debugEvaluate($script, $IN.modulePath, $params, $callBackScriptFile, @bp);
+	}catch($e){
+		
+	}
 	
 	return $threadId;
 }

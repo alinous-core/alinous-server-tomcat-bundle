@@ -26,5 +26,13 @@ function Debugger.ddl()
 	);
 	
 	
+	CREATE TABLE debug_console_out (
+		debug_console_out_id int,
+		update_time timestamp not null default now(),
+		body_string text not null default '',
+		
+		PRIMARY KEY(debug_console_out_id)
+	);
+	
 	COMMIT;
 }

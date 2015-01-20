@@ -39,8 +39,7 @@ var DebugState = {
 			error:function(XMLHttpRequest, textStatus, errorThrown) {
 				alert('Error occur : state' + textStatus);
 			}
-		});
-		
+		});		
 	},
 	updateVariable : function (modulePath, threadId, editor)
 	{

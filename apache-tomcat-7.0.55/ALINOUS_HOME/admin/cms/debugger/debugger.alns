@@ -1,5 +1,5 @@
 
-
+initParams($IN, $SESSION);
 
 if($IN.cmd == "back"){
 	redirect "/admin/cms/debugger/index.html";
@@ -9,5 +9,11 @@ $testString = File.readAllText($IN.modulePath, "utf-8");
 
 return 0;
 
+function initParams($IN, $SESSION)
+{
+	if($IN.debug_time == null){
+		$IN.debug_time = Timestamp.now();
+	}
+}
 
 
