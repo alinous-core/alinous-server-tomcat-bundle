@@ -1,0 +1,27 @@
+
+
+
+
+@tables = getTables($IN, $SESSION);
+
+
+return 0;
+
+function getTables($IN, $SESSION)
+{
+	@tables = Sql.getTables("pgapps");
+	
+	$idx = 0;
+	$size = Array.size(@tables);
+	for($i = 0; $i < $size; $i++){
+		if(String.startsWith($tables[$i].name, "alinous_")){
+			continue;
+		}
+		
+		$ret[$idx] = $tables[$i];
+		$idx++;		
+	}
+	
+	
+	return @ret;
+}

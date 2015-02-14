@@ -1,0 +1,9 @@
+
+
+if($IN.type == "alns" || $IN.type == "html" || $IN.type == "js" || $IN.type == "css" 
+	|| $IN.type == "text" || $IN.type == "xml"){
+	
+	return "/admin/sdk/program/alinous/index.html?type=alns&selectedPath=" + $IN.selectedPath;
+}
+
+return 0;

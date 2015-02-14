@@ -1,0 +1,36 @@
+
+include("/admin/sdk/program/filetypes.alns");
+
+
+$data = getCodeData($IN, $SESSION);
+
+return 0;
+
+function getCodeData($IN, $SESSION)
+{
+	$fileType = FileTypes.getType($IN.selectedPath);
+	
+	$data.type = "";
+	if($fileType == "alns"){
+		$data.type = "alinous";
+	}
+	else if($fileType == "html"){
+		$data.type = "htmlmixed";
+	}
+	else if($fileType == "js"){
+		$data.type = "javascript";
+	}
+	else if($fileType == "css"){
+		$data.type = "css";
+	}
+	else if($fileType == "xml"){
+		$data.type = "xml";
+	}
+	else {
+		$data.type = "text";
+	}
+	
+	$data.code = File.readAllText($IN.selectedPath, "utf-8");
+	
+	return $data;
+}

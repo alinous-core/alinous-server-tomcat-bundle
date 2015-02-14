@@ -7,6 +7,7 @@ function initJqTree(site)
 	var winHeight = document.body.clientHeight - 150;
 	$("#scroll-container").css("height", winHeight + "px");
 	
+	JqTreeScroll.restore();
 	
 	
 	$.getJSON(

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Programming & Development</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/jqtree/jqtree.css">
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+
+<script src="/jquery/jquery-2.1.1.min.js"></script>
+<script src="/jquery/jquery.cookie.js"></script>
+<script src="/jquery/ui/jquery.ui.position.js"></script>
+<script src="/jquery/jquery-migrate-1.0.0.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+<script src="/jquery/jquery-ui.js"></script>
+
+<script src="/jquery/timepicker/jquery.timepicker.js"></script>
+<link href='/jquery/timepicker/jquery.timepicker.css' rel='stylesheet'  />
+
+<script src="/jquery/jqtree/tree.jquery.js"></script>
+<script src="/admin/sdk/program/jqtree.js"></script>
+<script src="/admin/sdk/program/jqcookiestate.js"></script>
+
+<script src="/jquery/contextMenu/jquery.contextMenu.js"></script>
+<link rel="stylesheet" href="/jquery/contextMenu/jquery.contextMenu.css">
+
+
+<script src="/jquery/codemirror/lib/codemirror.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+<script src="/jquery/codemirror/mode/alinous/alinous.js"></script>
+<script src="/jquery/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="/jquery/codemirror/mode/css/css.js"></script>
+<script src="/jquery/codemirror/mode/xml/xml.js"></script>
+<script src="/jquery/codemirror/mode/javascript/javascript.js"></script>
+
+<link rel="stylesheet" href="/jquery/codemirror/lib/codemirror.css">
+
+<script src="/jquery/codemirror/addon/hint/show-hint.js"></script>
+
+<script src="/admin/cms/codemirror/alinoushint.js"></script>
+<link rel="stylesheet" href="/admin/cms/codemirror/alinoushint.css">
+
+<link rel="stylesheet" href="/jquery/codemirror/addon/hint/show-hint.css">
+
+<script type="text/javascript" charset="utf-8">
+<!--
+
+$(function() {
+	$("button").button();
+	
+	$('#left-menu-handle-tab').click( function() {
+    	 $("#left-menu-contents").animate({
+    	 	 width: 'toggle'
+    	 }, 400, function() {
+    	 	var marginWidth = this.clientWidth + 35;
+			    	 	
+    	 	$("#right-body").css("margin-left", marginWidth + "px");
+    	 	$("#lq_content_wrap").css("margin-left", marginWidth + "px");
+    	 });
+	});
+	
+	var path = $("#selectedPath").val();
+	initJqTree(path);
+});
+
+
+-->
+</script>
+
+
+<style>
+#scroll-container {
+    height: 800px;
+    overflow-y: scroll;
+    overflow-x: none;
+    position: relative;
+}
+</style>
+
+</head>
+<body>
+
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+
+<h1 class="nomargin"><a href="/admin/">Document CMS</a> &gt; Programming & Development</h1>
+
+<div id="left-menu">
+	<div id="left-menu-contents">
+		<h2><a href="/admin/cms/article/">Manage Contents</a></h2>
+		
+		<form name="naviFrm" action="index.html" method="POST">
+			<div id="scroll-container">
+				<div id="pageTree" data-url="/admin/sdk/program/makejson.alns"
+					style="width:100%; padding: 0 0 0 12px; width: 328px;"></div>
+			</div>
+		<input type="hidden" name="cmd" value="" />
+		<input type="hidden" name="selectedPath" id="selectedPath" value="{$IN.selectedPath}" />
+		</form>
+	</div>
+	
+	
+
+	<div id="left-menu-handle">
+		<div id="left-menu-handle-tab">
+			<img src="/admin/cms/img/leftmenu.png" width="20" /><br />
+			<div id="left-menu-handle-tab-string">
+			M<br />
+			E<br />
+			N<br />
+			U<br />
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div id="lq_content_wrap">
+	<div id="right-body">
+		
+		<div alns:inner="/admin/sdk/program/editarea.html?type={$type}&selectedPath={$IN.selectedPath}" alns:tagid="edit"></div>
+		
+		
+	</div>
+</div>
+
+</div>
+
+</body>
+</html>
+

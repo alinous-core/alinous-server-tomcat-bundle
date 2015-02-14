@@ -1,0 +1,120 @@
+
+
+initParams($IN, $SESSION);
+
+if($IN.cmd == "execute"){
+	$ret = execute($IN.sql);
+
+}
+
+
+$sizeRecords = Array.size(@ret.records);
+if($sizeRecords > 0){
+	$columnHeaders = createColumn(@ret.records);
+	$data = createData(@ret.records);
+}
+
+return 0;
+
+function createData(@records)
+{
+	@columns = Variable.listNames($records[0]);
+	$cols = Array.size(@columns);
+	
+	$size = Array.size(@records);
+	
+	// limit size
+	if($size > 1000){
+		$size = 1000;
+	}
+	
+	$json = "[";
+	
+	for($i = 0; $i < $size; $i++){
+		if($i > 0){
+			$json = $json + ",\n";
+		}
+		
+		$json = $json + "[";
+		for($j = 0; $j < $cols; $j++){
+			$vpath = "records[" + $i + "]." + $columns[$j];
+			
+			$value = Variable.get($vpath);
+			
+			$json = $json + '"' + String.jsonEscape($value) + '",';
+		}	
+		$json = $json + "]";
+	}
+	
+	
+	$json = $json + "]";
+	
+	return $json;
+}
+
+function createColumn(@records)
+{
+	@columns = Variable.listNames($records[0]);
+	
+	$json = Record.dom2json(@columns);
+	
+	return $json;
+}
+
+function execute($sql)
+{
+	$script = String.trim($sql);
+	if(!String.endsWith($script, ";") ){
+		$script = $script + ";";
+	}
+	
+	try{
+		Script.evaluate($script);
+	} catch($e){
+		$e = getRawException($e);
+		$ret.error = $e;
+	}
+	
+	@ret.records = @records;
+	
+	return $ret;
+}
+
+function getRawException($e)
+{
+	if($e.cause == null){
+		return $e;
+	}
+	
+	if($e.cause.cause == null){
+		return $e.cause;
+	}
+	
+	return $e.cause.cause;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.cmd == null){
+		if($IN.exec == 1){
+			$IN.cmd = "execute";
+		}
+		else{
+			$IN.cmd = "";
+		}
+	}
+	
+	if($IN.sql == null){
+		if($IN.command == "select"){
+			$IN.sql = "SELECT * INTO records FROM " + $IN.tableName 
+				+ "\nLIMIT 100";
+		}
+		else if($IN.command == "drop"){
+			$IN.sql = "DROP TABLE " + $IN.tableName 
+				+ ";";
+		}
+		else{
+			$IN.sql = "";
+		}
+	}
+}

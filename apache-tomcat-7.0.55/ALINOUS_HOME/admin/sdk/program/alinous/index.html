@@ -1,0 +1,44 @@
+<html>
+<body>
+<script>
+<!--
+var editor;
+
+$(function() {
+	var winHeight = window.innerHeight - 150;
+	var mode = $("#codeType").val();
+	
+	// alert(mode);
+	
+	editor = CodeMirror.fromTextArea(document.getElementById("code"),
+	{
+		mode: mode,
+		lineNumbers: true,
+		extraKeys: {"Ctrl-Space": "autocomplete"},
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});
+	
+	editor.setSize("100%", winHeight);
+	
+});
+-->
+</script>
+<style>
+
+  .CodeMirror { height: 100%; border: 1px solid #ddd; }
+  /*.CodeMirror-scroll { max-height: 680px; }*/
+  .CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+  .breakpoints {width: .8em;}
+
+</style>
+
+<h2>Code Editor</h2>
+<form name="frm" action="index.html" method="POST">
+
+<textarea id="code" name="code" style="width:100%;">{$data.code}</textarea>
+<input type="hidden" id="codeType" name="codeType" value="{$data.type}" />
+
+</form>
+
+</body>
+</html>

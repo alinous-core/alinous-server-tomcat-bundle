@@ -1,0 +1,5 @@
+
+$tableInfo = Sql.getTableInfo("pgapps", $IN.tableName);
+
+
+return 0;

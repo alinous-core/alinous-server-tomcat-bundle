@@ -1,0 +1,94 @@
+
+include("/admin/sdk/program/filetypes.alns");
+
+if($IN.node != "/ALINOUS_HOME" && !File.exists($IN.node)){
+	return "{}";
+}
+
+if($IN.node == "/"){
+	$elements[0].label = "ALINOUS_HOME";
+	$elements[0].id = "/ALINOUS_HOME";
+	$elements[0].type = "dir";
+	$elements[0].load_on_demand = true;
+	
+	$json = Record.dom2json(@elements);
+	return $json;
+}
+
+$path = $IN.node;
+if(String.startsWith($IN.node, "/ALINOUS_HOME")){
+	$len = String.length($path);
+	$path = String.subString($IN.node, String.length("/ALINOUS_HOME"), $len);
+	if($path == ""){
+		$path = "/";
+	}
+}
+
+if(File.isDirectory($path)){
+	@elements = getDirectoriesJson($path);
+	@elements = getFilesJson($path, @elements);
+}else{
+	@elements = getFilesJson($path, @elements);
+}
+
+$json = Record.dom2json(@elements);
+
+return $json;
+
+function getFilesJson($path, @elements)
+{
+	@files = File.getFiles($path);
+	$size = Array.size(@files);
+	for($i = 0; $i < $size; $i++){
+		$idx = Array.size(@elements);
+		
+		$elements[$idx].label = makeFileLabel($files[$i]);
+		$elements[$idx].id = $path + $files[$i];
+		$elements[$idx].type = FileTypes.getType($files[$i]);
+	}
+	
+	return @elements;
+}
+
+
+function getDirectoriesJson($path)
+{
+	@dirs = File.getDirectories($path);
+	
+	$size = Array.size(@dirs);
+	for($i = 0; $i < $size; $i++){
+		$ret[$i].label = makeFileLabel($dirs[$i]);
+		$ret[$i].id = $path + $dirs[$i] + "/";
+		$ret[$i].type = "dir";
+				
+		@inner = File.getDirectories($ret[$i].id);
+		if(Array.size(@inner) > 0){
+			$ret[$i].load_on_demand = true;
+		}
+		
+		
+		@inner = File.getFiles($ret[$i].id);
+		if(Array.size(@inner) > 0){
+			$ret[$i].load_on_demand = true;
+		}
+	}
+	
+	return @ret;
+}
+
+function makeFileLabel($path)
+{
+	if(String.startsWith($path, "/")){
+		$path = String.subString($path, 1, String.length($path));
+	}
+	if(String.endsWith($path, "/")){
+		$path = String.subString($path, 0, String.length($path) - 1);
+	}
+	
+	$idx = String.lastIndexOf($path, "/");
+	if($idx > 0){
+		$path = String.subString($path, $idx + 1, String.length($path));
+	}
+	
+	return $path;
+}

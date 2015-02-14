@@ -1,0 +1,29 @@
+
+include("/admin/sdk/program/filetypes.alns");
+
+
+initParams($IN, $SESSION);
+
+
+$type = editorData($IN, $SESSION);
+
+
+return 0;
+
+function editorData($IN, $SESSION)
+{
+	if(File.isDirectory($IN.selectedPath)){
+		return "dir";
+	}	
+	
+	$fileType = FileTypes.getType($IN.selectedPath);
+		
+	return $fileType;
+}
+
+function initParams($IN, $SESSION)
+{
+	if($IN.selectedPath == null){
+		$IN.selectedPath = "/";
+	}
+}

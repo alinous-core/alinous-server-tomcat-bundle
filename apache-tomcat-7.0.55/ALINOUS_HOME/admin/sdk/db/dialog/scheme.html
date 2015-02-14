@@ -1,0 +1,27 @@
+<html>
+<body>
+
+<h1>Database Scheme of {$IN.tableName}</h1>
+
+<table class="stdtable">
+	<tr>
+		<th>
+			Column Name
+		</th>
+		<th>
+			Key
+		</th>
+	</tr>
+	<tr alns:iterate="@tableInfo.columns" alns:variable="col">
+		<td>
+			{$col}
+		</td>
+		<td>
+			<span alns:if="{BOOL($col.primary == true)}">yes</span>
+		</td>
+	</tr>
+</table>
+
+
+</body>
+</html>

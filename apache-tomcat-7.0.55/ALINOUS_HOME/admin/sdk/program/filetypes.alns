@@ -1,0 +1,40 @@
+/*
+include("/admin/sdk/program/filetypes.alns");
+*/
+
+function FileTypes.getType($path)
+{
+	$ext = File.getExtention($path);
+	
+	if($ext == null || $ext == ""){
+		return "file";
+	}
+	
+	$ext = String.toLowerCase($ext);
+	if($ext == "js"){
+		return "js";
+	}
+	if($ext == "css"){
+		return "css";
+	}
+	if($ext == "html"){
+		return "html";
+	}
+	if($ext == "alns"){
+		return "alns";
+	}
+	if($ext == "txt"){
+		return "text";
+	}
+	if($ext == "xml"){
+		return "xml";
+	}
+	if($ext == "png" || $ext == "jpg"  || $ext == "jpeg" || $ext == "gif" || $ext == "tiff"){
+		return "image";
+	}
+	
+	return "file";
+}
+
+
+

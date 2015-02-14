@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Database Management</title>
+
+<link rel="stylesheet" href="/admin/css/navi.css">
+<link rel="stylesheet" href="/admin/css/layout.css">
+<link rel="stylesheet" href="/admin/css/style.css">
+<link rel="stylesheet" href="/admin/css/widgets.css">
+
+<link rel="stylesheet" href="/jquery/themes/cupertino/jquery-ui.css">
+
+<script src="/jquery/jquery-1.10.2.js"></script>
+<script src="/jquery/ui/jquery-ui.js"></script>
+
+<script src="/jquery/ui/jquery.ui.core.js"></script>
+<script src="/jquery/ui/jquery.ui.widget.js"></script>
+
+<script type="text/javascript" charset="utf-8">
+<!--
+
+$(function() {
+	$("button").button();
+	
+	window.scroll( 0, $("#scroll").val() );
+	
+	$( "#dialog" ).dialog({
+		height: 600,
+		width: 1000,
+		autoOpen: false,
+		show: {
+			effect: "blind",
+			duration: 300
+		},
+		hide: {
+			effect: "explode",
+			duration: 300
+		}
+	});
+});
+
+function cmdSubmit(form, cmd)
+{
+	form.cmd.value = cmd;
+	form.submit();
+}
+
+function sqlConsole(form, table, command, exec)
+{
+	var consolePath = "/admin/sdk/db/console.html";
+	var url = consolePath + "?tableName=" + table
+			+ "&command=" + command
+			+ "&exec=" + exec;
+	
+	var winHeight = document.body.clientHeight;
+	var winWidth = document.body.clientWidth;
+	
+	
+	var w = ( screen.width-winWidth ) / 2;
+	var h = ( screen.height-winHeight ) / 2;
+	
+	myWin = window.open(url, "sqlconsole",
+	            "toolbar=no,location=no,status=no,menubar=no,scrollbars=no,width=" + winWidth + ",height=" + winHeight +
+	           	+",left="+w+",top="+h);
+	
+	myWin.focus();
+}
+
+function showScheme(form, table)
+{
+	var url = "/admin/sdk/db/dialog/scheme.html";
+			
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+			tableName: table
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+-->
+</script>
+</head>
+<body>
+
+<div id="menubox" alns:tagid="menu" alns:inner="/admin/menu.html"></div>
+
+<div id="wrap">
+<h1><a href="/admin/">Document CMS</a> &gt; Database Management</h1>
+
+<form name="frm" action="index.html" method="POST">
+
+<input type="hidden" name="cmd" value="" />
+<input type="hidden" name="scroll" id="scroll" value="{$IN.scroll}" />
+
+<blockquote>
+<button type="button" onclick="cmdSubmit(this.form, 'reflesh')">Reflesh</button>
+<button type="button" onclick="sqlConsole(this.form, '', 'open', 0)">Open SQL Console</button>
+
+<table class="stdtable">
+	<tr>
+		<th>
+			Table Name
+		</th>
+		<th>
+			Table Info
+		</th>
+		<th>
+			View Data
+		</th>
+		<th>
+			Delete
+		</th>
+	</tr>
+	<tr alns:iterate="@tables" alns:variable="oneRecord">
+		<td>
+			{$oneRecord.name}
+		</td>
+		<td align="center">
+			<button type="button" onclick="showScheme(this.form, '{$oneRecord.name}')">Table Info</button>
+		</td>
+		<td align="center">
+			<button type="button" onclick="sqlConsole(this.form, '{$oneRecord.name}', 'select', 1)">View Data</button>
+		</td>
+		<td align="center">
+			<button type="button"onclick="sqlConsole(this.form, '{$oneRecord.name}', 'drop', 0)">Drop Table</button>
+		</td>
+	</tr>
+</table>
+</blockquote>
+
+</form>
+
+
+<div id="dialog"></div>
+
+</div>
+
+
+</body>
+</html>
