@@ -13,6 +13,10 @@ include("/include/pathutils.alns");
 
 include("/include/pagedirty.alns");
 
+include("/admin/cms/template-top/export/export.alns");
+include("/include/csvutils.alns");
+include("/admin/cms/template-primitive/lib/export.alns");
+
 initParams($IN, $SESSION);
 
 $ret = executeCommand($IN, $SESSION);
@@ -29,6 +33,10 @@ if($IN.cmd == "addTemplate"){
 else if($IN.cmd == "delete"){
 	deleteTemplate($IN, $SESSION);
 	redirect "/admin/cms/template-top/index.html";
+}
+else if($IN.cmd == "export"){
+	$file = makeExportZip($IN, $SESSION);
+	download $file, $IN.theme + ".zip";
 }
 
 SELECT * INTO template_top

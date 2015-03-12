@@ -13,6 +13,8 @@ include("/include/templatedirty.alns");
 include("/include/pagedirty.alns");
 include("/include/csvutils.alns");
 
+include("/admin/cms/template-primitive/lib/export.alns");
+
 initParams($IN, $SESSION);
 
 $ret = execCommand($IN, $SESSION);

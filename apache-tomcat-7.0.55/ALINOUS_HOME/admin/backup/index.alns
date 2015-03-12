@@ -10,6 +10,7 @@ include("/include/template_primitive.alns");
 include("/include/rss.alns");
 include("/include/sitefiles.alns");
 include("/include/sitesetting.alns");
+include("/admin/cms/publish/publish.alns");
 
 include("/include/httpheader.alns");
 
@@ -228,8 +229,11 @@ function recover($tmpFile, $outDir)
 	Redirects.sync(null);
 	
 	// sitemap, rss and robots txt
+	generateSitemaps();
 	Sitefiles.syncAll();
 	Rss.publishAll();
+	
+	
 	
 	PrimitiveTmpl.syncAll();
 	ContainerTmpl.syncAll();
@@ -237,6 +241,19 @@ function recover($tmpFile, $outDir)
 	
 	return 0;
 }
+
+
+function generateSitemaps()
+{
+	@sites = SiteSetting.getSiteFromPages();
+	
+	$size = Array.size(@sites);
+	for($i = 0; $i < $size; $i++){
+		SiteSetting.generateSitemap($sites[$i]);
+	}
+	
+}
+
 
 function resetDir($dir)
 {

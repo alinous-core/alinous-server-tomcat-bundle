@@ -1,0 +1,8 @@
+
+SELECT * INTO template_top
+FROM
+	template_top
+ORDER BY template_top.position_order;
+
+
+return 0;

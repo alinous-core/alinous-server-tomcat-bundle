@@ -1,0 +1,60 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$(".dlgbtn").button();
+	
+	
+	
+});
+
+function dlgExport(form)
+{
+	if(form.theme.value == ""){
+		alert("Input Template set's theme name.");
+		return;
+	}
+	
+	var checks = document.getElementsByName('template_top_ids[]');	
+	
+	var ids = "";
+	for(i = 0; i < checks.length; i++){
+		if(checks[i].checked){
+			if(ids != ""){
+				ids = ids + ",";
+			}
+			ids = ids + checks[i].value;
+		}
+	}
+	
+	document.partsFrm.targetTemplateId.value = ids;
+	document.partsFrm.theme.value = form.theme.value;
+	document.partsFrm.cmd.value = "export";
+	document.partsFrm.submit();
+}
+
+-->
+</script>
+
+<form name="dlgfrm" action="index.html" method="POST">
+
+<h3>Export templates set</h3>
+
+<ul class="top_tmpls">
+	<li alns:iterate="@template_top" alns:variable="oneRecord" id="tmpl_{$oneRecord.template_top_id}"
+		class="{$oneRecord.class}">
+		<input type="checkbox" name="template_top_ids[]" value="{$oneRecord.template_top_id}" checked />
+		{$oneRecord.template_top_name}
+	</li>		
+</ul>
+
+<h3>Enter Tempaltes Theme name</h3>
+
+Name: <input type="text" name="theme" value="" maxlength="128" />.zip
+<button type="button" class="dlgbtn" onclick="dlgExport(this.form)">Export</button>
+
+</form>
+
+</body>
+</html>

@@ -960,7 +960,7 @@ var nicEditorAdvancedButton = nicEditorButton.extend({
 		}
 	},
 	
-	addForm : function(f,elm) {
+	addForm : function(f,elm, submit) {
 		this.form = new bkElement('form').addEvent('submit',this.submit.closureListener(this));
 		this.pane.append(this.form);
 		this.inputs = {};
@@ -997,10 +997,18 @@ var nicEditorAdvancedButton = nicEditorButton.extend({
 					case 'content':
 						this.inputs[itm] = new bkElement('textarea').setAttributes({id : itm}).setStyle({border : '1px solid #ccc', 'float' : 'left'}).setStyle(field.style).appendTo(contain);
 						this.inputs[itm].value = val;
+						break;
+					case 'button' :
+						this.inputs[itm] = new bkElement('button').setAttributes({id : itm}).setAttributes({'type' : 'button'}).appendTo(contain);
+						this.inputs[itm].setContent(field.text);
+						break;
 				}	
 			}
 		}
-		new bkElement('input').setAttributes({'type' : 'submit'}).setStyle({backgroundColor : '#efefef',border : '1px solid #ccc', margin : '3px 0', 'float' : 'left', 'clear' : 'both'}).appendTo(this.form);
+		if(submit != false){
+			new bkElement('input').setAttributes({'type' : 'submit'}).setStyle({backgroundColor : '#efefef',border : '1px solid #ccc', margin : '3px 0', 'float' : 'left', 'clear' : 'both'}).appendTo(this.form);
+		}
+		
 		this.form.onsubmit = bkLib.cancelEvent;	
 	},
 	
@@ -1924,18 +1932,82 @@ var nicCodeOptions = {
 };
 /* END CONFIG */
 
+var htmlCodeMirror = null;
 var nicCodeButton = nicEditorAdvancedButton.extend({
-	width : '700px',
-		
+	htmlCodeMirror : null,
+	
+	mouseClick : function() {
+		if(!this.isDisabled) {
+			var main = $(".nicEdit-main").parent().parent();
+			var width = this.pix2number(main.css("width")) - 10;
+						
+			if(this.pane && this.pane.pane) {
+				this.removePane();
+			} else {
+				this.pane = new nicEditorPane(this.contain,this.ne,{width : width + 'px', backgroundColor : '#fff'},this);
+				this.addPane();
+				this.ne.selectedInstance.saveRng();
+			}
+		}
+	},
+	
+	pix2number : function(str)
+	{
+		return parseInt(str.substring(0, str.length - 2));
+	},
+	
 	addPane : function() {
-		this.addForm({
-			'' : {type : 'title', txt : 'Edit HTML'},
-			'code' : {type : 'content', 'value' : this.ne.selectedInstance.getContent(), style : {width: '700px', height : '480px'}}
+		var main = $(".nicEdit-main").parent().parent();
+		
+		var width = this.pix2number(main.css("width")) - 10;
+		var height = this.pix2number(main.css("height")) -70; 
+				
+		var htmlForm = new bkElement('form').setAttributes({'name' : 'htmlCodeFrm'});
+		this.pane.append(htmlForm);
+		
+		new bkElement('button').setAttributes({'type' : 'button', 'id' : 'formatbtn'})
+			.setContent("Format Html")
+			.setStyle({backgroundColor : '#efefef',border : '1px solid #ccc', margin : '1px 0', 'height' : '25px', 'float' : 'left', 'clear' : 'none'})
+			.appendTo(htmlForm);
+		new bkElement('button').setAttributes({'type' : 'button', 'id' : 'applybtn'})
+			.setContent("Apply to Editor")
+			.setStyle({backgroundColor : '#efefef',border : '1px solid #ccc', margin : '1px 0', 'height' : '25px', 'float' : 'left', 'clear' : 'none'})
+			.appendTo(htmlForm);
+		
+		new bkElement('br').appendTo(htmlForm);
+		
+		new bkElement('textarea').setAttributes({'id' : 'htmlCode'})
+			.setContent(this.ne.selectedInstance.getContent())
+			.appendTo(htmlForm);
+		
+		htmlCodeMirror = CodeMirror.fromTextArea(document.getElementById("htmlCode"),
+		{
+			mode: "htmlmixed",
+			lineNumbers: true,
+			gutters: []
+		});
+		htmlCodeMirror.setSize(width, height);
+				
+		$('#formatbtn').click( function() {
+			var totalLines = htmlCodeMirror.lineCount();
+			var totalChars = htmlCodeMirror.getTextArea().value.length;
+			htmlCodeMirror.autoFormatRange({line:0, ch:0}, {line:totalLines, ch:totalChars});
+		});
+		
+		var _this = this;
+		$('#applybtn').click( function() {
+			var code = htmlCodeMirror.getValue();
+			_this.ne.selectedInstance.setContent(code);
+		
+			_this.removePane();
 		});
 	},
 	
 	submit : function(e) {
-		var code = this.inputs['code'].value;
+		
+		// var code = this.inputs['htmlCode'].value;
+		
+		var code = htmlCodeMirror.getValue();
 		this.ne.selectedInstance.setContent(code);
 		
 		this.removePane();

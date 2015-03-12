@@ -65,6 +65,12 @@ function getChildParts($template_top_id)
 	
 	$size = Array.size(@ch);
 	for($i = 0; $i < $size; $i++){
+		if($ch[$i].estimated_height == null){
+			$ch[$i].estimated_height = 300;
+		}
+		if($ch[$i].c_estimated_height == null){
+			$ch[$i].c_estimated_height = 300;
+		}
 		if($ch[$i].inner_template_primitive_id != 0){
 			$tmpl[$i].name = $ch[$i].template_primitive_name;
 			$tmpl[$i].tmpltype = "primitive";

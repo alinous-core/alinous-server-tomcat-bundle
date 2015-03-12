@@ -114,8 +114,8 @@ if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_statu
 		// FIXME publish
 		System.println("Publish because no file : " + $cms_page[0].cms_page_id);
 		
-		lazyPublish($cms_page[0], $path, $page, $useContext);
-		return 0;
+		$retcode = lazyPublish($cms_page[0], $path, $page, $useContext);
+		return $retcode;
 	}
 	// check timestamp
 	$lastModified = File.getTimestamp($fileName);
@@ -124,17 +124,17 @@ if($cms_page[0].page_status == "published-with-draft" || $cms_page[0].page_statu
 		// FIXME publish
 		System.println("Publish because dirty");
 		
-		lazyPublish($cms_page[0], $path, $page, $useContext);
-		return 0;
+		$retcode = lazyPublish($cms_page[0], $path, $page, $useContext);
+		return $retcode;
 	}
 	
 	if(Timestamp.after($cms_page[0].published_time, $lastModified)){
 		// FIXME publish
 		System.println("Publish because dirty");
 		
-		lazyPublish($cms_page[0], $path, $page, $useContext);
+		$retcode = lazyPublish($cms_page[0], $path, $page, $useContext);
 		
-		return 0;
+		return $retcode;
 	}
 	
 }else{
@@ -175,5 +175,14 @@ function lazyPublish($cms_page, $path, $page, $useContext)
 	$genCode = "";
 	$numPages = Publish.getPaging($template_top_id, $cms_page.cms_page_id, $genCode);
 	
+	if($page < 0){
+		return -1;
+	}
+	if($numPages <= $page){
+		return -1;
+	}
+	
 	Publish.doPublish($template_top_id, $cms_page.cms_page_id, $fileExt, $contextRoot, $page, $numPages);
+	
+	return 0;
 }

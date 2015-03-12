@@ -1,0 +1,44 @@
+
+
+SELECT * INTO cms_page
+FROM
+	cms_page
+WHERE
+	cms_page.cms_page_id = $args[0];
+
+if(Array.size(@cms_page) == 0){
+	return "";
+}
+
+$path = getUrl($cms_page[0].cms_page_id);
+
+
+return $path;
+
+function getUrl($cms_page_id)
+{
+    SELECT tree_model.page_path, tree_model.page_children,
+    	cms_page.cms_page_id, cms_page.force_folder
+    INTO tree_model
+    FROM
+        tree_model LEFT JOIN cms_page
+        ON
+            tree_model.node_id = cms_page.node_id
+    WHERE
+        tree_model.tree_id = 'cms' AND
+        cms_page.cms_page_id = $cms_page_id;
+  	
+    $idx = String.indexOf($tree_model[0].page_path, "/", 1);
+    if($idx < 0){
+    	return "/";
+    }
+    $len = String.length($tree_model[0].page_path);
+    $path = String.subString($tree_model[0].page_path, $idx, $len);
+    
+    if($tree_model[0].force_folder == 1 || $tree_model[0].page_children > 0){
+    	return $path + "/";
+    }
+    
+    return $path + ".html";
+}
+

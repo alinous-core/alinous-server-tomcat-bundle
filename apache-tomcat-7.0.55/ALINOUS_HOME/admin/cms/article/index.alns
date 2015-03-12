@@ -225,9 +225,8 @@ function createFirst($IN, $SESSION)
 	FROM
 		site_setting;
 	
-	if(Array.size(@site_setting) == 0){
-		$site_path = "/" + $IN.nodeCode;
-		
+	$site_path = "/" + $IN.nodeCode;
+	if(Array.size(@site_setting) == 0){		
 		INSERT INTO site_setting(
 			site_path,
 			site_domain,

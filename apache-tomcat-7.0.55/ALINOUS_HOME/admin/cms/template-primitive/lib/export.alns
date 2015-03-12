@@ -1,0 +1,101 @@
+
+/*
+include("/admin/cms/template-primitive/lib/export.alns");
+*/
+
+include("/include/csvutils.alns");
+
+function PrimitiveTemplate.export($template_code, $selectedNodeId, $SESSION)
+{
+	$tmpFolder = "/tmp/dl_primitive" + $SESSION;
+	$csvFolder = $tmpFolder + "/csv/";
+	$zipFile = "/tmp/" + $SESSION + "export.zip";
+		
+	File.remove($tmpFolder);
+	File.makeDir($csvFolder);
+	
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive
+	WHERE
+		template_primitive.node_id = $selectedNodeId;
+	
+	$outPath = $csvFolder + "/template_primitive.csv";
+	CsvRecord.storeRecords(@template_primitive, $outPath);
+	
+	SELECT * INTO cms_resource
+	FROM
+		cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'template_primitive' AND
+		cms_resource.resource_owner_id = $template_primitive[0].template_primitive_id
+	ORDER BY cms_resource.position;
+	
+	$outPath = $csvFolder + "cms_resource.csv";
+	CsvRecord.storeRecords(@cms_resource, $outPath);
+	
+	
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_primitive' AND
+		cms_resource_group.resource_owner_id = $template_primitive[0].template_primitive_id;
+		
+	$outPath = $csvFolder + "cms_resource_group.csv";
+	CsvRecord.storeRecords(@cms_resource_group, $outPath);
+	
+	
+	SELECT * INTO cms_resource_to_group
+	FROM
+		cms_resource_to_group
+	WHERE
+		cms_resource_to_group.cms_resource_id IN(
+			SELECT cms_resource_id
+			FROM
+				cms_resource
+			WHERE
+				cms_resource.resource_owner_type = 'template_primitive' AND
+				cms_resource.resource_owner_id = $template_primitive[0].template_primitive_id
+		);
+	
+	$outPath = $csvFolder + "cms_resource_to_group.csv";
+	CsvRecord.storeRecords(@cms_resource_to_group, $outPath);
+	
+	
+	SELECT * INTO template_primitive_parameter
+	FROM
+		template_primitive_parameter
+	WHERE
+		template_primitive_parameter.template_primitive_id = $template_primitive[0].template_primitive_id;
+	
+	$outPath = $csvFolder + "template_primitive_parameter.csv";
+	CsvRecord.storeRecords(@template_primitive_parameter, $outPath);
+	
+	
+	$codeTxt = $csvFolder + "primitive_code.txt";
+	File.putText($codeTxt, $template_code, "utf-8");
+	
+	Zip.compress($csvFolder, $zipFile);
+	
+	
+	
+	SELECT * INTO tree_model
+	FROM
+		tree_model
+	WHERE
+		tree_model.tree_id = 'primitive' AND
+		tree_model.node_id = $selectedNodeId;
+	
+	
+	$code = $template_code;
+	$now = Timestamp.now();
+	$dateStr = Timestamp.format($now, "yyyyMMdd");
+	
+	$ret.path = $zipFile;
+	$ret.fileName = $code + "-" + $dateStr + ".zip";
+	
+	File.remove($tmpFolder);
+	
+	return $ret;
+}

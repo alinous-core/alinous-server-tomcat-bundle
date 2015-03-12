@@ -1,0 +1,705 @@
+
+include("/include/csvutils.alns");
+include("/include/serialutils.alns");
+include("/include/treemodel.alns");
+
+include("/admin/cms/template-primitive/lib/import.alns");
+
+if($IN.cmd == "import"){
+	ImportTheme($IN, $SESSION);
+}
+
+return 0;
+
+function ImportTheme($IN, $SESSION)
+{
+	$file = "/tmp/" + $SESSION + "_" + $IN.theme;
+	$extractDir = "/tmp/theme" + $SESSION + "/";
+	
+	Zip.extract($file, $extractDir);
+	
+	importPrimitives($extractDir);
+	importContainer($extractDir);
+	importTopTemplates($extractDir);
+	
+	File.remove($file);
+	File.remove($extractDir);
+	
+	return 0;
+}
+
+function importTopTemplates($dir)
+{
+	$topDir = $dir + "top/";
+	
+	BEGIN;
+	
+	@template_top = CsvRecord.loadRecords($topDir + "template_top.csv");
+	$size = Array.size(@template_top);
+	for($i = 0; $i < $size; $i++){
+		importTopTemplate($template_top[$i], $topDir);
+	}
+	
+	COMMIT;
+}
+
+function importTopTemplate($template_top, $topDir)
+{
+	$tmplDir = $topDir + $template_top.template_top_code + "/";
+	
+	// self
+	SELECT * INTO record
+	FROM
+		template_top
+	WHERE
+		template_top.template_top_code = $template_top.template_top_code;
+	
+	if(Array.size(@record) > 0){
+		$paging_template_primitive_id = 0;
+		
+		UPDATE template_top
+		SET
+			template_top_code = $template_top.template_top_code,
+			template_top_name = $template_top.template_top_name,
+			div_id = $template_top.div_id,
+			code_css = $template_top.code_css,
+			code_html = $template_top.code_html,
+			code_alinous = $template_top.code_alinous,
+			code_js = $template_top.code_js,
+			has_paging = $template_top.has_paging,
+			paging_template_primitive_id = $paging_template_primitive_id
+		WHERE
+			template_top.template_top_code = $template_top.template_top_code;
+		
+		$template_top_id = $record[0].template_top_id;
+	}else{
+		$template_top_id = Common.newSerial("template_top");
+		$position_order = 1;
+		$paging_template_primitive_id = 0;
+		
+		SELECT max(template_top.position_order) as pos INTO ord
+		FROM
+			template_top;
+		
+		if($ord[0].pos != null){
+			$position_order = Cast.toNumber($ord[0].pos) + 1;
+		}
+		
+		INSERT INTO template_top(
+			template_top_id,
+			position_order,
+			template_top_code,
+			template_top_name,
+			div_id,
+			code_css,
+			code_html,
+			code_alinous,
+			code_js,
+			has_paging,
+			paging_template_primitive_id
+		)
+		VALUES(
+			$template_top_id,
+			$position_order,
+			$template_top.template_top_code,
+			$template_top.template_top_name,
+			$template_top.div_id,
+			$template_top.code_css,
+			$template_top.code_html,
+			$template_top.code_alinous,
+			$template_top.code_js,
+			$template_top.has_paging,
+			$paging_template_primitive_id
+		);
+	}
+	
+	// children
+	DELETE FROM template_top_children
+	WHERE
+		template_top_children.template_top_id = $template_top_id;
+	
+	@template_top_children = CsvRecord.loadRecords($tmplDir + "template_top_children.csv");
+	$size = Array.size(@template_top_children);
+	for($i = 0; $i < $size; $i++){
+		topChildren($template_top_id, $template_top_children[$i]);
+	}
+	
+	// resources
+	TopTemplate.clearResources($template_top_id);
+	
+	$cms_resource_csv = $tmplDir + "cms_resource.csv";
+	$cms_resource_group_csv = $tmplDir + "cms_resource_group.csv";
+	$cms_resource_to_group_csv = $tmplDir + "cms_resource_to_group.csv";
+	
+	@cms_resource_csv = CsvRecord.loadRecords($cms_resource_csv);
+	@cms_resource_group_csv = CsvRecord.loadRecords($cms_resource_group_csv);
+	@cms_resource_to_group_csv = CsvRecord.loadRecords($cms_resource_to_group_csv);
+	
+	for($i = 0; $i < Array.size(@cms_resource_csv); $i++){
+		$last_cms_resource_id = $cms_resource_csv[$i].cms_resource_id;
+		$cms_resource_csv[$i].cms_resource_id = Common.newSerial("cms_resource");
+		INSERT INTO cms_resource(
+			cms_resource_id,
+			position,
+			resource_owner_type,
+			resource_owner_id,
+			resource_type,
+			resource_name,
+			resource_title,
+			resource_description,
+			resource_binary
+		)VALUES(
+			$cms_resource_csv[$i].cms_resource_id,
+			$cms_resource_csv[$i].position,
+			'template_top', // resource_owner_type,
+			$template_top_id, // resource_owner_id,
+			$cms_resource_csv[$i].resource_type, // resource_type,
+			$cms_resource_csv[$i].resource_name,
+			$cms_resource_csv[$i].resource_title,
+			$cms_resource_csv[$i].resource_description,
+			$cms_resource_csv[$i].resource_binary
+		);
+		
+		// overwrite ids
+		for($j = 0; $j < Array.size(@cms_resource_to_group_csv); $j++){
+			if($cms_resource_to_group_csv[$j].cms_resource_id == $last_cms_resource_id){
+				$cms_resource_to_group_csv[$j].cms_resource_id = $cms_resource_csv[$i].cms_resource_id;
+			}
+		}
+	}
+	
+	for($i = 0; $i < Array.size(@cms_resource_group_csv); $i++){
+		$last_cms_resource_group_id = $cms_resource_group_csv[$i].cms_resource_group_id;
+		$cms_resource_group_csv[$i].cms_resource_group_id = Common.newSerial("cms_resource_group");
+		
+		INSERT INTO cms_resource_group(
+			cms_resource_group_id,
+			resource_owner_type,
+			resource_owner_id,
+			group_code
+		)
+		VALUES(
+			$cms_resource_group_csv[$i].cms_resource_group_id,
+			'template_top', // resource_owner_type,
+			$template_top_id, // resource_owner_id,
+			$cms_resource_group_csv[$i].group_code
+		);
+		
+		// overwrite ids
+		for($j = 0; $j < Array.size(@cms_resource_to_group_csv); $j++){
+			if($cms_resource_to_group_csv[$j].cms_resource_group_id == $last_cms_resource_group_id){
+				$cms_resource_to_group_csv[$j].cms_resource_group_id = $cms_resource_group_csv[$i].cms_resource_group_id;
+			}
+		}
+	}
+	
+	for($i = 0; $i < Array.size(@cms_resource_to_group_csv); $i++){
+		
+		INSERT INTO cms_resource_to_group(
+			cms_resource_group_id,
+			cms_resource_id
+		)
+		VALUES(
+			$cms_resource_to_group_csv[$i].cms_resource_group_id,
+			$cms_resource_to_group_csv[$i].cms_resource_id
+		);
+	}
+}
+
+function TopTemplate.clearResources($template_top_id)
+{
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_top' AND
+		cms_resource_group.resource_owner_id = $template_top_id;
+	
+	for($i = 0; $i < Array.size(@cms_resource_group); $i++){
+		DELETE FROM cms_resource_to_group
+		WHERE
+			cms_resource_to_group.cms_resource_group_id = $cms_resource_group[$i].cms_resource_group_id;
+	}
+	
+	DELETE FROM cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_top' AND
+		cms_resource_group.resource_owner_id = $template_top_id;
+	
+	DELETE FROM cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'template_top' AND
+		cms_resource.resource_owner_id = $template_top_id;
+	
+	return 0;
+}
+
+function topChildren($template_top_id, $template_top_children)
+{
+	if($template_top_children.type == "primitive"){
+		$primitive = path2Primitive($template_top_children.code);
+		
+		$inner_template_container_id = 0;
+		$inner_template_primitive_id = $primitive.template_primitive_id;
+	}else{
+		$container = path2Container($template_top_children.code);
+		
+		$inner_template_container_id = $container.template_container_id;
+		$inner_template_primitive_id = 0;
+	}
+	
+	INSERT INTO template_top_children(
+		template_top_id,
+		position_order,
+		inner_template_container_id,
+		inner_template_primitive_id
+	)
+	VALUES(
+		$template_top_id,
+		$template_top_children.position_order,
+		$inner_template_container_id,
+		$inner_template_primitive_id
+	);
+	
+}
+
+function importContainer($dir)
+{
+	$conDir = $dir + "container/";
+	
+	BEGIN;
+	
+	// load Category
+	@cats = CsvRecord.loadRecords($conDir + "template_container_category.csv");
+	$size = Array.size(@cats);
+	for($i = 0; $i < $size; $i++){
+		createContainerCategory($cats[$i]);
+	}
+	
+	// create container
+	@template_container = CsvRecord.loadRecords($conDir + "template_container.csv");
+	$size = Array.size(@template_container);
+	for($i = 0; $i < $size; $i++){
+		createContainerTemplate($template_container[$i], $conDir, @cats);
+	}
+	
+	// children
+	@template_container_children = CsvRecord.loadRecords($conDir + "template_container_children.csv");
+	$size = Array.size(@template_container_children);
+	for($i = 0; $i < $size; $i++){
+		setupContainerInner($conDir, $template_container_children[$i]);
+	}
+		
+	COMMIT;
+}
+
+function setupContainerInner($conDir, $template_container_children)
+{
+	$container = path2Container($template_container_children.container);
+	
+	if($template_container_children.type == "primitive"){
+		$inner = path2Primitive($template_container_children.code);
+		$inner_template_container_id = 0;
+		$inner_template_primitive_id = $inner.template_primitive_id;
+	}else{
+		$inner = path2Container($template_container_children.code);
+		$inner_template_container_id = $inner.template_container_id;
+		$inner_template_primitive_id = 0;
+	}
+	
+	INSERT INTO template_container_children(
+		template_container_id,
+		position,
+		position_order,
+		inner_template_container_id,
+		inner_template_primitive_id
+	)
+	VALUES(
+		$container.template_container_id,
+		$template_container_children.position,
+		$template_container_children.position_order,
+		$inner_template_container_id,
+		$inner_template_primitive_id
+	);
+	
+	return 0;
+}
+
+function path2Primitive($page_path)
+{
+	SELECT * INTO template_primitive
+	FROM
+		template_primitive LEFT JOIN tree_model
+		ON
+			template_primitive.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'primitive'
+	WHERE
+		tree_model.page_path = $page_path;
+	
+	return $template_primitive[0];
+}
+
+function path2Container($page_path)
+{
+	SELECT * INTO template_container
+	FROM
+		template_container LEFT JOIN tree_model
+		ON
+			template_container.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'container'
+	WHERE
+		tree_model.page_path = $page_path;
+	return $template_container[0];
+	return $template_container[0];
+}
+
+
+function createContainerTemplate($template_container, $conDir, @cats)
+{
+	$template_container_code = path2Code($template_container.page_path);
+	$categoryPath = path2CategoryPath($template_container.page_path);
+	
+	
+	SELECT * INTO record
+	FROM
+		template_container LEFT JOIN tree_model
+		ON
+			template_container.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'container'
+	WHERE
+		tree_model.page_path = $template_container.page_path;
+	
+	if(Array.size(@record) > 0){
+		UPDATE template_container
+		SET
+			has_paging = $template_container.has_paging,
+			estimated_height = $template_container.estimated_height,
+			div_left_id = $template_container.div_left_id,
+			div_right_id = $template_container.div_right_id,
+			code_css = $template_container.code_css,
+			div_id = $template_container.div_id,
+			num_lines = $template_container.num_lines,
+			code_js = $template_container.code_js,
+			template_container_name = $template_container.template_container_name,
+			code_alinous = $template_container.code_alinous			
+		WHERE
+			template_container.template_container_id = $record[0].template_container_id;
+		
+		DELETE FROM template_container_children
+		WHERE
+			template_container_children.template_container_id = $record[0].template_container_id;
+		
+		ContainerTemplate.clearResources($template_container_id);
+		
+		$template_container_id = $record[0].template_container_id;
+	}else{
+		SELECT * INTO template_container_category
+		FROM
+			template_container_category LEFT JOIN tree_model
+		ON
+			template_container_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'container'
+		WHERE
+			tree_model.page_path = $categoryPath;
+		
+		
+		$nodeId = TreeModel.insertInside('container', $template_container_category[0].node_id, $template_container_code);
+		
+		$template_container_id = Common.newSerial("template_container");
+		
+		INSERT INTO template_container(
+			template_container_id,
+			node_id,
+			template_container_name,
+			div_id,
+			div_left_id,
+			div_right_id,
+			code_css,
+			code_js,
+			code_alinous,
+			num_lines,
+			has_paging,
+			estimated_height
+		)
+		VALUES(
+			$template_container_id,
+			$nodeId,
+			$template_container.template_container_name,
+			$template_container.div_id,
+			$template_container.div_left_id,
+			$template_container.div_right_id,
+			$template_container.code_css,
+			$template_container.code_js,
+			$template_container.code_alinous,
+			$template_container.num_lines,
+			$template_container.has_paging,
+			$template_container.estimated_height
+		);
+	}
+
+	// resources
+	$cms_resource_csv = $conDir + "cms_resource.csv";
+	$cms_resource_group_csv = $conDir + "cms_resource_group.csv";
+	$cms_resource_to_group_csv = $conDir + "cms_resource_to_group.csv";
+	
+	@cms_resource_csv = CsvRecord.loadRecords($cms_resource_csv);
+	@cms_resource_group_csv = CsvRecord.loadRecords($cms_resource_group_csv);
+	@cms_resource_to_group_csv = CsvRecord.loadRecords($cms_resource_to_group_csv);
+	
+	for($i = 0; $i < Array.size(@cms_resource_csv); $i++){
+		$last_cms_resource_id = $cms_resource_csv[$i].cms_resource_id;
+		$cms_resource_csv[$i].cms_resource_id = Common.newSerial("cms_resource");
+		INSERT INTO cms_resource(
+			cms_resource_id,
+			position,
+			resource_owner_type,
+			resource_owner_id,
+			resource_type,
+			resource_name,
+			resource_title,
+			resource_description,
+			resource_binary
+		)VALUES(
+			$cms_resource_csv[$i].cms_resource_id,
+			$cms_resource_csv[$i].position,
+			'template_container', // resource_owner_type,
+			$template_container_id, // resource_owner_id,
+			$cms_resource_csv[$i].resource_type, // resource_type,
+			$cms_resource_csv[$i].resource_name,
+			$cms_resource_csv[$i].resource_title,
+			$cms_resource_csv[$i].resource_description,
+			$cms_resource_csv[$i].resource_binary
+		);
+		
+		// overwrite ids
+		for($j = 0; $j < Array.size(@cms_resource_to_group_csv); $j++){
+			if($cms_resource_to_group_csv[$j].cms_resource_id == $last_cms_resource_id){
+				$cms_resource_to_group_csv[$j].cms_resource_id = $cms_resource_csv[$i].cms_resource_id;
+			}
+		}
+	}
+	
+	for($i = 0; $i < Array.size(@cms_resource_group_csv); $i++){
+		$last_cms_resource_group_id = $cms_resource_group_csv[$i].cms_resource_group_id;
+		$cms_resource_group_csv[$i].cms_resource_group_id = Common.newSerial("cms_resource_group");
+		
+		INSERT INTO cms_resource_group(
+			cms_resource_group_id,
+			resource_owner_type,
+			resource_owner_id,
+			group_code
+		)
+		VALUES(
+			$cms_resource_group_csv[$i].cms_resource_group_id,
+			'template_container', // resource_owner_type,
+			$template_container_id, // resource_owner_id,
+			$cms_resource_group_csv[$i].group_code
+		);
+		
+		// overwrite ids
+		for($j = 0; $j < Array.size(@cms_resource_to_group_csv); $j++){
+			if($cms_resource_to_group_csv[$j].cms_resource_group_id == $last_cms_resource_group_id){
+				$cms_resource_to_group_csv[$j].cms_resource_group_id = $cms_resource_group_csv[$i].cms_resource_group_id;
+			}
+		}
+	}
+	
+	for($i = 0; $i < Array.size(@cms_resource_to_group_csv); $i++){
+		
+		INSERT INTO cms_resource_to_group(
+			cms_resource_group_id,
+			cms_resource_id
+		)
+		VALUES(
+			$cms_resource_to_group_csv[$i].cms_resource_group_id,
+			$cms_resource_to_group_csv[$i].cms_resource_id
+		);
+	}
+	
+	return 0;
+}
+
+function ContainerTemplate.clearResources($template_container_id)
+{
+	SELECT * INTO cms_resource_group
+	FROM
+		cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_container' AND
+		cms_resource_group.resource_owner_id = $template_container_id;
+	
+	for($i = 0; $i < Array.size(@cms_resource_group); $i++){
+		DELETE FROM cms_resource_to_group
+		WHERE
+			cms_resource_to_group.cms_resource_group_id = $cms_resource_group[$i].cms_resource_group_id;
+	}
+	
+	DELETE FROM cms_resource_group
+	WHERE
+		cms_resource_group.resource_owner_type = 'template_container' AND
+		cms_resource_group.resource_owner_id = $template_container_id;
+	
+	DELETE FROM cms_resource
+	WHERE
+		cms_resource.resource_owner_type = 'template_container' AND
+		cms_resource.resource_owner_id = $template_container_id;
+	
+	return 0;
+}
+
+
+function createContainerCategory($cat)
+{
+	SELECT * INTO template_container_category
+	FROM
+		template_container_category LEFT JOIN tree_model
+		ON
+			template_container_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'container'
+	WHERE
+		tree_model.page_path = $cat.page_path;
+	
+	if(Array.size(@template_container_category) == 0){		
+		$category_code =  path2Code($cat.page_path);
+		
+		$nodeId = TreeModel.newNode("container", 0, $category_code, 1);
+		
+		$template_container_category_id = Common.newSerial("template_container_category");
+		
+		INSERT INTO template_container_category(
+			template_container_category_id,
+			node_id,
+			category_name
+		)
+		VALUES(
+			$template_container_category_id,
+			$nodeId,
+			$cat.category_name
+		);
+	}
+	
+	return 0;
+}
+
+function importPrimitives($dir)
+{
+	$prdir = $dir + "primitive/";
+	
+	// load Category
+	@cats = CsvRecord.loadRecords($prdir + "template_primitive_category.csv");
+	$size = Array.size(@cats);
+	for($i = 0; $i < $size; $i++){
+		createPrimitiveCategory($cats[$i]);
+	}
+	
+	@files = File.getFiles($prdir);
+	$size = Array.size(@files);
+	for($i = 0; $i < $size; $i++){
+		$archive = $files[$i];
+		
+		if(String.endsWith($archive, ".csv")){
+			continue;
+		}
+		
+		importPrimitive($dir, $archive, @cats);
+	}
+	
+	
+	return 0;
+}
+
+function importPrimitive($dir, $archive, @cats)
+{
+	$tmpdir = $dir + "buffer/";
+	if(File.exists($tmpdir)){
+		File.remove($tmpdir);
+	}
+	File.makeDir($tmpdir);
+	
+	Zip.extract($archive, $tmpdir);
+	
+	$template_primitive_category_id = getPrimitiveCategoryFromPath($archive);
+	$template_code = getPrimitiveCodeFromPath($archive);
+	PrimitiveTemplate.importTemplate($tmpdir, $template_code, $template_primitive_category_id);
+}
+
+function getPrimitiveCodeFromPath($archive)
+{
+	@elements = String.split($archive, "/");
+	$pos = Array.size(@elements) - 1;
+	
+	$code = $elements[$pos];
+	@elements = String.split($code, "@");
+	
+	@elements = String.split($elements[2], "\\.");
+	
+	return $elements[0];
+}
+
+function getPrimitiveCategoryFromPath($archive)
+{
+	@elements = String.split($archive, "/");
+	$pos = Array.size(@elements) - 1;
+	
+	$code = $elements[$pos];
+	@elements = String.split($code, "@");
+	
+	$page_path = "/" + $elements[1];
+	SELECT * INTO template_primitive_category
+	FROM
+		template_primitive_category LEFT JOIN tree_model
+		ON
+			template_primitive_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'primitive'
+	WHERE
+		tree_model.page_path = $page_path;
+	
+	return $template_primitive_category[0].template_primitive_category_id;
+}
+
+function createPrimitiveCategory($cat)
+{
+	SELECT * INTO template_primitive_category
+	FROM
+		template_primitive_category LEFT JOIN tree_model
+		ON
+			template_primitive_category.node_id = tree_model.node_id AND
+			tree_model.tree_id = 'primitive'
+	WHERE
+		tree_model.page_path = $cat.page_path;
+	
+	if(Array.size(@template_primitive_category) == 0){		
+		$category_code =  path2Code($cat.page_path);
+		
+		$nodeId = TreeModel.newNode("primitive", 0, $category_code, 1);
+		
+		$template_primitive_category_id = Common.newSerial("template_primitive_category");
+		
+		INSERT INTO template_primitive_category(
+			template_primitive_category_id,
+			node_id,
+			category_name
+		)
+		VALUES(
+			$template_primitive_category_id,
+			$nodeId,
+			$cat.category_name
+		);
+	}
+	
+	return 0;
+}
+
+function path2CategoryPath($path)
+{
+	@elements = String.split($path, "/");
+	return "/" + $elements[1];
+}
+
+function path2Code($path)
+{
+	@elements = String.split($path, "/");
+	$pos = Array.size(@elements) - 1;
+	return $elements[$pos];
+}
+

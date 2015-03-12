@@ -31,6 +31,8 @@ $robot = getRobotTxt($IN.site);
 SELECT * INTO sitemap_page_type
 FROM
 	sitemap_page_type
+WHERE
+	sitemap_page_type.site_path = $IN.site
 ORDER BY sitemap_page_type.page_type;
 $size_page_type = Array.size(@sitemap_page_type);
 

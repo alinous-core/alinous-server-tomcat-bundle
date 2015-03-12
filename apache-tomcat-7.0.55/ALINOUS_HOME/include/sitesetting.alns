@@ -180,6 +180,9 @@ function SiteSetting.generateSitemap($site)
 	File.putText($outFile, $xml, "utf-8");
 	
 	$outFile = "/html_resource/page" + $site + "/sitemap-pg.xml";
+	
+	$outDir = "/html_resource/page" + $site + "/";
+	File.makeDir($outDir);
 	File.putText($outFile, $xml_pg, "utf-8");
 	
 	BEGIN;

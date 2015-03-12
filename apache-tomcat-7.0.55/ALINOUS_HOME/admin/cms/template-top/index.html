@@ -123,6 +123,48 @@ function newTemplate()
 	$( "#dialog" ).dialog( "open" );
 }
 
+function exportTemplates()
+{
+	var url = "/admin/cms/template-top/export/index.html";
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+
+}
+
+function importTemplates()
+{
+	var url = "/admin/cms/template-top/import/index.html";
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		data: {
+		},
+		dataType: 'html',
+		success: function(data) {
+			$('#dialog').html(data);
+			$( "#dialog" ).dialog( "open" );
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+	
+}
+
 
 function showTemplate(currentTemplateId)
 {
@@ -196,7 +238,11 @@ function deleteTemplate(currentTemplateId)
 				Please create the first page from the button below.<br />
 			</p>
 			<p>
-				<center><button type="button" onclick="newTemplate()">Create a New Template</button></center>
+				<center>
+					<button type="button" onclick="newTemplate()" style="width:300px;">Create a New Template</button>
+					<button type="button" onclick="exportTemplates()" style="width:300px;">Export Templates Set</button>
+					<button type="button" onclick="importTemplates()" style="width:300px;">Import Templates Set</button>
+				</center>
 			</p>
 		</div>
 		
@@ -207,6 +253,7 @@ function deleteTemplate(currentTemplateId)
 		
 		<input type="hidden" name="currentTemplateId" value="{$IN.currentTemplateId}" />
 		<input type="hidden" name="targetTemplateId" value="" />
+		<input type="hidden" name="theme" value="" />
 		</form>		
 	</div>
 	<div id="left-menu-handle">

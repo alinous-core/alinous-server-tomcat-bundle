@@ -1,0 +1,57 @@
+<html>
+<body>
+<script>
+<!--
+$(function() {
+	$(".dlgbtn").button();
+});
+
+function dlgImport(form)
+{
+	if(form.theme.value == ""){
+		alert("Input theme file.");
+		return;
+	}
+	
+	$('#dialog').html("Importing data....");
+	
+	form.cmd.value = "import";
+	var url = "/admin/cms/template-top/import/index.html";
+	
+	var fd = new FormData(form);
+	$.ajax({
+		type: 'POST',
+		url: url,
+		processData: false,
+		contentType: false,
+		data: fd,
+		dataType: 'html',
+		success: function (data){
+			$("#dialog").html(data);
+			
+			location.href="/admin/cms/template-top/index.html";
+		},
+		error:function() {
+			alert('Error occur');
+		}
+	});
+}
+
+-->
+</script>
+
+
+<form name="dlgfrm" action="index.html" method="POST">
+
+<h3>Import templates set</h3>
+
+<input type="file" name="theme" />
+
+<button type="button" class="dlgbtn" onclick="dlgImport(this.form)">Import Theme</button>
+
+<input type="hidden" name="cmd" value="" />
+
+</form>
+
+</body>
+</html>

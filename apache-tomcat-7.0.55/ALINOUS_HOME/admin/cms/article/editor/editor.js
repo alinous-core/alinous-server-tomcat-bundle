@@ -23,7 +23,7 @@ function activateNicedit()
 			'forecolor','bgcolor','link', 'anchor', 'unlink', 
 			'xhtml',
 			 'NewTable', 'EdiTableTag', 'RemoveTable','InsertRow',
-			 'alinousImage', 'image', 'objects', 'alinousInner' ],
+			 'alinousImage', 'image', 'objects', 'alinousInner'],
 			iconsPath : '/jquery/nicedit/nicEditorIcons.gif',
 			maxHeight : winHeight,
 			cms_page_id: cms_page_id

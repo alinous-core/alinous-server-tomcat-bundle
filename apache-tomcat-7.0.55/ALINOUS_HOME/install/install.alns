@@ -29,6 +29,7 @@ include("/include/template_primitive.alns");
 include("/include/rss.alns");
 include("/include/sitefiles.alns");
 include("/include/sitesetting.alns");
+include("/admin/cms/publish/publish.alns");
 
 include("/include/httpheader.alns");
 

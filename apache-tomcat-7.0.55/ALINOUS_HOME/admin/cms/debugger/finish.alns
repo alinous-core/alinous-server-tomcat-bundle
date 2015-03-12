@@ -3,5 +3,6 @@
 Debugger.clearAllBreakpoints($IN.modulePath);
 Debugger.terminateThread($IN.threadId);
 
+Debugger.removeConsole("alinous-debug");
 
 return 0;

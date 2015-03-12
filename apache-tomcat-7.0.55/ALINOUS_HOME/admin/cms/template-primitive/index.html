@@ -169,7 +169,9 @@ function firstCategory()
 		</div>
 		<div alns:if="{BOOL($sizeCategory == 0)}">
 			<form name="firstfrm" action="index.html" method="POST">
-			<center><button type="button" onclick="firstCategory()">Create First Tag</button></center>
+			<center>
+				<button type="button" onclick="firstCategory()">Create First Tag</button>
+			</center>
 			<input type="hidden" name="cmd" value="" />
 			
 			<input type="hidden" name="category_code" value="" />
